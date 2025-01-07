@@ -1,7 +1,12 @@
 using Microsoft.EntityFrameworkCore;
 using Microsoft.OpenApi.Models;
 using Pregiato.API.Data;
+using Microsoft.IdentityModel.Tokens;
 using Pregiato.API.Interface;
+using Microsoft.AspNetCore.Authentication.JwtBearer;
+using System.Text;
+using Pregiato.API.Services;
+
 
 var builder = WebApplication.CreateBuilder(args);
 
@@ -13,23 +18,58 @@ builder.Services.AddDbContext<ModelAgencyContext>(options =>
 
 // 
 builder.Services.AddAutoMapper(AppDomain.CurrentDomain.GetAssemblies());
-
 // 
 builder.Services.AddScoped<IClientRepository, ClientRepository>();
 // 
 builder.Services.AddControllers();
 
+//
+builder.Services.AddScoped<IJwtService, JwtService>();
 // 
 builder.Services.AddEndpointsApiExplorer();
 builder.Services.AddSwaggerGen(c =>
 {
-    c.SwaggerDoc("v1", new OpenApiInfo
+    c.AddSecurityDefinition("Bearer", new Microsoft.OpenApi.Models.OpenApiSecurityScheme
     {
-        Title = "Model Agency API",
-        Version = "v1",
-        Description = "API for managing models, clients, contracts, and jobs in a model agency."
+        Name = "Authorization",
+        Type = Microsoft.OpenApi.Models.SecuritySchemeType.Http,
+        Scheme = "Bearer",
+        BearerFormat = "JWT",
+        In = Microsoft.OpenApi.Models.ParameterLocation.Header,
+        Description = "Enter 'Bearer' [space] and then your token."
+    });
+    c.AddSecurityRequirement(new Microsoft.OpenApi.Models.OpenApiSecurityRequirement
+    {
+        {
+            new Microsoft.OpenApi.Models.OpenApiSecurityScheme
+            {
+                Reference = new Microsoft.OpenApi.Models.OpenApiReference
+                {
+                    Type = Microsoft.OpenApi.Models.ReferenceType.SecurityScheme,
+                    Id = "Bearer"
+                }
+            },
+            new string[] { }
+        }
     });
 });
+
+
+var jwtSettings = builder.Configuration.GetSection("JwtSettings");
+builder.Services.AddAuthentication(JwtBearerDefaults.AuthenticationScheme)
+    .AddJwtBearer(options =>
+    {
+        options.TokenValidationParameters = new TokenValidationParameters
+        {
+            ValidateIssuer = true,
+            ValidateAudience = true,
+            ValidateLifetime = true,
+            ValidateIssuerSigningKey = true,
+            ValidIssuer = jwtSettings["Issuer"],
+            ValidAudience = jwtSettings["Audience"],
+            IssuerSigningKey = new SymmetricSecurityKey(Encoding.UTF8.GetBytes(jwtSettings["SecretKey"]))
+        };
+    });
 
 var app = builder.Build();
 

@@ -1,4 +1,5 @@
-﻿using Microsoft.AspNetCore.Mvc;
+﻿using Microsoft.AspNetCore.Authorization;
+using Microsoft.AspNetCore.Mvc;
 using NuGet.Protocol.Core.Types;
 using Pregiato.API.Interface;
 using Pregiato.API.Models;
@@ -9,6 +10,7 @@ using System.Net;
 
 namespace Pregiato.API.Controllers
 {
+    [Authorize]
     [ApiController]
     [Route("api/[controller]")]
     public class ClientController : ControllerBase
@@ -19,7 +21,7 @@ namespace Pregiato.API.Controllers
         {
             _clientRepository = clientRepository ?? throw new ArgumentNullException(nameof(clientRepository));
         }
-
+        [Authorize]
         [HttpGet("/GetAllClients")]
         [SwaggerOperation("Retorna todos os clientes cadastrados.")]
         //[ProducesResponseType(typeof(ApiSuccessResponse<IdStatusResponse>), (int)HttpStatusCode.OK)]
@@ -28,7 +30,7 @@ namespace Pregiato.API.Controllers
             var clients = await _clientRepository.GetAllClientsAsync();
             return Ok(clients);
         }
-
+        [Authorize]
         [HttpPost("/AddClients")]
         [SwaggerOperation("Criação de clientes.")]
         public async Task<IActionResult> AddNewClient([FromBody] CreateClientRequest createClientRequest) 
@@ -52,7 +54,7 @@ namespace Pregiato.API.Controllers
 
             return CreatedAtAction(nameof(_clientRepository.GetByClientIdAsync), new { client.ClientId });
         }
-
+        [Authorize]
         [HttpPut("/UpdateClients/{id}")]
         [SwaggerOperation("Atualizar cadastro de clientes.")]
         public async Task<IActionResult> UpdateClient(int id, [FromBody] UpdateClientRequest request)
