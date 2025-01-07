@@ -1,0 +1,25 @@
+﻿
+Microsoft Visual Studio Solution File, Format Version 12.00
+# Visual Studio Version 17
+VisualStudioVersion = 17.11.35431.28
+MinimumVisualStudioVersion = 10.0.40219.1
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "Pregiato.API", "Pregiato.API\Pregiato.API.csproj", "{36CEA1DE-A2F7-48C5-82DB-BC6FB334E6F5}"
+EndProject
+Global
+	GlobalSection(SolutionConfigurationPlatforms) = preSolution
+		Debug|Any CPU = Debug|Any CPU
+		Release|Any CPU = Release|Any CPU
+	EndGlobalSection
+	GlobalSection(ProjectConfigurationPlatforms) = postSolution
+		{36CEA1DE-A2F7-48C5-82DB-BC6FB334E6F5}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{36CEA1DE-A2F7-48C5-82DB-BC6FB334E6F5}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{36CEA1DE-A2F7-48C5-82DB-BC6FB334E6F5}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{36CEA1DE-A2F7-48C5-82DB-BC6FB334E6F5}.Release|Any CPU.Build.0 = Release|Any CPU
+	EndGlobalSection
+	GlobalSection(SolutionProperties) = preSolution
+		HideSolutionNode = FALSE
+	EndGlobalSection
+	GlobalSection(ExtensibilityGlobals) = postSolution
+		SolutionGuid = {665A88A6-AC72-4A00-B6A9-EA4A2B483E27}
+	EndGlobalSection
+EndGlobal
