@@ -34,9 +34,9 @@ namespace Pregiato.API.Data
            return await _context.Clients.ToListAsync(); 
         }
 
-        public async Task<Client> GetByClientIdAsync(Guid id)
+        public async Task<Client> GetByClientIdAsync(int id)
         {
-            return await _context.Clients.FindAsync(id); 
+            return await _context.Clients.FindAsync(id);
         }
 
         public async Task UpdateClientAsync(Client client)
@@ -44,5 +44,6 @@ namespace Pregiato.API.Data
             _context.Clients.Update(client);    
             await _context.SaveChangesAsync();
         }
+
     }
 }

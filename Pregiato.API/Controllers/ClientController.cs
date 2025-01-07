@@ -2,7 +2,9 @@
 using NuGet.Protocol.Core.Types;
 using Pregiato.API.Interface;
 using Pregiato.API.Models;
+using Pregiato.API.Requests;
 using Swashbuckle.AspNetCore.Annotations;
+using System.ComponentModel;
 using System.Net;
 
 namespace Pregiato.API.Controllers
@@ -29,20 +31,53 @@ namespace Pregiato.API.Controllers
 
         [HttpPost("/AddClients")]
         [SwaggerOperation("Criação de clientes.")]
-        public async Task<IActionResult> AddNewClient([FromBody] Client client)
+        public async Task<IActionResult> AddNewClient([FromBody] CreateClientRequest createClientRequest) 
+        
         {
-
             if (!ModelState.IsValid)
             {
                 return BadRequest(ModelState);
             }
 
-    
-            await _clientRepository.AddClientAsync(client); 
-           
-            return CreatedAtAction(nameof(GetAllClients), new { client.ClientId, client.Name });
+            var client = new Client
+            {
+                Name = createClientRequest.Name,    
+                Email = createClientRequest.Email,  
+                Contact = createClientRequest.Contact,  
+                ClientDocument = createClientRequest.ClientDocument,    
+
+            };
+
+            await _clientRepository.AddClientAsync(client);
+
+            return CreatedAtAction(nameof(_clientRepository.GetByClientIdAsync), new { client.ClientId });
         }
 
+        [HttpPut("/UpdateClients/{id}")]
+        [SwaggerOperation("Atualizar cadastro de clientes.")]
+        public async Task<IActionResult> UpdateClient(int id, [FromBody] UpdateClientRequest request)
+        {
+            if (!ModelState.IsValid)
+            {
+                return BadRequest(ModelState);
+            }
+
+            var clientExists = await _clientRepository.GetByClientIdAsync(id);
+
+            if (clientExists == null)
+            {
+                return NotFound();
+            }
+
+            clientExists.Name = request.Name;
+            clientExists.ClientDocument = request.ClientDocument;
+            clientExists.Contact = request.Contact;
+            clientExists.Email = request.Email;
+
+            await _clientRepository.UpdateClientAsync(clientExists);
+
+            return NoContent();
+        }
 
 
     }
