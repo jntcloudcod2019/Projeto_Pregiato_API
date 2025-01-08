@@ -19,8 +19,8 @@ namespace Pregiato.API.Data
         {
             modelBuilder.Entity<Client>(entity =>
             {
-                entity.HasKey(e => e.ClientId);
-                entity.Property(e => e.ClientId)
+                entity.HasKey(e => e.IdClient);
+                entity.Property(e => e.IdClient)
                       .ValueGeneratedOnAdd()
                       .HasDefaultValueSql("gen_random_uuid()");
             });
@@ -43,8 +43,8 @@ namespace Pregiato.API.Data
 
             modelBuilder.Entity<Moddels>(entity =>
             {
-                entity.HasKey(e => e.ModelId);
-                entity.Property(e => e.ModelId)
+                entity.HasKey(e => e.IdModel);
+                entity.Property(e => e.IdModel)
                       .ValueGeneratedOnAdd()
                       .HasDefaultValueSql("gen_random_uuid()");
             });

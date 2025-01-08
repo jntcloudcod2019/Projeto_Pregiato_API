@@ -15,7 +15,6 @@ namespace Pregiato.API.Services
             _configuration = configuration;
         }
 
-
         public string GenerateToken(string username, string role)
         {
             var jwtSettings = _configuration.GetSection("JwtSettings");

@@ -18,7 +18,7 @@ namespace Pregiato.API.Data
             await _context.SaveChangesAsync();  
         }
 
-        public async Task DeleteAsync(Guid id)
+        public async Task DeleteClientAsync(Guid id)
         {
             var idclient = await _context.Clients.FindAsync(id);
             if (idclient != null)
@@ -34,7 +34,7 @@ namespace Pregiato.API.Data
            return await _context.Clients.ToListAsync(); 
         }
 
-        public async Task<Client> GetByClientIdAsync(int id)
+        public async Task<Client> GetByClientIdAsync(Guid id)
         {
             return await _context.Clients.FindAsync(id);
         }

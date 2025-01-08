@@ -1,5 +1,6 @@
 ﻿using Microsoft.AspNetCore.Identity.Data;
 using Microsoft.AspNetCore.Mvc;
+using Microsoft.VisualStudio.Web.CodeGenerators.Mvc.Templates.BlazorIdentity.Pages;
 using Pregiato.API.Interface;
 using Pregiato.API.Models;
 
@@ -16,7 +17,7 @@ namespace Pregiato.API.Controllers
             _jwtService = jwtService;
         }
 
-        [HttpPost("login")]
+        [HttpPost("/Auth/login/")]
         public IActionResult Login([FromBody] Models.LoginRequest request)
         {
             // Simulação de autenticação (substituir por validação real)
