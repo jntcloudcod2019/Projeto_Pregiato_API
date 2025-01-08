@@ -81,6 +81,7 @@ namespace Pregiato.API.Controllers
         }
 
         [HttpDelete("/DeleteClients/{id}")]
+        [SwaggerOperation("Deletar cadastro de clientes.")]
         public async Task<IActionResult> DeleteClient(Guid id)
         {
            await _clientRepository.DeleteClientAsync(id);

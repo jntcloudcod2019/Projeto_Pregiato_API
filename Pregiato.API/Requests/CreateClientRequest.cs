@@ -4,6 +4,7 @@ namespace Pregiato.API.Requests
 {
     public class CreateClientRequest
     {
+        [Required]
         [EmailAddress]
         public string Email { get; set; }
         [Required]

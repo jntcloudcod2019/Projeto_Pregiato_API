@@ -20,6 +20,7 @@ builder.Services.AddDbContext<ModelAgencyContext>(options =>
 builder.Services.AddAutoMapper(AppDomain.CurrentDomain.GetAssemblies());
 // 
 builder.Services.AddScoped<IClientRepository, ClientRepository>();
+builder.Services.AddScoped<IModelRepository, ModelsRepository>();
 // 
 builder.Services.AddControllers();
 
