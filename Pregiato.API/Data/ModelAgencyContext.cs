@@ -57,9 +57,15 @@ namespace Pregiato.API.Data
                       .HasDefaultValueSql("gen_random_uuid()");
             });
 
-           
-            modelBuilder.Entity<ClientBilling>()
-                .HasKey(cb => cb.BillingId);
+
+            modelBuilder.Entity<ClientBilling>(entity =>
+            {
+                entity.HasKey(cb => cb.BillingId);
+                entity.Property( cb => cb.BillingId)
+                .ValueGeneratedOnAdd()
+                .HasDefaultValueSql("gen_random_uuid()");
+
+            });
         
 
         }
