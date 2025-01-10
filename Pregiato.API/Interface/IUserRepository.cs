@@ -8,6 +8,8 @@ namespace Pregiato.API.Interface
         Task<User> GetByUserIdAsync(Guid id);
         Task AddUserAsync(User user);
         Task UpdateUserAsync(User user);
-        Task DeleteUserAsync(User user);
+        Task DeleteUserAsync(Guid id);
+        Task<User> GetByUsernameAsync(string username);
+        Task SaveChangesAsync();
     }
 }

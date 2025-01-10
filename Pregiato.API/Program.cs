@@ -16,6 +16,8 @@ builder.Services.AddScoped<IClientRepository, ClientRepository>();
 builder.Services.AddScoped<IModelRepository, ModelsRepository>();
 builder.Services.AddScoped<IClientBillingRepository, ClientBillingRepository>();
 builder.Services.AddScoped<IJobRepository, JobRepository>();
+builder.Services.AddScoped<IUserRepository, UserRepository>();
+builder.Services.AddScoped<IUserService, UserService>();
 builder.Services.AddControllers();
 builder.Services.AddScoped<IJwtService, JwtService>();
 builder.Services.AddEndpointsApiExplorer();
