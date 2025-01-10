@@ -1,5 +1,4 @@
 ﻿using Microsoft.AspNetCore.Authorization;
-using Microsoft.AspNetCore.Http.HttpResults;
 using Microsoft.AspNetCore.Mvc;
 using Pregiato.API.Interface;
 using Pregiato.API.Models;
@@ -66,7 +65,7 @@ namespace Pregiato.API.Controllers
             return BadRequest();
         }
 
-        [HttpGet]
+        [HttpGet("/GetClientBillingID{id}")]
         [SwaggerOperation("Retorna faturamento do cliente por id")]
         public async Task <IActionResult> GetClientBillingForId (Guid id)
         {
@@ -83,13 +82,12 @@ namespace Pregiato.API.Controllers
 
         }
 
-        [HttpGet]
+        [HttpGet("/GetClientBillingAll")]
         [SwaggerOperation("Retorna faturamento do cliente por id")]
         public async Task<IActionResult> GetClientBillingAll()
         {
             var clientbilling = await _clientBillingRepository.GetAllClientBillingAsync();
             return Ok(clientbilling);
-
         }
     }
 }

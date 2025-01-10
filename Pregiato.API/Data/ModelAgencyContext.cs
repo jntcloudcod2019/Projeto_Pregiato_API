@@ -12,11 +12,12 @@ namespace Pregiato.API.Data
         public DbSet<User> Users { get; set; }
         public DbSet<Moddels> Models { get; set; }
         public DbSet<Job> Jobs { get; set; }
+        public DbSet<ModelsBilling> ModelsBilling { get; set; } 
 
-       
 
         protected override void OnModelCreating(ModelBuilder modelBuilder)
         {
+         
             modelBuilder.Entity<Client>(entity =>
             {
                 entity.HasKey(e => e.IdClient);
@@ -51,8 +52,8 @@ namespace Pregiato.API.Data
 
             modelBuilder.Entity<Job>(entity =>
             {
-                entity.HasKey(e => e.JobId);
-                entity.Property(e => e.JobId)
+                entity.HasKey(e => e.idjob);
+                entity.Property(e => e.idjob)
                       .ValueGeneratedOnAdd()
                       .HasDefaultValueSql("gen_random_uuid()");
             });

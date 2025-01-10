@@ -1,8 +1,6 @@
-﻿using Microsoft.AspNetCore.Identity.Data;
-using Microsoft.AspNetCore.Mvc;
-using Microsoft.VisualStudio.Web.CodeGenerators.Mvc.Templates.BlazorIdentity.Pages;
+﻿using Microsoft.AspNetCore.Mvc;
 using Pregiato.API.Interface;
-using Pregiato.API.Models;
+
 
 namespace Pregiato.API.Controllers
 {

@@ -1,6 +1,5 @@
 ﻿using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
-using Pregiato.API.Data;
 using Pregiato.API.Interface;
 using Pregiato.API.Models;
 using Pregiato.API.Requests;
@@ -109,7 +108,7 @@ namespace Pregiato.API.Controllers
             return NoContent();
         }
 
-        [HttpDelete("DeleteModel{id}")]
+        [HttpDelete("/DeleteModel{id}")]
         [SwaggerOperation("Deletar cadastro de modelos.")]
         public async Task<IActionResult> DeleteModel(Guid id)
         {

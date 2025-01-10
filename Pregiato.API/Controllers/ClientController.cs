@@ -1,12 +1,10 @@
 ﻿using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
-using NuGet.Protocol.Core.Types;
 using Pregiato.API.Interface;
 using Pregiato.API.Models;
 using Pregiato.API.Requests;
 using Swashbuckle.AspNetCore.Annotations;
-using System.ComponentModel;
-using System.Net;
+
 
 namespace Pregiato.API.Controllers
 {
