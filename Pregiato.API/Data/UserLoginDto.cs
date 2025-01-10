@@ -1,4 +1,4 @@
-﻿namespace Pregiato.API.Models
+﻿namespace Pregiato.API.Data
 {
     public class UserLoginDto
     {
