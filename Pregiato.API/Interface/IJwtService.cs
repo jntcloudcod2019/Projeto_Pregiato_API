@@ -1,7 +1,11 @@
-﻿namespace Pregiato.API.Interface
+﻿using Microsoft.AspNetCore.Identity.Data;
+using Pregiato.API.Requests;
+
+
+namespace Pregiato.API.Interface
 {
     public interface IJwtService
     {
-        string GenerateToken(string username, string role);
+        string GenerateToken(LoginUserRequest loginRequest);
     }
 }

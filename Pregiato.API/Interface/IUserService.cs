@@ -1,9 +1,13 @@
-﻿namespace Pregiato.API.Interface
+﻿using Microsoft.AspNetCore.Identity.Data;
+using Pregiato.API.Models;
+using Pregiato.API.Requests;
+
+namespace Pregiato.API.Interface
 {
     public interface IUserService
     {
-        Task<string> RegisterUserAsync(string username, string email, string password);
-        Task<string> AuthenticateUserAsync(string username, string password);
+        Task<string> RegisterUserAsync(string username, string email, string password, UserType userType);
+        Task <string> AuthenticateUserAsync(LoginUserRequest loginRequest);
         Task DeleteUserAsync(Guid id);
     }
 }

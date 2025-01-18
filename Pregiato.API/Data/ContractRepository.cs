@@ -1,6 +1,7 @@
 ﻿using Microsoft.EntityFrameworkCore;
 using Pregiato.API.Interface;
 using Pregiato.API.Models;
+using System.Diagnostics.Contracts;
 
 namespace Pregiato.API.Data
 {
@@ -8,42 +9,32 @@ namespace Pregiato.API.Data
     {
         private readonly ModelAgencyContext _context;
 
-        public ContractRepository(ModelAgencyContext context) 
+        public ContractRepository(ModelAgencyContext context)
         {
-              _context = context; 
+            _context = context;
         }
 
-        public async Task AddContractAsync(Contract contract)
+        public async Task AddAsync(ContractsModels contract)
         {
-            _context.Contracts.Add(contract);
+            _context.ContractsModels.Add(contract);
             await _context.SaveChangesAsync();
         }
 
-        public async Task DeleteContractAsync(Guid id)
+        public async Task<ContractsModels> GetByIdAsync(Guid id)
         {
-            var idContract = await _context.Contracts.FindAsync(id);
-            if (idContract != null) 
-            {
-             _context.Remove(idContract);
-             await _context.SaveChangesAsync();
-
-            }
+            return await _context.ContractsModels.FindAsync(id);
         }
 
-        public async Task<IEnumerable<Contract>> GetAllContractAsync()
+        public async Task UpdateAsync(ContractsModels contract)
         {
-            return await _context.Contracts.ToListAsync();
+            _context.ContractsModels.Update(contract);
+            await _context.SaveChangesAsync();
         }
 
-        public async Task<Contract> GetByIdContractAsync(Guid id)
+        public async Task DeleteAsync(ContractsModels contract)
         {
-            return await _context.Contracts.FindAsync(id);
-        }
-
-        public async Task UpdateContractAsync(Contract contract)
-        {
-           _context.Contracts.Update(contract);
-           await _context.SaveChangesAsync();
+            _context.ContractsModels.Remove(contract);
+            await _context.SaveChangesAsync();
         }
     }
-}
+ }

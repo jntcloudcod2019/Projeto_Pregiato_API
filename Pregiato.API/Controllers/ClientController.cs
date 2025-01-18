@@ -8,7 +8,7 @@ using Swashbuckle.AspNetCore.Annotations;
 
 namespace Pregiato.API.Controllers
 {
-    [Authorize] 
+    [Authorize(Roles = "AdministratorPolicy,ManagerPolicy")]
     [ApiController]
     [Route("api/Client")]
     public class ClientController : ControllerBase
@@ -22,7 +22,7 @@ namespace Pregiato.API.Controllers
       
         [HttpGet("/GetAllClients")]
         [SwaggerOperation("Retorna todos os clientes cadastrados.")]
-        //[ProducesResponseType(typeof(ApiSuccessResponse<IdStatusResponse>), (int)HttpStatusCode.OK)]
+   
         public async Task<IActionResult> GetAllClients()
         {
             var clients = await _clientRepository.GetAllClientsAsync();

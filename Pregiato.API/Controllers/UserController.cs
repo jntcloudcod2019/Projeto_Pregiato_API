@@ -1,18 +1,22 @@
 ﻿using Microsoft.AspNetCore.Mvc;
-using Pregiato.API.Data;
+using Pregiato.API.Requests;
 using Pregiato.API.Interface;
+using Pregiato.API.Models;
 
 namespace Pregiato.API.Controllers
 {
+
     [ApiController]
     [Route("api/User")]
     public class UserController : ControllerBase
     {
         private readonly IUserService _userService;
+        private readonly IUserRepository _userRepository;   
 
-        public UserController(IUserService userService)
+        public UserController(IUserService userService, IUserRepository userRepository)
         {
             _userService = userService;
+            _userRepository = userRepository;   
         }
 
         [HttpPost("/register")]
@@ -20,7 +24,7 @@ namespace Pregiato.API.Controllers
         {
             try
             {
-                var result = await _userService.RegisterUserAsync(dto.Username, dto.Email, dto.Password);
+                var result = await _userService.RegisterUserAsync(dto.Username, dto.Email, dto.Password, dto.UserType);
                 return Ok(new { message = result });
             }
             catch (Exception ex)
@@ -30,11 +34,11 @@ namespace Pregiato.API.Controllers
         }
 
         [HttpPost("/login")]
-        public async Task<IActionResult> Login(UserLoginDto dto)
+        public async Task<IActionResult> Login([FromBody] LoginUserRequest loginRequest)
         {
             try
             {
-                var token = await _userService.AuthenticateUserAsync(dto.Username, dto.Password);
+                var token = await _userService.AuthenticateUserAsync(loginRequest);
                 return Ok(new { token });
             }
             catch (Exception ex)
@@ -56,6 +60,68 @@ namespace Pregiato.API.Controllers
                 return BadRequest(new { error = ex.Message });
             }
         }
+
+        [HttpPost("register/administrator")]
+        public async Task<IActionResult> RegisterAdministrator([FromBody] UserRegisterDto dto)
+        {
+            try
+            {
+               
+                if (dto.UserType.ToString() != UserType.Administrator)
+                {
+                    return BadRequest(new { error = "Invalid user type. Expected 'Administrator'." });
+                }
+
+                
+                var result = await _userService.RegisterUserAsync(dto.Username, dto.Email, dto.Password, dto.UserType);
+                return Ok(new { message = result });
+            }
+            catch (Exception ex)
+            {
+                return BadRequest(new { error = ex.Message });
+            }
+        }
+        [HttpPost("register/model")]
+        public async Task<IActionResult> RegisterModel([FromBody] UserRegisterDto dto)
+        {
+            try
+            {
+                
+                if (dto.UserType.ToString() != UserType.Model)
+                {
+                    return BadRequest(new { error = "Invalid user type. Expected 'Model'." });
+                }
+
+                var result = await _userService.RegisterUserAsync(dto.Username, dto.Email, dto.Password, dto.UserType);
+                return Ok(new { message = result });
+            }
+            catch (Exception ex)
+            {
+                return BadRequest(new { error = ex.Message });
+            }
+        }
+        
+        [HttpPost("register/manager")]
+        public async Task<IActionResult> RegisterManager([FromBody] UserRegisterDto dto)
+        {
+            try
+            {
+                
+                if (dto.UserType.ToString() != UserType.Manager)
+                {
+                    return BadRequest(new { error = "Invalid user type. Expected 'Manager'." });
+                }
+
+                var result = await _userService.RegisterUserAsync(dto.Username, dto.Email, dto.Password, dto.UserType);
+                return Ok(new { message = result });
+            }
+            catch (Exception ex)
+            {
+                return BadRequest(new { error = ex.Message });
+            }
+        }
+
+
     }
 
 }

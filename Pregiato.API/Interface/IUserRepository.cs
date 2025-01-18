@@ -1,4 +1,7 @@
-﻿using Pregiato.API.Models;
+﻿using Microsoft.AspNetCore.Identity.Data;
+using Microsoft.VisualStudio.Web.CodeGenerators.Mvc.Templates.BlazorIdentity.Pages;
+using Pregiato.API.Models;
+using Pregiato.API.Requests;
 
 namespace Pregiato.API.Interface
 {
@@ -11,5 +14,6 @@ namespace Pregiato.API.Interface
         Task DeleteUserAsync(Guid id);
         Task<User> GetByUsernameAsync(string username);
         Task SaveChangesAsync();
+        Task GetByUserAsync(LoginUserRequest loginRequest);
     }
 }

@@ -1,26 +1,23 @@
-﻿using Microsoft.CodeAnalysis.Scripting;
-using Microsoft.IdentityModel.Tokens;
-using Org.BouncyCastle.Crypto.Generators;
+﻿using Microsoft.AspNetCore.Identity.Data;
 using Pregiato.API.Interface;
 using Pregiato.API.Models;
-using System.IdentityModel.Tokens.Jwt;
-using System.Security.Claims;
-using System.Text;
+using Pregiato.API.Requests;
+
 
 namespace Pregiato.API.Services
 {
     public class UserService : IUserService
     {
         private readonly IUserRepository _userRepository;
-        private readonly IConfiguration _configuration;
+        private readonly IJwtService _jwtService; 
 
-        public UserService(IUserRepository userRepository, IConfiguration configuration)
+        public UserService(IUserRepository userRepository, IJwtService jwtService)
         {
             _userRepository = userRepository;
-            _configuration = configuration;
+            _jwtService = jwtService;  
         }
 
-        public async Task<string> RegisterUserAsync(string username, string email, string password)
+        public async Task<string> RegisterUserAsync(string username, string email, string password, UserType userType)
         {
             if (await _userRepository.GetByUsernameAsync(username) != null)
             {
@@ -41,42 +38,22 @@ namespace Pregiato.API.Services
             return "User registered successfully.";
         }
 
-        public async Task<string> AuthenticateUserAsync(string username, string password)
-        {
-            var user = await _userRepository.GetByUsernameAsync(username);
-
-            if (user == null || !BCrypt.Net.BCrypt.Verify(password, user.PasswordHash))
-            {
-                throw new Exception("Invalid username or password.");
-            }
-
-            return GenerateToken(user);
-        }
-
         public async Task DeleteUserAsync(Guid id)
         {
             await _userRepository.DeleteUserAsync(id);
             await _userRepository.SaveChangesAsync();
         }
 
-        private string GenerateToken(User user)
+        public async Task<string> AuthenticateUserAsync(LoginUserRequest loginUserRequest)
         {
-            var tokenHandler = new JwtSecurityTokenHandler();
-            var secretKey = Encoding.ASCII.GetBytes(_configuration["JwtSettings:SecretKey"]);
+            var user = await _userRepository.GetByUsernameAsync(loginUserRequest.Username);
 
-            var tokenDescriptor = new SecurityTokenDescriptor
+            if (user == null || !BCrypt.Net.BCrypt.Verify(loginUserRequest.Password, user.PasswordHash))
             {
-                Subject = new ClaimsIdentity(new[]
-                {
-            new Claim(ClaimTypes.NameIdentifier, user.UserId.ToString()),
-            new Claim(ClaimTypes.Name, user.Name)
-        }),
-                Expires = DateTime.UtcNow.AddHours(1), // Define o tempo de expiração
-                SigningCredentials = new SigningCredentials(new SymmetricSecurityKey(secretKey), SecurityAlgorithms.HmacSha256Signature)
-            };
+                throw new Exception("Invalid username or password.");
+            }
 
-            var token = tokenHandler.CreateToken(tokenDescriptor);
-            return tokenHandler.WriteToken(token);
+            return _jwtService.GenerateToken(loginUserRequest);
         }
     }
-}
+  }

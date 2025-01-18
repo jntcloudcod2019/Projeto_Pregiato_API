@@ -1,5 +1,8 @@
 ﻿using Microsoft.AspNetCore.Mvc;
 using Pregiato.API.Interface;
+using Pregiato.API.Models;
+using Pregiato.API.Requests;
+using Pregiato.API.Services;
 
 
 namespace Pregiato.API.Controllers
@@ -9,23 +12,33 @@ namespace Pregiato.API.Controllers
     public class AuthController : ControllerBase
     {
         private readonly IJwtService _jwtService;
-
-        public AuthController(IJwtService jwtService)
+        private readonly IUserRepository _userRepository;
+        private readonly IPasswordHasherService _passwordHasherService;
+        private readonly IUserService _userService;
+        public AuthController(IJwtService jwtService, IUserRepository userRepository, IPasswordHasherService passwordHasherService, IUserService userService)
         {
             _jwtService = jwtService;
+            _userRepository = userRepository;  
+            _passwordHasherService = passwordHasherService;
+            _userService = userService; 
         }
 
         [HttpPost("/Auth/login/")]
-        public IActionResult Login([FromBody] Models.LoginRequest request)
+        public async Task<IActionResult> Login([FromBody] LoginUserRequest loginRequest)
         {
-            // Simulação de autenticação (substituir por validação real)
-            if (request.Username == "admin" && request.Password == "password")
+           var user =  await _userRepository.GetByUsernameAsync(loginRequest.Username);    
+            if (user ==  null)
             {
-                var token = _jwtService.GenerateToken(request.Username, "Admin");
-                return Ok(new { Token = token });
+                return Unauthorized("Usuário não encontrado.");
+            }
+            if ((!_passwordHasherService.VerifyPasswordHash(loginRequest.Password, user.PasswordHash)))
+            {
+                return Unauthorized("Senha incorreta.");
             }
 
-            return Unauthorized("Invalid username or password.");
+            var token = _userService.AuthenticateUserAsync(loginRequest);
+
+            return Ok(new { Token = token });
         }
     }
 

@@ -1,6 +1,9 @@
-﻿using Microsoft.EntityFrameworkCore;
+﻿using Microsoft.AspNetCore.Http.HttpResults;
+using Microsoft.EntityFrameworkCore;
+using Microsoft.VisualStudio.Web.CodeGenerators.Mvc.Templates.BlazorIdentity.Pages;
 using Pregiato.API.Interface;
 using Pregiato.API.Models;
+using Pregiato.API.Requests;
 
 namespace Pregiato.API.Data
 {
@@ -15,6 +18,7 @@ namespace Pregiato.API.Data
 
         public async Task AddUserAsync(User user)
         {
+            
             _context.Users.Add(user);   
             await _context.SaveChangesAsync();
         }
@@ -53,6 +57,12 @@ namespace Pregiato.API.Data
                 _context.Users.Remove(idUser);
                 await _context.SaveChangesAsync();
             }
+        }
+
+        public async Task GetByUserAsync(LoginUserRequest loginUserRequest)
+        {
+            await _context.LoginRequests.FindAsync(loginUserRequest.Username);
+            //inserir um tipo de retorno aqui 
         }
     }
 }

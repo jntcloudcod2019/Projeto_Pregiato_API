@@ -1,13 +1,13 @@
 ﻿using Pregiato.API.Models;
+using System.Diagnostics.Contracts;
 
 namespace Pregiato.API.Interface
 {
     public interface IContractRepository
     {
-        Task<IEnumerable<Contract>> GetAllContractAsync();
-        Task<Contract> GetByIdContractAsync(Guid id);
-        Task AddContractAsync(Contract contract);
-        Task UpdateContractAsync(Contract contract);
-        Task DeleteContractAsync(Guid id);
+        Task AddAsync(ContractsModels contract);
+        Task<ContractsModels> GetByIdAsync(Guid id);
+        Task UpdateAsync(ContractsModels contract);
+        Task DeleteAsync(ContractsModels contract);
     }
 }
