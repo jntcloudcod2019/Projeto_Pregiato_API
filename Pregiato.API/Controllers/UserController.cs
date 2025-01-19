@@ -24,7 +24,7 @@ namespace Pregiato.API.Controllers
         {
             try
             {
-                var result = await _userService.RegisterUserAsync(dto.Username, dto.Email, dto.Password, dto.UserType);
+                var result = await _userService.RegisterUserAsync(dto.Username, dto.Email, dto.Password, UserType.Test);
                 return Ok(new { message = result });
             }
             catch (Exception ex)
@@ -66,14 +66,8 @@ namespace Pregiato.API.Controllers
         {
             try
             {
-               
-                if (dto.UserType.ToString() != UserType.Administrator)
-                {
-                    return BadRequest(new { error = "Invalid user type. Expected 'Administrator'." });
-                }
 
-                
-                var result = await _userService.RegisterUserAsync(dto.Username, dto.Email, dto.Password, dto.UserType);
+                var result = await _userService.RegisterUserAsync(dto.Username, dto.Email, dto.Password, UserType.Administrator.ToString());
                 return Ok(new { message = result });
             }
             catch (Exception ex)
@@ -87,12 +81,7 @@ namespace Pregiato.API.Controllers
             try
             {
                 
-                if (dto.UserType.ToString() != UserType.Model)
-                {
-                    return BadRequest(new { error = "Invalid user type. Expected 'Model'." });
-                }
-
-                var result = await _userService.RegisterUserAsync(dto.Username, dto.Email, dto.Password, dto.UserType);
+                var result = await _userService.RegisterUserAsync(dto.Username, dto.Email, dto.Password, UserType.Model);
                 return Ok(new { message = result });
             }
             catch (Exception ex)
@@ -106,13 +95,7 @@ namespace Pregiato.API.Controllers
         {
             try
             {
-                
-                if (dto.UserType.ToString() != UserType.Manager)
-                {
-                    return BadRequest(new { error = "Invalid user type. Expected 'Manager'." });
-                }
-
-                var result = await _userService.RegisterUserAsync(dto.Username, dto.Email, dto.Password, dto.UserType);
+                var result = await _userService.RegisterUserAsync(dto.Username, dto.Email, dto.Password, UserType.Manager);
                 return Ok(new { message = result });
             }
             catch (Exception ex)

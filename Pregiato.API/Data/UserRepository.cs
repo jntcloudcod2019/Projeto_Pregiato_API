@@ -18,9 +18,18 @@ namespace Pregiato.API.Data
 
         public async Task AddUserAsync(User user)
         {
-            
-            _context.Users.Add(user);   
-            await _context.SaveChangesAsync();
+
+            try
+{
+                // Tente salvar o usuário
+                _context.Users.Add(user);
+                await _context.SaveChangesAsync();
+            }
+             catch (DbUpdateException ex)
+{
+                Console.WriteLine($"Erro ao salvar o usuário: {ex.Message}");
+                Console.WriteLine($"Exceção interna: {ex.InnerException?.Message}");
+            }
         }
 
         public async Task<IEnumerable<User>> GetAllUserAsync()

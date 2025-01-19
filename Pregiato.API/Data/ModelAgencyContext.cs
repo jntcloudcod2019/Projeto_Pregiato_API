@@ -55,8 +55,6 @@ namespace Pregiato.API.Data
                 entity.Property(e => e.UserId)
                       .ValueGeneratedOnAdd()
                       .HasDefaultValueSql("gen_random_uuid()");
-                entity.Property(e => e.UserType)
-                     .HasConversion<string>();
             });
 
             modelBuilder.Entity<Moddels>(entity =>
@@ -88,6 +86,7 @@ namespace Pregiato.API.Data
             {
                 entity.HasKey(e => e.Id);
             });
+
 
         }
     }

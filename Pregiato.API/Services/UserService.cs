@@ -17,26 +17,6 @@ namespace Pregiato.API.Services
             _jwtService = jwtService;  
         }
 
-        public async Task<string> RegisterUserAsync(string username, string email, string password, UserType userType)
-        {
-            if (await _userRepository.GetByUsernameAsync(username) != null)
-            {
-                throw new Exception("Username already exists.");
-            }
-
-            var passwordHash = BCrypt.Net.BCrypt.HashPassword(password);
-            var user = new User
-            {
-                Name = username,
-                Email = email,
-                PasswordHash = passwordHash
-            };
-
-            await _userRepository.AddUserAsync(user);
-            await _userRepository.SaveChangesAsync();
-
-            return "User registered successfully.";
-        }
 
         public async Task DeleteUserAsync(Guid id)
         {
@@ -54,6 +34,31 @@ namespace Pregiato.API.Services
             }
 
             return _jwtService.GenerateToken(loginUserRequest);
+        }
+
+        public async Task<string> RegisterUserAsync(string username, string email, string password, string userType)
+        {
+
+            if (await _userRepository.GetByUsernameAsync(username) != null)
+            {
+                throw new Exception("Username already exists.");
+            }
+
+            var passwordHash = BCrypt.Net.BCrypt.HashPassword(password);
+            var user = new User
+
+            {
+                UserId = new Guid(),
+                Name = username,
+                Email = email,
+                PasswordHash = passwordHash,
+                UserType = userType
+            };
+
+            await _userRepository.AddUserAsync(user);
+            await _userRepository.SaveChangesAsync();
+
+            return "User registered successfully.";
         }
     }
   }

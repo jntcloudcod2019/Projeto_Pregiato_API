@@ -10,9 +10,7 @@ namespace Pregiato.API.Models
         public string? Email { get; set; }
         public string? Name { get; set; }
         public string PasswordHash { get; set; }
-
-        [JsonConverter(typeof(JsonStringEnumConverter))]
-        public UserType UserType { get; set; }  
+        public string  UserType { get; set; }  
        
     }
 }
