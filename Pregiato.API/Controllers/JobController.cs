@@ -20,7 +20,7 @@ namespace Pregiato.API.Controllers
             _jobRepository = jobRepository;
             _modelRepository = modelRepository;
         }
-
+        [Authorize(Roles = "AdministratorPolicy,ManagerPolicy")]
         [HttpPost]
         [SwaggerOperation("Criação de Job")]
         public async Task <IActionResult> AddJobModel( [FromBody] JobRequest jobRequest)

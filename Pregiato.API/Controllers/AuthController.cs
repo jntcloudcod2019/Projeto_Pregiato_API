@@ -1,8 +1,8 @@
-﻿using Microsoft.AspNetCore.Mvc;
+﻿using Microsoft.AspNetCore.Authorization;
+using Microsoft.AspNetCore.Mvc;
 using Pregiato.API.Interface;
-using Pregiato.API.Models;
 using Pregiato.API.Requests;
-using Pregiato.API.Services;
+
 
 
 namespace Pregiato.API.Controllers
@@ -22,7 +22,8 @@ namespace Pregiato.API.Controllers
             _passwordHasherService = passwordHasherService;
             _userService = userService; 
         }
-
+        
+        [Authorize(Roles = "AdministratorPolicy, ManagerPolicy, ModelPolicy")]
         [HttpPost("/Auth/login/")]
         public async Task<IActionResult> Login([FromBody] LoginUserRequest loginRequest)
         {

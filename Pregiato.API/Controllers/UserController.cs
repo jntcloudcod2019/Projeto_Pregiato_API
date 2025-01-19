@@ -2,10 +2,11 @@
 using Pregiato.API.Requests;
 using Pregiato.API.Interface;
 using Pregiato.API.Models;
+using Microsoft.AspNetCore.Authorization;
 
 namespace Pregiato.API.Controllers
 {
-
+    [Authorize(Roles = "AdministratorPolicy,ManagerPolicy")]
     [ApiController]
     [Route("api/User")]
     public class UserController : ControllerBase

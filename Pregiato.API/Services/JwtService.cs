@@ -26,7 +26,7 @@ namespace Pregiato.API.Services
             var claims = new[]
             {
               new Claim(ClaimTypes.Name, loginUserRequest.Username),      
-              new Claim(ClaimTypes.Role, loginUserRequest.UserType.ToString()) // ou "Admin", "Manager", etc.
+              new Claim(ClaimTypes.Role, loginUserRequest.UserType.ToString())
             };
 
             // 2. Criar a chave de segurança
