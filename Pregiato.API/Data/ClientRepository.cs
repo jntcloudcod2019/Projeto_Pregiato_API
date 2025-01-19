@@ -45,5 +45,11 @@ namespace Pregiato.API.Data
             await _context.SaveChangesAsync();
         }
 
+        public async Task<Client> GetByEmailOrDocumentAsync(string email, string clientDocument)
+        {
+            return await _context.Clients
+                .FirstOrDefaultAsync(c => c.Email == email || c.ClientDocument == clientDocument);
+        }
+
     }
 }

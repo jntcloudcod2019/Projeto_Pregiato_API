@@ -33,7 +33,7 @@ namespace Pregiato.API.Controllers
             var jobModel = new Job
             {
               Status = "Confirmed",
-              idjob = new Guid(),
+              IdJob = new Guid(),
               JobDate = jobRequest.JobDate,
               Location = jobRequest.Location,
               Description = jobRequest.Description,                      

@@ -57,8 +57,8 @@ builder.Services.AddAuthentication(JwtBearerDefaults.AuthenticationScheme)
             ValidateAudience = true,
             ValidateLifetime = true,
             ValidateIssuerSigningKey = true,
-            ValidIssuer = jwtSettings["Issuer"],
-            ValidAudience = jwtSettings["Audience"],
+            ValidIssuer = jwtSettings["PregiatoAPI"],
+            ValidAudience = jwtSettings["PregiatoAPIToken"],
             IssuerSigningKey = new SymmetricSecurityKey(Encoding.UTF8.GetBytes(jwtSettings["SecretKey"]))
         };
     });
@@ -78,7 +78,7 @@ if (app.Environment.IsDevelopment())
     app.UseSwaggerUI(c =>
     {
         c.SwaggerEndpoint("/swagger/v1/swagger.json", "Model Agency API v1");
-        c.RoutePrefix = string.Empty; // Swagger será acessado na raiz (http://localhost:5000)
+        c.RoutePrefix = string.Empty; // Swagger  (http://localhost:5000)
     });
 }
 
@@ -86,8 +86,7 @@ app.UseHttpsRedirection();
 app.UseAuthorization();
 app.MapControllers();
 app.Run();
-
-// Ensure database creation (opcional, para ambiente de desenvolvimento)
+ 
 using (var scope = app.Services.CreateScope())
 {
     var dbContext = scope.ServiceProvider.GetRequiredService<ModelAgencyContext>();

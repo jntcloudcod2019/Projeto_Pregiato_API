@@ -9,5 +9,6 @@ namespace Pregiato.API.Interface
         Task AddClientAsync(Client client);
         Task UpdateClientAsync(Client client);
         Task DeleteClientAsync(Guid id);
+        Task<Client> GetByEmailOrDocumentAsync(string email, string clientDocument);
     }
 }

@@ -43,7 +43,7 @@ namespace Pregiato.API.Data
             var existingBilling = _context.ModelsBilling.FirstOrDefault(b => b.IdModel == modelsBilling.IdModel);
             if (existingBilling != null)
             {
-                existingBilling.Amout = modelsBilling.Amout;
+               existingBilling.Amount = modelsBilling.Amount;   
                 existingBilling.BillingDate = modelsBilling.BillingDate;
 
             }

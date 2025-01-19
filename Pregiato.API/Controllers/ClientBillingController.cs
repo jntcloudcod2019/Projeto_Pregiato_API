@@ -7,7 +7,7 @@ using Swashbuckle.AspNetCore.Annotations;
 
 namespace Pregiato.API.Controllers
 {
-    [Authorize(Policy = "Administrator, Manager")]
+    [Authorize(Policy = "AdministratorPolicy, ManagerPolicy")]
     [ApiController]
     public class ClientBillingController : ControllerBase
     {
@@ -25,7 +25,9 @@ namespace Pregiato.API.Controllers
         public async Task<IActionResult> AddClientBilling(Guid id, [FromBody] ClientBillingRequest createClientBillingRequest)
         {
             if (id == Guid.Empty)
-            {return BadRequest();}
+            {
+                return BadRequest(new { message = "O ID do cliente não pode ser vazio." });
+            }
 
             var clientExists = await _clientRepository.GetByClientIdAsync(id);
 
@@ -34,14 +36,16 @@ namespace Pregiato.API.Controllers
                 var clientBilling = new ClientBilling
                 {
                     ClientId = clientExists.IdClient,
-                    BillingId = new Guid(),
-                    Amount = createClientBillingRequest.Amount,
-                    BillingDate = createClientBillingRequest.BillingDate
+                    BillingId = Guid.NewGuid(),
+                    Amount = (decimal)createClientBillingRequest.Amount, // Valor obtido da requisição
+                    BillingDate = createClientBillingRequest.BillingDate ?? DateTime.UtcNow // Garante uma data válida
                 };
+
                 await _clientBillingRepository.AddClientBillingAsync(clientBilling);
-                return Ok();
+                return Ok(new { message = "Faturamento adicionado com sucesso!" });
             }
-            return BadRequest();
+
+            return NotFound(new { message = "Cliente não encontrado." });
 
         }
 
@@ -50,19 +54,30 @@ namespace Pregiato.API.Controllers
         public async Task<IActionResult> UpdateClientBilling(Guid id, [FromBody] ClientBillingRequest updateclientBillingRequest)
         {
             if (id == Guid.Empty)
-            {return BadRequest();}
+            {
+                return BadRequest(new { message = "O ID do cliente não pode ser vazio." });
+            }
 
             var clientExists = await _clientRepository.GetByClientIdAsync(id);
-            if (clientExists != null && clientExists.IdClient == id)
+            if (clientExists == null || clientExists.IdClient != id)
             {
-                var clientBilling = new ClientBilling
-                {
-                    Amount = updateclientBillingRequest.Amount,
-                    BillingDate = updateclientBillingRequest.BillingDate
-                }; await _clientBillingRepository.AddClientBillingAsync(clientBilling);
-                return Ok();
+                return NotFound(new { message = "Cliente não encontrado." });
             }
-            return BadRequest();
+
+            var clientBilling = await _clientBillingRepository.GetByIdClientBillingAsync(id);
+
+            if (clientBilling == null)
+            {
+                return NotFound(new { message = "Faturamento do cliente não encontrado." });
+            }
+
+            // Atualizar propriedades do faturamento
+            clientBilling.Amount = updateclientBillingRequest.Amount ?? clientBilling.Amount; // Mantém o valor atual se nulo
+            clientBilling.BillingDate = updateclientBillingRequest.BillingDate ?? clientBilling.BillingDate; // Mantém a data atual se nula
+
+            await _clientBillingRepository.UpdateClientBillingAsync(clientBilling);
+
+            return Ok(new { message = "Faturamento atualizado com sucesso!" });
         }
 
         [HttpGet("/GetClientBillingID{id}")]

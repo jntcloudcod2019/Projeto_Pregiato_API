@@ -70,7 +70,7 @@ namespace Pregiato.API.Data
 
         public async Task GetByUserAsync(LoginUserRequest loginUserRequest)
         {
-            await _context.LoginRequests.FindAsync(loginUserRequest.Username);
+            await _context.LoginUserRequest.FindAsync(loginUserRequest.Username);
             //inserir um tipo de retorno aqui 
         }
     }

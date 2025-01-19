@@ -6,7 +6,7 @@ using Microsoft.AspNetCore.Authorization;
 
 namespace Pregiato.API.Controllers
 {
-    [Authorize(Roles = "AdministratorPolicy,ManagerPolicy")]
+    //[Authorize(Roles = "AdministratorPolicy,ManagerPolicy")]
     [ApiController]
     [Route("api/User")]
     public class UserController : ControllerBase
@@ -35,11 +35,11 @@ namespace Pregiato.API.Controllers
         }
 
         [HttpPost("/login")]
-        public async Task<IActionResult> Login([FromBody] LoginUserRequest loginRequest)
+        public async Task<IActionResult> Login([FromBody]LoginUserRequest loginUserRequest)
         {
             try
             {
-                var token = await _userService.AuthenticateUserAsync(loginRequest);
+                var token = await _userService.AuthenticateUserAsync(loginUserRequest);
                 return Ok(new { token });
             }
             catch (Exception ex)

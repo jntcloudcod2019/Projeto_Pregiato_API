@@ -23,19 +23,6 @@ namespace Pregiato.API.Services
             await _userRepository.DeleteUserAsync(id);
             await _userRepository.SaveChangesAsync();
         }
-
-        public async Task<string> AuthenticateUserAsync(LoginUserRequest loginUserRequest)
-        {
-            var user = await _userRepository.GetByUsernameAsync(loginUserRequest.Username);
-
-            if (user == null || !BCrypt.Net.BCrypt.Verify(loginUserRequest.Password, user.PasswordHash))
-            {
-                throw new Exception("Invalid username or password.");
-            }
-
-            return _jwtService.GenerateToken(loginUserRequest);
-        }
-
         public async Task<string> RegisterUserAsync(string username, string email, string password, string userType)
         {
 
@@ -59,6 +46,18 @@ namespace Pregiato.API.Services
             await _userRepository.SaveChangesAsync();
 
             return "User registered successfully.";
+        }
+
+        public async Task<string> AuthenticateUserAsync(LoginUserRequest loginUserRequest)
+        {
+            var user = await _userRepository.GetByUsernameAsync(loginUserRequest.Username);
+
+            if (user == null || !BCrypt.Net.BCrypt.Verify(loginUserRequest.Password, user.PasswordHash))
+            {
+                throw new Exception("Invalid username or password.");
+            }
+
+            return _jwtService.GenerateToken(loginUserRequest);
         }
     }
   }

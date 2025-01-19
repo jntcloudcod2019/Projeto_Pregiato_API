@@ -32,12 +32,12 @@ namespace Pregiato.API.Services
             // 2. Criar a chave de segurança
             var secretKey = Encoding.ASCII.GetBytes(_configuration["JwtSettings:SecretKey"]);
             var key = new SymmetricSecurityKey(secretKey); // Criar uma instância de SymmetricSecurityKey
-            var credentials = new SigningCredentials(key, SecurityAlgorithms.Sha256); 
+            var credentials = new SigningCredentials(key, SecurityAlgorithms.HmacSha256); 
 
             // 3. Criar o token JWT
             var token = new JwtSecurityToken(
-                issuer: "SeuIssuer",
-                audience: "SuaAudience", 
+                issuer: "PregiatoAPI",
+                audience: "PregiatoAPIToken", 
                 claims: claims,
                 expires: DateTime.Now.AddMinutes(2), 
                 signingCredentials: credentials
