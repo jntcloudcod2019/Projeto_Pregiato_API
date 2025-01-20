@@ -22,7 +22,22 @@ namespace Pregiato.API.Data
 
         protected override void OnModelCreating(ModelBuilder modelBuilder)
         {
+            modelBuilder.Entity<ContractBase>().HasNoKey();
+            modelBuilder.Entity<ContractBase>().HasKey(c => c.ContractId);
 
+            modelBuilder.Entity<ContractBase>()
+        .ToTable("Contracts") // Usa uma única tabela para todos os contratos
+        .HasDiscriminator<string>("ContractType")
+        .HasValue<AgencyContract>("Agency")
+        .HasValue<PhotographyProductionContract>("Photography")
+        .HasValue<CommitmentTerm>("Commitment")
+        .HasValue<ImageRightsTerm>("ImageRights");
+
+
+            modelBuilder.Entity<AgencyContract>().ToTable("AgencyContracts");
+            modelBuilder.Entity<PhotographyProductionContract>().ToTable("PhotographyProductionContracts");
+            modelBuilder.Entity<CommitmentTerm>().ToTable("CommitmentTerms");
+            modelBuilder.Entity<ImageRightsTerm>().ToTable("ImageRightsTerms");
 
             modelBuilder.Entity<ContractBase>().HasNoKey();
             // Configuração de Client
