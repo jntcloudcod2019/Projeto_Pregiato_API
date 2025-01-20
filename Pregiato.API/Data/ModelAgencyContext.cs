@@ -16,11 +16,15 @@ namespace Pregiato.API.Data
         public DbSet<Moddels> Models { get; set; }
         public DbSet<Job> Jobs { get; set; }
         public DbSet<ModelsBilling> ModelsBilling { get; set; }
+        public DbSet<ContractBase?> ContractBase { get; set; }   
 
         public DbSet<LoginUserRequest> LoginUserRequest { get; set; }
 
         protected override void OnModelCreating(ModelBuilder modelBuilder)
         {
+
+
+            modelBuilder.Entity<ContractBase>().HasNoKey();
             // Configuração de Client
             modelBuilder.Entity<Client>(entity =>
             {
@@ -46,16 +50,22 @@ namespace Pregiato.API.Data
             modelBuilder.Entity<ContractsModels>(entity =>
             {
                 entity.HasKey(e => e.ContractId);
+
                 entity.Property(e => e.ContractId)
                       .ValueGeneratedOnAdd()
                       .HasDefaultValueSql("gen_random_uuid()");
+
                 entity.Property(e => e.ContractFile)
                       .IsRequired()
-                      .HasMaxLength(255);
-                entity.Property(e => e.ContractFile)
+                      .HasMaxLength(255)
                       .HasColumnType("text");
+
+                // Adicione o CheckConstraint no nível da entidade, não da propriedade
+                entity.HasCheckConstraint("CK_ContractsModels_FileFormat", "ContractFile ~ '\\.(doc|docx|pdf)$'");
+
                 entity.Property(e => e.CreatedAt)
                       .HasDefaultValueSql("NOW()");
+
                 entity.Property(e => e.UpdatedAt)
                       .HasDefaultValueSql("NOW()");
             });
@@ -155,6 +165,8 @@ namespace Pregiato.API.Data
             {
                 entity.HasNoKey(); 
             });
+
+
         }
     }
 }

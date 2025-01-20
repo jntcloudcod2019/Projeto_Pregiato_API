@@ -37,8 +37,8 @@ namespace Pregiato.API.Controllers
                 {
                     ClientId = clientExists.IdClient,
                     BillingId = Guid.NewGuid(),
-                    Amount = (decimal)createClientBillingRequest.Amount, // Valor obtido da requisição
-                    BillingDate = createClientBillingRequest.BillingDate ?? DateTime.UtcNow // Garante uma data válida
+                    Amount = (decimal)createClientBillingRequest.Amount, 
+                    BillingDate = createClientBillingRequest.BillingDate ?? DateTime.UtcNow 
                 };
 
                 await _clientBillingRepository.AddClientBillingAsync(clientBilling);
@@ -71,9 +71,9 @@ namespace Pregiato.API.Controllers
                 return NotFound(new { message = "Faturamento do cliente não encontrado." });
             }
 
-            // Atualizar propriedades do faturamento
-            clientBilling.Amount = updateclientBillingRequest.Amount ?? clientBilling.Amount; // Mantém o valor atual se nulo
-            clientBilling.BillingDate = updateclientBillingRequest.BillingDate ?? clientBilling.BillingDate; // Mantém a data atual se nula
+           
+            clientBilling.Amount = updateclientBillingRequest.Amount ?? clientBilling.Amount; 
+            clientBilling.BillingDate = updateclientBillingRequest.BillingDate ?? clientBilling.BillingDate; 
 
             await _clientBillingRepository.UpdateClientBillingAsync(clientBilling);
 

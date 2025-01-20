@@ -5,6 +5,8 @@ namespace Pregiato.API.Interface
 {
     public interface IContractService
     {
-        string GenerateContractPdf(ContractDto dto);
+        Task<ContractBase> GenerateContractAsync(Guid modelId, Guid jobId, string contractType, Dictionary<string, string> parameters);
+        Task SaveContractAsync(ContractBase contract, Stream pdfStream);
+        Task<ContractBase?> GetContractByIdAsync(Guid contractId);
     }
 }

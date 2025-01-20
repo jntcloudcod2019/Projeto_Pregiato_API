@@ -44,6 +44,15 @@ namespace Pregiato.API.Data
            _context.Models.Update(model);
             await _context.SaveChangesAsync();        
         }
+
+        public async Task<Moddels?> GetModelByCriteriaAsync(string query)
+        {
+            return await _context.Models.FirstOrDefaultAsync(m =>
+                m.CPF == query ||
+                m.RG == query ||
+                m.Name.Contains(query) ||
+                m.IdModel.ToString() == query);
+        }
     }
 
 }
