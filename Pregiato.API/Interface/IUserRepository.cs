@@ -1,5 +1,4 @@
 ﻿using Microsoft.AspNetCore.Identity.Data;
-using Microsoft.VisualStudio.Web.CodeGenerators.Mvc.Templates.BlazorIdentity.Pages;
 using Pregiato.API.Models;
 using Pregiato.API.Requests;
 

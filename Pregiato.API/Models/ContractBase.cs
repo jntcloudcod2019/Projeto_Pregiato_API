@@ -7,7 +7,15 @@
         public Guid JobId { get; set; }
         public DateTime CreatedAt { get; set; } = DateTime.UtcNow;
         public DateTime UpdatedAt { get; set; } = DateTime.UtcNow;
-        public string ContractFilePath { get; set; }
+        public string Neighborhood { get; set; } = "N/A"; // Bairro com valor padrão
+        public string City { get; set; } = "N/A";
+
+        // Propriedade que havia sido removida
+        public string ContractFilePath { get; set; } = string.Empty;
+
+        // Propriedade para conteúdo do contrato, se necessário
+        public byte[] Content { get; set; }
+
         public abstract string TemplateFileName { get; }
     }
 

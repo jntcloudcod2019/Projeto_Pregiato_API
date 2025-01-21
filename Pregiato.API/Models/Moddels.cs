@@ -1,6 +1,8 @@
 ﻿using System.ComponentModel.DataAnnotations.Schema;
 using System.ComponentModel.DataAnnotations;
 using System.Security;
+using System.Text.Json.Nodes;
+using System.Text.Json;
 
 namespace Pregiato.API.Models
 {
@@ -48,5 +50,12 @@ namespace Pregiato.API.Models
 
         [Required]
         public DateTime UpdatedAt { get; set; } = DateTime.UtcNow;
+
+        [Required]
+        public JsonDocument DNA { get; set; }
+        [Required]
+        public string Neighborhood { get; set; } // Bairro
+        [Required]
+        public string City { get; set; } // Cidade
     }
 }

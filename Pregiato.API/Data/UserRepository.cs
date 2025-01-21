@@ -1,6 +1,5 @@
 ﻿using Microsoft.AspNetCore.Http.HttpResults;
 using Microsoft.EntityFrameworkCore;
-using Microsoft.VisualStudio.Web.CodeGenerators.Mvc.Templates.BlazorIdentity.Pages;
 using Pregiato.API.Interface;
 using Pregiato.API.Models;
 using Pregiato.API.Requests;
@@ -70,8 +69,14 @@ namespace Pregiato.API.Data
 
         public async Task GetByUserAsync(LoginUserRequest loginUserRequest)
         {
-            await _context.LoginUserRequest.FindAsync(loginUserRequest.Username);
-            //inserir um tipo de retorno aqui 
+            var loginRequest = (from l in _context.Users
+                                where l.Name == loginUserRequest.Username
+                                select new LoginUserRequest
+                                {
+                                    Username = loginUserRequest.Username,
+                                    Password = l.PasswordHash
+                                }).FirstOrDefault();
+
         }
     }
 }

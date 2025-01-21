@@ -8,7 +8,7 @@ namespace Pregiato.API.Models
     {
         [Key]
         [DatabaseGenerated(DatabaseGeneratedOption.Identity)]
-        public Guid IdJob { get; set; }
+        public Guid ? IdJob { get; set; }
 
         [StringLength(500, ErrorMessage = "A descrição deve ter no máximo 500 caracteres.")]
         public string Description { get; set; }

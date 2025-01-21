@@ -16,30 +16,24 @@ namespace Pregiato.API.Data
         public DbSet<Moddels> Models { get; set; }
         public DbSet<Job> Jobs { get; set; }
         public DbSet<ModelsBilling> ModelsBilling { get; set; }
-        public DbSet<ContractBase?> ContractBase { get; set; }   
-
-        public DbSet<LoginUserRequest> LoginUserRequest { get; set; }
 
         protected override void OnModelCreating(ModelBuilder modelBuilder)
         {
-            modelBuilder.Entity<ContractBase>().HasNoKey();
-            modelBuilder.Entity<ContractBase>().HasKey(c => c.ContractId);
+            base.OnModelCreating(modelBuilder);
 
-            modelBuilder.Entity<ContractBase>()
-        .ToTable("Contracts") // Usa uma única tabela para todos os contratos
-        .HasDiscriminator<string>("ContractType")
-        .HasValue<AgencyContract>("Agency")
-        .HasValue<PhotographyProductionContract>("Photography")
-        .HasValue<CommitmentTerm>("Commitment")
-        .HasValue<ImageRightsTerm>("ImageRights");
+            // Configuração de ContractsModels
+            modelBuilder.Entity<ContractsModels>(entity =>
+            {
+                entity.HasKey(e => e.ContractId);
+                entity.Property(e => e.ContractId)
+                      .ValueGeneratedOnAdd()
+                      .HasDefaultValueSql("gen_random_uuid()");
+                entity.Property(e => e.ContractFile).IsRequired().HasMaxLength(255).HasColumnType("text");
+                entity.HasCheckConstraint("CK_ContractsModels_FileFormat", "\"ContractFile\" ~ '\\.(doc|docx|pdf)$'");
+                entity.Property(e => e.CreatedAt).HasDefaultValueSql("NOW()");
+                entity.Property(e => e.UpdatedAt).HasDefaultValueSql("NOW()");
+            });
 
-
-            modelBuilder.Entity<AgencyContract>().ToTable("AgencyContracts");
-            modelBuilder.Entity<PhotographyProductionContract>().ToTable("PhotographyProductionContracts");
-            modelBuilder.Entity<CommitmentTerm>().ToTable("CommitmentTerms");
-            modelBuilder.Entity<ImageRightsTerm>().ToTable("ImageRightsTerms");
-
-            modelBuilder.Entity<ContractBase>().HasNoKey();
             // Configuração de Client
             modelBuilder.Entity<Client>(entity =>
             {
@@ -47,42 +41,11 @@ namespace Pregiato.API.Data
                 entity.Property(e => e.IdClient)
                       .ValueGeneratedOnAdd()
                       .HasDefaultValueSql("gen_random_uuid()");
-                entity.Property(e => e.Contact)
-                      .HasMaxLength(20);
-                entity.Property(e => e.Email)
-                      .IsRequired()
-                      .HasMaxLength(255);
-                entity.Property(e => e.ClientDocument)
-                      .IsRequired()
-                      .HasMaxLength(50);
-                entity.Property(e => e.CreatedAt)
-                      .HasDefaultValueSql("NOW()");
-                entity.Property(e => e.UpdatedAt)
-                      .HasDefaultValueSql("NOW()");
-            });
-
-            // Configuração de ContractsModels
-            modelBuilder.Entity<ContractsModels>(entity =>
-            {
-                entity.HasKey(e => e.ContractId);
-
-                entity.Property(e => e.ContractId)
-                      .ValueGeneratedOnAdd()
-                      .HasDefaultValueSql("gen_random_uuid()");
-
-                entity.Property(e => e.ContractFile)
-                      .IsRequired()
-                      .HasMaxLength(255)
-                      .HasColumnType("text");
-
-                // Adicione o CheckConstraint no nível da entidade, não da propriedade
-                entity.HasCheckConstraint("CK_ContractsModels_FileFormat", "ContractFile ~ '\\.(doc|docx|pdf)$'");
-
-                entity.Property(e => e.CreatedAt)
-                      .HasDefaultValueSql("NOW()");
-
-                entity.Property(e => e.UpdatedAt)
-                      .HasDefaultValueSql("NOW()");
+                entity.Property(e => e.Contact).HasMaxLength(20);
+                entity.Property(e => e.Email).IsRequired().HasMaxLength(255);
+                entity.Property(e => e.ClientDocument).IsRequired().HasMaxLength(50);
+                entity.Property(e => e.CreatedAt).HasDefaultValueSql("NOW()");
+                entity.Property(e => e.UpdatedAt).HasDefaultValueSql("NOW()");
             });
 
             // Configuração de Users
@@ -92,22 +55,12 @@ namespace Pregiato.API.Data
                 entity.Property(e => e.UserId)
                       .ValueGeneratedOnAdd()
                       .HasDefaultValueSql("gen_random_uuid()");
-                entity.Property(e => e.Email)
-                      .IsRequired()
-                      .HasMaxLength(255);
-                entity.Property(e => e.Name)
-                      .IsRequired()
-                      .HasMaxLength(255);
-                entity.Property(e => e.PasswordHash)
-                      .IsRequired()
-                      .HasMaxLength(255);
-                entity.Property(e => e.UserType)
-                      .IsRequired()
-                      .HasMaxLength(50);
-                entity.Property(e => e.CreatedAt)
-                      .HasDefaultValueSql("NOW()");
-                entity.Property(e => e.UpdatedAt)
-                      .HasDefaultValueSql("NOW()");
+                entity.Property(e => e.Email).IsRequired().HasMaxLength(255);
+                entity.Property(e => e.Name).IsRequired().HasMaxLength(255);
+                entity.Property(e => e.PasswordHash).IsRequired().HasMaxLength(255);
+                entity.Property(e => e.UserType).IsRequired().HasMaxLength(50);
+                entity.Property(e => e.CreatedAt).HasDefaultValueSql("NOW()");
+                entity.Property(e => e.UpdatedAt).HasDefaultValueSql("NOW()");
             });
 
             // Configuração de Models
@@ -117,27 +70,18 @@ namespace Pregiato.API.Data
                 entity.Property(e => e.IdModel)
                       .ValueGeneratedOnAdd()
                       .HasDefaultValueSql("gen_random_uuid()");
-                entity.Property(e => e.CPF)
-                      .IsRequired()
-                      .HasMaxLength(14);
-                entity.Property(e => e.RG)
-                      .IsRequired()
-                      .HasMaxLength(20);
-                entity.Property(e => e.Email)
-                      .IsRequired()
-                      .HasMaxLength(255);
-                entity.Property(e => e.PostalCode)
-                      .HasMaxLength(10);
-                entity.Property(e => e.Address)
-                      .HasMaxLength(255);
-                entity.Property(e => e.BankAccount)
-                      .HasMaxLength(30);
-                entity.Property(e => e.Status)
-                      .HasDefaultValue(true);
-                entity.Property(e => e.CreatedAt)
-                      .HasDefaultValueSql("NOW()");
-                entity.Property(e => e.UpdatedAt)
-                      .HasDefaultValueSql("NOW()");
+                entity.Property(e => e.CPF).IsRequired().HasMaxLength(14);
+                entity.Property(e => e.RG).IsRequired().HasMaxLength(20);
+                entity.Property(e => e.Email).IsRequired().HasMaxLength(255);
+                entity.Property(e => e.PostalCode).HasMaxLength(10);
+                entity.Property(e => e.Address).HasMaxLength(255);
+                entity.Property(e => e.BankAccount).HasMaxLength(30);
+                entity.Property(e => e.Status).HasDefaultValue(true);
+                entity.Property(e => e.CreatedAt).HasDefaultValueSql("NOW()");
+                entity.Property(e => e.UpdatedAt).HasDefaultValueSql("NOW()");
+                entity.Property(e => e.DNA)
+                      .HasColumnType("jsonb")
+                      .HasDefaultValueSql("'{}'::jsonb");
             });
 
             // Configuração de Jobs
@@ -147,15 +91,10 @@ namespace Pregiato.API.Data
                 entity.Property(e => e.IdJob)
                       .ValueGeneratedOnAdd()
                       .HasDefaultValueSql("gen_random_uuid()");
-                entity.Property(e => e.Description)
-                      .HasMaxLength(500);
-                entity.Property(e => e.Status)
-                      .HasMaxLength(20)
-                      .HasDefaultValue("Pending");
-                entity.Property(e => e.CreatedAt)
-                      .HasDefaultValueSql("NOW()");
-                entity.Property(e => e.UpdatedAt)
-                      .HasDefaultValueSql("NOW()");
+                entity.Property(e => e.Description).HasMaxLength(500);
+                entity.Property(e => e.Status).HasMaxLength(20).HasDefaultValue("Pending");
+                entity.Property(e => e.CreatedAt).HasDefaultValueSql("NOW()");
+                entity.Property(e => e.UpdatedAt).HasDefaultValueSql("NOW()");
             });
 
             // Configuração de ModelsBilling
@@ -165,23 +104,17 @@ namespace Pregiato.API.Data
                 entity.Property(e => e.Id)
                       .ValueGeneratedOnAdd()
                       .HasDefaultValueSql("gen_random_uuid()");
-                entity.Property(e => e.Amount)
-                      .IsRequired()
-                      .HasColumnType("numeric(10, 2)");
-                entity.Property(e => e.BillingDate)
-                      .IsRequired();
-                entity.Property(e => e.CreatedAt)
-                      .HasDefaultValueSql("NOW()");
-                entity.Property(e => e.UpdatedAt)
-                      .HasDefaultValueSql("NOW()");
+                entity.Property(e => e.Amount).IsRequired().HasColumnType("numeric(10, 2)");
+                entity.Property(e => e.BillingDate).IsRequired();
+                entity.Property(e => e.CreatedAt).HasDefaultValueSql("NOW()");
+                entity.Property(e => e.UpdatedAt).HasDefaultValueSql("NOW()");
             });
 
+            // Configuração de LoginUserRequest
             modelBuilder.Entity<LoginUserRequest>(entity =>
             {
-                entity.HasNoKey(); 
+                entity.HasNoKey();
             });
-
-
         }
     }
 }

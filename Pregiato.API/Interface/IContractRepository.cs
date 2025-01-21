@@ -9,6 +9,6 @@ namespace Pregiato.API.Interface
         Task<ContractsModels> GetByIdContractAsync(Guid id);
         Task UpdateAsync(ContractsModels contract);
         Task DeleteAsync(ContractsModels contract);
-        Task SaveContractAsync(ContractBase contract, Stream pdfStream);
+        Task SaveContractAsync(ContractBase contract);
     }
 }

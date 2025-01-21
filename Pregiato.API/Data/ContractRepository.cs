@@ -1,5 +1,4 @@
-﻿using Microsoft.EntityFrameworkCore;
-using NuGet.Protocol.Core.Types;
+﻿using iText.Kernel.Pdf;
 using Pregiato.API.Interface;
 using Pregiato.API.Models;
 using System.Diagnostics.Contracts;
@@ -33,22 +32,16 @@ namespace Pregiato.API.Data
             await _context.SaveChangesAsync();
         }
 
-        public async Task SaveContractAsync(ContractBase contract, Stream pdfStream)
-        {
-            using var memoryStream = new MemoryStream();
-            await pdfStream.CopyToAsync(memoryStream);
-            byte[] pdfBytes = memoryStream.ToArray();
-
-            // Salvar o PDF diretamente no banco (supondo que o ContractFile seja um campo binário)
-            contract.ContractFilePath = Convert.ToBase64String(pdfBytes); // Ou use outro método de serialização
-            await _context.AddAsync(contract);
-            await _context.SaveChangesAsync();
-
-        }
 
         public async Task<ContractsModels> GetByIdContractAsync(Guid id)
         {
             return await _context.ContractsModels.FindAsync(id);
+        }
+
+        public async Task SaveContractAsync(ContractBase contract)
+        {
+             _context.Add(contract); // Adiciona o contrato à tabela correspondente
+            await _context.SaveChangesAsync(); // Salva as alterações no banco
         }
     }
  }

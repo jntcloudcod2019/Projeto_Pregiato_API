@@ -10,5 +10,6 @@ namespace Pregiato.API.Interface
         Task UpdateModelAsync(Moddels model);
         Task DeleteModelAsync(Guid id);
         Task<Moddels?> GetModelByCriteriaAsync(string query);
+        Task<Moddels> GetModelAllAsync(string? idModel, string? cpf, string? rg);
     }
 }
