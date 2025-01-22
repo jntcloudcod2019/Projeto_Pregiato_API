@@ -13,8 +13,8 @@ using Pregiato.API.Data;
 namespace Pregiato.API.Migrations
 {
     [DbContext(typeof(ModelAgencyContext))]
-    [Migration("20250120232329_AdjustModelAgencyContext")]
-    partial class AdjustModelAgencyContext
+    [Migration("20250122143836_CreateContractsTable")]
+    partial class CreateContractsTable
     {
         /// <inheritdoc />
         protected override void BuildTargetModel(ModelBuilder modelBuilder)
@@ -107,9 +107,11 @@ namespace Pregiato.API.Migrations
                         .HasColumnType("text");
 
                     b.Property<byte[]>("Content")
+                        .IsRequired()
                         .HasColumnType("bytea");
 
                     b.Property<string>("ContractFilePath")
+                        .IsRequired()
                         .HasColumnType("text");
 
                     b.Property<DateTime>("CreatedAt")
@@ -403,7 +405,7 @@ namespace Pregiato.API.Migrations
                 {
                     b.HasBaseType("Pregiato.API.Models.ContractBase");
 
-                    b.ToTable("PhotographyContracts", (string)null);
+                    b.ToTable("PhotographyProductionContracts", (string)null);
                 });
 
             modelBuilder.Entity("Pregiato.API.Models.AgencyContract", b =>

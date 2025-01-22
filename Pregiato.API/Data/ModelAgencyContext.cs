@@ -16,10 +16,42 @@ namespace Pregiato.API.Data
         public DbSet<Moddels> Models { get; set; }
         public DbSet<Job> Jobs { get; set; }
         public DbSet<ModelsBilling> ModelsBilling { get; set; }
+        public DbSet<ContractBase> Contracts { get; set; } // Tabela base
 
         protected override void OnModelCreating(ModelBuilder modelBuilder)
         {
             base.OnModelCreating(modelBuilder);
+
+            // Configuração para a tabela base (ContractBase)
+            modelBuilder.Entity<ContractBase>(entity =>
+            {
+                entity.HasKey(c => c.ContractId); // Define a chave primária
+                entity.Property(c => c.City).IsRequired(false);
+                entity.Property(c => c.Neighborhood).IsRequired(false);
+                entity.Property(c => c.ContractFilePath).IsRequired(false);
+                entity.Property(c => c.Content).HasColumnType("bytea");
+                entity.ToTable("Contracts"); // Nome da tabela base
+            });
+
+            // Configuração para as tabelas derivadas (TPT)
+            modelBuilder.Entity<AgencyContract>().ToTable("AgencyContracts");
+            modelBuilder.Entity<PhotographyProductionContract>().ToTable("PhotographyProductionContracts");
+            modelBuilder.Entity<CommitmentTerm>().ToTable("CommitmentTerms");
+            modelBuilder.Entity<ImageRightsTerm>().ToTable("ImageRightsContracts");
+
+            // Configuração de Clients
+            modelBuilder.Entity<Client>(entity =>
+            {
+                entity.HasKey(e => e.IdClient);
+                entity.Property(e => e.IdClient)
+                      .ValueGeneratedOnAdd()
+                      .HasDefaultValueSql("gen_random_uuid()");
+                entity.Property(e => e.Contact).HasMaxLength(20);
+                entity.Property(e => e.Email).IsRequired().HasMaxLength(255);
+                entity.Property(e => e.ClientDocument).IsRequired().HasMaxLength(50);
+                entity.Property(e => e.CreatedAt).HasDefaultValueSql("NOW()");
+                entity.Property(e => e.UpdatedAt).HasDefaultValueSql("NOW()");
+            });
 
             // Configuração de ContractsModels
             modelBuilder.Entity<ContractsModels>(entity =>
@@ -30,20 +62,6 @@ namespace Pregiato.API.Data
                       .HasDefaultValueSql("gen_random_uuid()");
                 entity.Property(e => e.ContractFile).IsRequired().HasMaxLength(255).HasColumnType("text");
                 entity.HasCheckConstraint("CK_ContractsModels_FileFormat", "\"ContractFile\" ~ '\\.(doc|docx|pdf)$'");
-                entity.Property(e => e.CreatedAt).HasDefaultValueSql("NOW()");
-                entity.Property(e => e.UpdatedAt).HasDefaultValueSql("NOW()");
-            });
-
-            // Configuração de Client
-            modelBuilder.Entity<Client>(entity =>
-            {
-                entity.HasKey(e => e.IdClient);
-                entity.Property(e => e.IdClient)
-                      .ValueGeneratedOnAdd()
-                      .HasDefaultValueSql("gen_random_uuid()");
-                entity.Property(e => e.Contact).HasMaxLength(20);
-                entity.Property(e => e.Email).IsRequired().HasMaxLength(255);
-                entity.Property(e => e.ClientDocument).IsRequired().HasMaxLength(50);
                 entity.Property(e => e.CreatedAt).HasDefaultValueSql("NOW()");
                 entity.Property(e => e.UpdatedAt).HasDefaultValueSql("NOW()");
             });
@@ -79,6 +97,8 @@ namespace Pregiato.API.Data
                 entity.Property(e => e.Status).HasDefaultValue(true);
                 entity.Property(e => e.CreatedAt).HasDefaultValueSql("NOW()");
                 entity.Property(e => e.UpdatedAt).HasDefaultValueSql("NOW()");
+
+                // Adiciona a coluna DNA como JSON
                 entity.Property(e => e.DNA)
                       .HasColumnType("jsonb")
                       .HasDefaultValueSql("'{}'::jsonb");
