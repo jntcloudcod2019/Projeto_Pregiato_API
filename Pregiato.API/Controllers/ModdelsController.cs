@@ -4,6 +4,7 @@ using Pregiato.API.Interface;
 using Pregiato.API.Models;
 using Pregiato.API.Requests;
 using Swashbuckle.AspNetCore.Annotations;
+using System.Text.Json;
 
 namespace Pregiato.API.Controllers
 {
@@ -35,22 +36,30 @@ namespace Pregiato.API.Controllers
                 return BadRequest(ModelState);
             }
 
+            var dnaJson = JsonDocument.Parse(JsonSerializer.Serialize(new
+            {
+                physicalCharacteristics = createModelRequest.PhysicalCharacteristics,
+                appearance = createModelRequest.Appearance,
+                additionalAttributes = createModelRequest.AdditionalAttributes
+            }));
+
             var model = new Moddels
             {
-                Status = true,
-                IdModel = new Guid(),
-                CPF = createModelRequest.CPF,
-                RG = createModelRequest.RG,                
                 Name = createModelRequest.Name,
+                CPF = createModelRequest.CPF,
+                RG = createModelRequest.RG,
                 Email = createModelRequest.Email,
-                Address = createModelRequest.Address,
                 PostalCode = createModelRequest.PostalCode,
+                Address = createModelRequest.Address,
                 BankAccount = createModelRequest.BankAccount,
-                PasswordHash = createModelRequest.PasswordHash               
+                PasswordHash = createModelRequest.PasswordHash,
+                Neighborhood = createModelRequest.Neighborhood,
+                City = createModelRequest.City,
+                DNA = dnaJson,  
             };
 
             await _modelRepository.AddModelAsync(model);
-            return CreatedAtAction(nameof(AddNewModel), model); 
+            return Ok("Modelo criado com sucesso!");
         }
 
         [HttpPut("/UpdateModels{id}")]

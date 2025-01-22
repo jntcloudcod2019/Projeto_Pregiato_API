@@ -13,22 +13,6 @@ namespace Pregiato.API.Migrations
         protected override void Up(MigrationBuilder migrationBuilder)
         {
             migrationBuilder.CreateTable(
-                name: "AgencyContracts",
-                columns: table => new
-                {
-                    ContractId = table.Column<Guid>(type: "uuid", nullable: false),
-                    ModelId = table.Column<Guid>(type: "uuid", nullable: false),
-                    JobId = table.Column<Guid>(type: "uuid", nullable: false),
-                    CreatedAt = table.Column<DateTime>(type: "timestamp with time zone", nullable: false),
-                    UpdatedAt = table.Column<DateTime>(type: "timestamp with time zone", nullable: false),
-                    ContractFilePath = table.Column<string>(type: "text", nullable: false)
-                },
-                constraints: table =>
-                {
-                    table.PrimaryKey("PK_AgencyContracts", x => x.ContractId);
-                });
-
-            migrationBuilder.CreateTable(
                 name: "Clients",
                 columns: table => new
                 {
@@ -63,7 +47,7 @@ namespace Pregiato.API.Migrations
                 });
 
             migrationBuilder.CreateTable(
-                name: "CommitmentTerms",
+                name: "Contracts",
                 columns: table => new
                 {
                     ContractId = table.Column<Guid>(type: "uuid", nullable: false),
@@ -71,11 +55,14 @@ namespace Pregiato.API.Migrations
                     JobId = table.Column<Guid>(type: "uuid", nullable: false),
                     CreatedAt = table.Column<DateTime>(type: "timestamp with time zone", nullable: false),
                     UpdatedAt = table.Column<DateTime>(type: "timestamp with time zone", nullable: false),
-                    ContractFilePath = table.Column<string>(type: "text", nullable: false)
+                    Neighborhood = table.Column<string>(type: "text", nullable: true),
+                    City = table.Column<string>(type: "text", nullable: true),
+                    ContractFilePath = table.Column<string>(type: "text", nullable: true),
+                    Content = table.Column<byte[]>(type: "bytea", nullable: false)
                 },
                 constraints: table =>
                 {
-                    table.PrimaryKey("PK_CommitmentTerms", x => x.ContractId);
+                    table.PrimaryKey("PK_Contracts", x => x.ContractId);
                 });
 
             migrationBuilder.CreateTable(
@@ -92,22 +79,6 @@ namespace Pregiato.API.Migrations
                 {
                     table.PrimaryKey("PK_ContractsModels", x => x.ContractId);
                     table.CheckConstraint("CK_ContractsModels_FileFormat", "\"ContractFile\" ~ '\\.(doc|docx|pdf)$'");
-                });
-
-            migrationBuilder.CreateTable(
-                name: "ImageRightsTerms",
-                columns: table => new
-                {
-                    ContractId = table.Column<Guid>(type: "uuid", nullable: false),
-                    ModelId = table.Column<Guid>(type: "uuid", nullable: false),
-                    JobId = table.Column<Guid>(type: "uuid", nullable: false),
-                    CreatedAt = table.Column<DateTime>(type: "timestamp with time zone", nullable: false),
-                    UpdatedAt = table.Column<DateTime>(type: "timestamp with time zone", nullable: false),
-                    ContractFilePath = table.Column<string>(type: "text", nullable: false)
-                },
-                constraints: table =>
-                {
-                    table.PrimaryKey("PK_ImageRightsTerms", x => x.ContractId);
                 });
 
             migrationBuilder.CreateTable(
@@ -155,7 +126,9 @@ namespace Pregiato.API.Migrations
                     PasswordHash = table.Column<string>(type: "character varying(255)", maxLength: 255, nullable: false),
                     CreatedAt = table.Column<DateTime>(type: "timestamp with time zone", nullable: false, defaultValueSql: "NOW()"),
                     UpdatedAt = table.Column<DateTime>(type: "timestamp with time zone", nullable: false, defaultValueSql: "NOW()"),
-                    DNA = table.Column<JsonDocument>(type: "jsonb", nullable: false, defaultValueSql: "'{}'::jsonb")
+                    DNA = table.Column<JsonDocument>(type: "jsonb", nullable: false, defaultValueSql: "'{}'::jsonb"),
+                    Neighborhood = table.Column<string>(type: "text", nullable: false),
+                    City = table.Column<string>(type: "text", nullable: false)
                 },
                 constraints: table =>
                 {
@@ -179,22 +152,6 @@ namespace Pregiato.API.Migrations
                 });
 
             migrationBuilder.CreateTable(
-                name: "PhotographyProductionContracts",
-                columns: table => new
-                {
-                    ContractId = table.Column<Guid>(type: "uuid", nullable: false),
-                    ModelId = table.Column<Guid>(type: "uuid", nullable: false),
-                    JobId = table.Column<Guid>(type: "uuid", nullable: false),
-                    CreatedAt = table.Column<DateTime>(type: "timestamp with time zone", nullable: false),
-                    UpdatedAt = table.Column<DateTime>(type: "timestamp with time zone", nullable: false),
-                    ContractFilePath = table.Column<string>(type: "text", nullable: false)
-                },
-                constraints: table =>
-                {
-                    table.PrimaryKey("PK_PhotographyProductionContracts", x => x.ContractId);
-                });
-
-            migrationBuilder.CreateTable(
                 name: "Users",
                 columns: table => new
                 {
@@ -209,6 +166,74 @@ namespace Pregiato.API.Migrations
                 constraints: table =>
                 {
                     table.PrimaryKey("PK_Users", x => x.UserId);
+                });
+
+            migrationBuilder.CreateTable(
+                name: "AgencyContracts",
+                columns: table => new
+                {
+                    ContractId = table.Column<Guid>(type: "uuid", nullable: false)
+                },
+                constraints: table =>
+                {
+                    table.PrimaryKey("PK_AgencyContracts", x => x.ContractId);
+                    table.ForeignKey(
+                        name: "FK_AgencyContracts_Contracts_ContractId",
+                        column: x => x.ContractId,
+                        principalTable: "Contracts",
+                        principalColumn: "ContractId",
+                        onDelete: ReferentialAction.Cascade);
+                });
+
+            migrationBuilder.CreateTable(
+                name: "CommitmentTerms",
+                columns: table => new
+                {
+                    ContractId = table.Column<Guid>(type: "uuid", nullable: false)
+                },
+                constraints: table =>
+                {
+                    table.PrimaryKey("PK_CommitmentTerms", x => x.ContractId);
+                    table.ForeignKey(
+                        name: "FK_CommitmentTerms_Contracts_ContractId",
+                        column: x => x.ContractId,
+                        principalTable: "Contracts",
+                        principalColumn: "ContractId",
+                        onDelete: ReferentialAction.Cascade);
+                });
+
+            migrationBuilder.CreateTable(
+                name: "ImageRightsContracts",
+                columns: table => new
+                {
+                    ContractId = table.Column<Guid>(type: "uuid", nullable: false)
+                },
+                constraints: table =>
+                {
+                    table.PrimaryKey("PK_ImageRightsContracts", x => x.ContractId);
+                    table.ForeignKey(
+                        name: "FK_ImageRightsContracts_Contracts_ContractId",
+                        column: x => x.ContractId,
+                        principalTable: "Contracts",
+                        principalColumn: "ContractId",
+                        onDelete: ReferentialAction.Cascade);
+                });
+
+            migrationBuilder.CreateTable(
+                name: "PhotographyProductionContracts",
+                columns: table => new
+                {
+                    ContractId = table.Column<Guid>(type: "uuid", nullable: false)
+                },
+                constraints: table =>
+                {
+                    table.PrimaryKey("PK_PhotographyProductionContracts", x => x.ContractId);
+                    table.ForeignKey(
+                        name: "FK_PhotographyProductionContracts_Contracts_ContractId",
+                        column: x => x.ContractId,
+                        principalTable: "Contracts",
+                        principalColumn: "ContractId",
+                        onDelete: ReferentialAction.Cascade);
                 });
         }
 
@@ -231,7 +256,7 @@ namespace Pregiato.API.Migrations
                 name: "ContractsModels");
 
             migrationBuilder.DropTable(
-                name: "ImageRightsTerms");
+                name: "ImageRightsContracts");
 
             migrationBuilder.DropTable(
                 name: "Jobs");
@@ -250,6 +275,9 @@ namespace Pregiato.API.Migrations
 
             migrationBuilder.DropTable(
                 name: "Users");
+
+            migrationBuilder.DropTable(
+                name: "Contracts");
         }
     }
 }

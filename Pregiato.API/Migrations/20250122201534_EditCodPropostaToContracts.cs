@@ -5,7 +5,7 @@
 namespace Pregiato.API.Migrations
 {
     /// <inheritdoc />
-    public partial class RemoveAgencyContracts : Migration
+    public partial class EditCodPropostaToContracts : Migration
     {
         /// <inheritdoc />
         protected override void Up(MigrationBuilder migrationBuilder)

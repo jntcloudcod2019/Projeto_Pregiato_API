@@ -1,4 +1,5 @@
 ﻿using Microsoft.AspNetCore.Http.HttpResults;
+using Microsoft.EntityFrameworkCore;
 using Pregiato.API.Data;
 using Pregiato.API.Interface;
 using Pregiato.API.Models;
@@ -39,6 +40,7 @@ namespace Pregiato.API.Services
 
             contract.ModelId = modelId;
             contract.JobId = jobId;
+            contract.CodProposta = await GetNextCodPropostaAsync();
 
             // Preenchimento do template HTML
             string htmlTemplate = await File.ReadAllTextAsync($"TemplatesContratos/{contract.TemplateFileName}");
@@ -123,26 +125,31 @@ namespace Pregiato.API.Services
 
         public async Task SaveContractAsync(ContractBase contract, Stream pdfStream)
         {
-            // Converta o conteúdo do PDF (stream) para bytes
+        
             using var memoryStream = new MemoryStream();
             await pdfStream.CopyToAsync(memoryStream);
             var pdfBytes = memoryStream.ToArray();
 
-            // Salve o conteúdo do PDF na propriedade Content
+    
             contract.Content = pdfBytes;
 
             var model = await _modelAgencyContext.Models.FindAsync(contract.ModelId);
             if (model == null)
                 throw new InvalidOperationException($"Modelo com ID {contract.ModelId} não encontrado.");
 
-            var sanitizedModelName = model.Name.Replace(" ", "_"); // Substituir espaços por underscore
+            var sanitizedModelName = model.Name.Replace(" ", "_"); 
             contract.ContractFilePath = $"{sanitizedModelName}_{contract.ModelId}.pdf";
 
-            // Atualize o campo ContractFilePath, se necessário, com um identificador ou descrição
+           
             contract.ContractFilePath = $"{model.Name}{DateTime.Now}{contract.ContractId}.pdf";
 
-            // Salve o contrato no banco de dados
             await _contractRepository.SaveContractAsync(contract);
+        }
+
+        private async Task<int> GetNextCodPropostaAsync()
+        {
+            var maxCodProposta = await _modelAgencyContext.Contracts.MaxAsync(c => (int?)c.CodProposta) ?? 109;
+            return maxCodProposta + 1;
         }
     }
 }

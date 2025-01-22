@@ -13,8 +13,8 @@ using Pregiato.API.Data;
 namespace Pregiato.API.Migrations
 {
     [DbContext(typeof(ModelAgencyContext))]
-    [Migration("20250120230542_UpdateModelAgencyContext")]
-    partial class UpdateModelAgencyContext
+    [Migration("20250122153005_UpdateCityNullable")]
+    partial class UpdateCityNullable
     {
         /// <inheritdoc />
         protected override void BuildTargetModel(ModelBuilder modelBuilder)
@@ -107,6 +107,7 @@ namespace Pregiato.API.Migrations
                         .HasColumnType("text");
 
                     b.Property<byte[]>("Content")
+                        .IsRequired()
                         .HasColumnType("bytea");
 
                     b.Property<string>("ContractFilePath")
@@ -129,7 +130,7 @@ namespace Pregiato.API.Migrations
 
                     b.HasKey("ContractId");
 
-                    b.ToTable("ContractBase");
+                    b.ToTable("Contracts", (string)null);
 
                     b.UseTptMappingStrategy();
                 });
@@ -232,7 +233,6 @@ namespace Pregiato.API.Migrations
                         .HasColumnType("character varying(14)");
 
                     b.Property<string>("City")
-                        .IsRequired()
                         .HasColumnType("text");
 
                     b.Property<DateTime>("CreatedAt")
@@ -257,7 +257,6 @@ namespace Pregiato.API.Migrations
                         .HasColumnType("character varying(255)");
 
                     b.Property<string>("Neighborhood")
-                        .IsRequired()
                         .HasColumnType("text");
 
                     b.Property<string>("PasswordHash")
@@ -403,7 +402,7 @@ namespace Pregiato.API.Migrations
                 {
                     b.HasBaseType("Pregiato.API.Models.ContractBase");
 
-                    b.ToTable("PhotographyContracts", (string)null);
+                    b.ToTable("PhotographyProductionContracts", (string)null);
                 });
 
             modelBuilder.Entity("Pregiato.API.Models.AgencyContract", b =>
@@ -441,8 +440,6 @@ namespace Pregiato.API.Migrations
                         .OnDelete(DeleteBehavior.Cascade)
                         .IsRequired();
                 });
-
-            
 #pragma warning restore 612, 618
         }
     }

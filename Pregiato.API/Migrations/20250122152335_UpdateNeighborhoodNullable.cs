@@ -5,14 +5,14 @@
 namespace Pregiato.API.Migrations
 {
     /// <inheritdoc />
-    public partial class ConfigureContractsBase : Migration
+    public partial class UpdateNeighborhoodNullable : Migration
     {
         /// <inheritdoc />
         protected override void Up(MigrationBuilder migrationBuilder)
         {
             migrationBuilder.AlterColumn<string>(
-                name: "ContractFilePath",
-                table: "Contracts",
+                name: "Neighborhood",
+                table: "Models",
                 type: "text",
                 nullable: true,
                 oldClrType: typeof(string),
@@ -23,8 +23,8 @@ namespace Pregiato.API.Migrations
         protected override void Down(MigrationBuilder migrationBuilder)
         {
             migrationBuilder.AlterColumn<string>(
-                name: "ContractFilePath",
-                table: "Contracts",
+                name: "Neighborhood",
+                table: "Models",
                 type: "text",
                 nullable: false,
                 defaultValue: "",

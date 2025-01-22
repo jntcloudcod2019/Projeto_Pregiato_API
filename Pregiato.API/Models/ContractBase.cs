@@ -17,6 +17,8 @@
         public byte[] Content { get; set; }
 
         public abstract string TemplateFileName { get; }
+
+        public int CodProposta { get; set; }
     }
 
     public class AgencyContract : ContractBase

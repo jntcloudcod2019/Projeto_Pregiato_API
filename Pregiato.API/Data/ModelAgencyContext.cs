@@ -22,6 +22,63 @@ namespace Pregiato.API.Data
         {
             base.OnModelCreating(modelBuilder);
 
+            modelBuilder.Entity<ModelJob>(entity =>
+            {
+                entity.HasKey(e => e.ModelJobId);
+
+                entity.Property(e => e.JobDate)
+                      .IsRequired();
+
+                entity.Property(e => e.Location)
+                      .IsRequired()
+                      .HasMaxLength(255);
+
+                entity.Property(e => e.Time)
+                      .IsRequired()
+                      .HasMaxLength(50);
+
+                entity.Property(e => e.AdditionalDescription)
+                      .HasMaxLength(500);
+
+                // Configura o relacionamento com a tabela Models
+                entity.HasOne(e => e.Model)
+                      .WithMany()
+                      .HasForeignKey(e => e.ModelId)
+                      .OnDelete(DeleteBehavior.Cascade); // Remove os registros relacionados ao excluir o modelo
+
+                // Configura o relacionamento com a tabela Jobs
+                entity.HasOne(e => e.Job)
+                      .WithMany()
+                      .HasForeignKey(e => e.JobId)
+                      .OnDelete(DeleteBehavior.Cascade); // Remove os registros relacionados ao excluir o job
+            });
+
+            modelBuilder.Entity<ContractBase>(entity =>
+            {
+                entity.HasKey(c => c.ContractId);
+                entity.Property(c => c.City).IsRequired(false);
+                entity.Property(c => c.Neighborhood).IsRequired(false);
+                entity.Property(c => c.ContractFilePath).IsRequired(false);
+                entity.Property(c => c.Content).HasColumnType("bytea");
+
+                // Configuração do campo CodProposta
+                modelBuilder.Entity<ContractBase>(entity =>
+                {
+                    entity.HasKey(c => c.ContractId);
+                    entity.Property(c => c.CodProposta)
+                          .IsRequired()
+                          .ValueGeneratedOnAdd()
+                          .HasDefaultValue(110); // Começa em 110
+                    entity.ToTable("Contracts");
+                });
+            });
+
+            modelBuilder.Entity<Moddels>(entity =>
+            {
+                entity.Property(e => e.City).IsRequired(false); // Permite valores nulos
+                entity.Property(e => e.Neighborhood).IsRequired(false); // Bairro opcional
+            });
+
             // Configuração para a tabela base (ContractBase)
             modelBuilder.Entity<ContractBase>(entity =>
             {

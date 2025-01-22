@@ -5,29 +5,31 @@
 namespace Pregiato.API.Migrations
 {
     /// <inheritdoc />
-    public partial class UpdateCityColumnInContracts : Migration
+    public partial class UpdateCityNullable : Migration
     {
+        /// <inheritdoc />
         protected override void Up(MigrationBuilder migrationBuilder)
         {
             migrationBuilder.AlterColumn<string>(
                 name: "City",
-                table: "AgencyContracts",
-                type: "character varying(100)",
-                nullable: true, // Permite valores nulos
+                table: "Models",
+                type: "text",
+                nullable: true,
                 oldClrType: typeof(string),
-                oldType: "character varying(100)");
+                oldType: "text");
         }
 
+        /// <inheritdoc />
         protected override void Down(MigrationBuilder migrationBuilder)
         {
             migrationBuilder.AlterColumn<string>(
                 name: "City",
-                table: "AgencyContracts",
-                type: "character varying(100)",
-                nullable: false, // Volta para NOT NULL
-                defaultValue: "N/A", // Valor padrão caso necessário
+                table: "Models",
+                type: "text",
+                nullable: false,
+                defaultValue: "",
                 oldClrType: typeof(string),
-                oldType: "character varying(100)",
+                oldType: "text",
                 oldNullable: true);
         }
     }

@@ -13,8 +13,8 @@ using Pregiato.API.Data;
 namespace Pregiato.API.Migrations
 {
     [DbContext(typeof(ModelAgencyContext))]
-    [Migration("20250122143836_CreateContractsTable")]
-    partial class CreateContractsTable
+    [Migration("20250122212928_UpdateModelJobConfiguration")]
+    partial class UpdateModelJobConfiguration
     {
         /// <inheritdoc />
         protected override void BuildTargetModel(ModelBuilder modelBuilder)
@@ -106,12 +106,16 @@ namespace Pregiato.API.Migrations
                     b.Property<string>("City")
                         .HasColumnType("text");
 
+                    b.Property<int>("CodProposta")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("integer")
+                        .HasDefaultValue(110);
+
                     b.Property<byte[]>("Content")
                         .IsRequired()
                         .HasColumnType("bytea");
 
                     b.Property<string>("ContractFilePath")
-                        .IsRequired()
                         .HasColumnType("text");
 
                     b.Property<DateTime>("CreatedAt")
@@ -234,7 +238,6 @@ namespace Pregiato.API.Migrations
                         .HasColumnType("character varying(14)");
 
                     b.Property<string>("City")
-                        .IsRequired()
                         .HasColumnType("text");
 
                     b.Property<DateTime>("CreatedAt")
@@ -259,7 +262,6 @@ namespace Pregiato.API.Migrations
                         .HasColumnType("character varying(255)");
 
                     b.Property<string>("Neighborhood")
-                        .IsRequired()
                         .HasColumnType("text");
 
                     b.Property<string>("PasswordHash")
@@ -290,6 +292,45 @@ namespace Pregiato.API.Migrations
                     b.HasKey("IdModel");
 
                     b.ToTable("Models");
+                });
+
+            modelBuilder.Entity("Pregiato.API.Models.ModelJob", b =>
+                {
+                    b.Property<Guid>("ModelJobId")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("uuid");
+
+                    b.Property<string>("AdditionalDescription")
+                        .IsRequired()
+                        .HasMaxLength(500)
+                        .HasColumnType("character varying(500)");
+
+                    b.Property<DateTime>("JobDate")
+                        .HasColumnType("timestamp with time zone");
+
+                    b.Property<Guid>("JobId")
+                        .HasColumnType("uuid");
+
+                    b.Property<string>("Location")
+                        .IsRequired()
+                        .HasMaxLength(255)
+                        .HasColumnType("character varying(255)");
+
+                    b.Property<Guid>("ModelId")
+                        .HasColumnType("uuid");
+
+                    b.Property<string>("Time")
+                        .IsRequired()
+                        .HasMaxLength(50)
+                        .HasColumnType("character varying(50)");
+
+                    b.HasKey("ModelJobId");
+
+                    b.HasIndex("JobId");
+
+                    b.HasIndex("ModelId");
+
+                    b.ToTable("ModelJob");
                 });
 
             modelBuilder.Entity("Pregiato.API.Models.ModelsBilling", b =>
@@ -406,6 +447,25 @@ namespace Pregiato.API.Migrations
                     b.HasBaseType("Pregiato.API.Models.ContractBase");
 
                     b.ToTable("PhotographyProductionContracts", (string)null);
+                });
+
+            modelBuilder.Entity("Pregiato.API.Models.ModelJob", b =>
+                {
+                    b.HasOne("Pregiato.API.Models.Job", "Job")
+                        .WithMany()
+                        .HasForeignKey("JobId")
+                        .OnDelete(DeleteBehavior.Cascade)
+                        .IsRequired();
+
+                    b.HasOne("Pregiato.API.Models.Moddels", "Model")
+                        .WithMany()
+                        .HasForeignKey("ModelId")
+                        .OnDelete(DeleteBehavior.Cascade)
+                        .IsRequired();
+
+                    b.Navigation("Job");
+
+                    b.Navigation("Model");
                 });
 
             modelBuilder.Entity("Pregiato.API.Models.AgencyContract", b =>

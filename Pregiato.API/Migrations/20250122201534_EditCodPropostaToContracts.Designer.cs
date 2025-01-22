@@ -13,8 +13,8 @@ using Pregiato.API.Data;
 namespace Pregiato.API.Migrations
 {
     [DbContext(typeof(ModelAgencyContext))]
-    [Migration("20250122144937_ConfigureContractsBase")]
-    partial class ConfigureContractsBase
+    [Migration("20250122201534_EditCodPropostaToContracts")]
+    partial class EditCodPropostaToContracts
     {
         /// <inheritdoc />
         protected override void BuildTargetModel(ModelBuilder modelBuilder)
@@ -105,6 +105,11 @@ namespace Pregiato.API.Migrations
 
                     b.Property<string>("City")
                         .HasColumnType("text");
+
+                    b.Property<int>("CodProposta")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("integer")
+                        .HasDefaultValue(110);
 
                     b.Property<byte[]>("Content")
                         .IsRequired()
@@ -233,7 +238,6 @@ namespace Pregiato.API.Migrations
                         .HasColumnType("character varying(14)");
 
                     b.Property<string>("City")
-                        .IsRequired()
                         .HasColumnType("text");
 
                     b.Property<DateTime>("CreatedAt")
@@ -258,7 +262,6 @@ namespace Pregiato.API.Migrations
                         .HasColumnType("character varying(255)");
 
                     b.Property<string>("Neighborhood")
-                        .IsRequired()
                         .HasColumnType("text");
 
                     b.Property<string>("PasswordHash")
