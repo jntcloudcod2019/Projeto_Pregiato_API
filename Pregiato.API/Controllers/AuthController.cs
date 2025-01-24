@@ -8,7 +8,7 @@ using Pregiato.API.Requests;
 namespace Pregiato.API.Controllers
 {
     [ApiController]
-    [Route("api/[controller]")]
+    [Route("/Auth/")]
     public class AuthController : ControllerBase
     {
         private readonly IJwtService _jwtService;
@@ -23,23 +23,43 @@ namespace Pregiato.API.Controllers
             _userService = userService; 
         }
         
-        [Authorize(Roles = "AdministratorPolicy, ManagerPolicy, ModelPolicy")]
-        [HttpPost("/Auth/login/")]
-        public async Task<IActionResult> Login([FromBody] LoginUserRequest loginRequest)
+       // [Authorize(Roles = "AdministratorPolicy, ManagerPolicy, ModelPolicy")]
+        [HttpPost("login/")]
+        public async Task<IActionResult> Login([FromBody] Login login)
         {
-           var user =  await _userRepository.GetByUsernameAsync(loginRequest.Username);    
-            if (user ==  null)
+            var user = await _userRepository.GetByUsernameAsync(login.Username);
+            if (user == null)
             {
                 return Unauthorized("Usuário não encontrado.");
             }
-            if ((!_passwordHasherService.VerifyPasswordHash(loginRequest.Password, user.PasswordHash)))
+
+            if (!_passwordHasherService.VerifyPasswordHash(login.Password, user.PasswordHash))
             {
                 return Unauthorized("Senha incorreta.");
             }
 
-            var token = _userService.AuthenticateUserAsync(loginRequest);
+            string userRole;
+            switch (user.UserType)
+            {
+                case "Administrator":
+                    userRole = "AdministratorPolicy";
+                    break;
+                case "Manager":
+                    userRole = "ManagerPolicy";
+                    break;
+                case "Model":
+                    userRole = "ModelPolicy";
+                    break;
+                default:
+                    return Unauthorized("Tipo de usuário inválido.");
+            }
+            var token = await _userService.AuthenticateUserAsync(login);
 
-            return Ok(new { Token = token });
+            return Ok(new
+            {
+                Token = token,
+                Role = userRole
+            });
         }
     }
 

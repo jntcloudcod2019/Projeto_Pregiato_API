@@ -34,20 +34,6 @@ namespace Pregiato.API.Controllers
             }
         }
 
-        [HttpPost("/login")]
-        public async Task<IActionResult> Login([FromBody]LoginUserRequest loginUserRequest)
-        {
-            try
-            {
-                var token = await _userService.AuthenticateUserAsync(loginUserRequest);
-                return Ok(new { token });
-            }
-            catch (Exception ex)
-            {
-                return Unauthorized(new { error = ex.Message });
-            }
-        }
-
         [HttpDelete("{id:guid}")]
         public async Task<IActionResult> Delete(Guid id)
         {

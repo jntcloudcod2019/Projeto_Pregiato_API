@@ -48,16 +48,21 @@ namespace Pregiato.API.Services
             return "User registered successfully.";
         }
 
-        public async Task<string> AuthenticateUserAsync(LoginUserRequest loginUserRequest)
+        public async Task<string> AuthenticateUserAsync(Login login)
         {
-            var user = await _userRepository.GetByUsernameAsync(loginUserRequest.Username);
+            var user = await _userRepository.GetByUsernameAsync(login.Username);
 
-            if (user == null || !BCrypt.Net.BCrypt.Verify(loginUserRequest.Password, user.PasswordHash))
+            if (user == null || !BCrypt.Net.BCrypt.Verify(login.Password, user.PasswordHash))
             {
                 throw new Exception("Invalid username or password.");
             }
 
-            return _jwtService.GenerateToken(loginUserRequest);
+            var loginAuthenticate = new LoginUserRequest
+            {
+                Username = user.Name,   
+                UserType = user.UserType,   
+            };
+            return _jwtService.GenerateToken(loginAuthenticate);
         }
     }
   }

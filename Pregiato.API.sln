@@ -3,7 +3,9 @@ Microsoft Visual Studio Solution File, Format Version 12.00
 # Visual Studio Version 17
 VisualStudioVersion = 17.11.35431.28
 MinimumVisualStudioVersion = 10.0.40219.1
-Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "Pregiato.API", "Pregiato.API\Pregiato.API.csproj", "{36CEA1DE-A2F7-48C5-82DB-BC6FB334E6F5}"
+Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "Pregiato.API", "Pregiato.API\Pregiato.API.csproj", "{36CEA1DE-A2F7-48C5-82DB-BC6FB334E6F5}"
+EndProject
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "Progiato.API.Test", "Progiato.API.Test\Progiato.API.Test.csproj", "{BC406DF7-C8E1-405B-8553-592E97FAF8A7}"
 EndProject
 Global
 	GlobalSection(SolutionConfigurationPlatforms) = preSolution
@@ -15,6 +17,10 @@ Global
 		{36CEA1DE-A2F7-48C5-82DB-BC6FB334E6F5}.Debug|Any CPU.Build.0 = Debug|Any CPU
 		{36CEA1DE-A2F7-48C5-82DB-BC6FB334E6F5}.Release|Any CPU.ActiveCfg = Release|Any CPU
 		{36CEA1DE-A2F7-48C5-82DB-BC6FB334E6F5}.Release|Any CPU.Build.0 = Release|Any CPU
+		{BC406DF7-C8E1-405B-8553-592E97FAF8A7}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{BC406DF7-C8E1-405B-8553-592E97FAF8A7}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{BC406DF7-C8E1-405B-8553-592E97FAF8A7}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{BC406DF7-C8E1-405B-8553-592E97FAF8A7}.Release|Any CPU.Build.0 = Release|Any CPU
 	EndGlobalSection
 	GlobalSection(SolutionProperties) = preSolution
 		HideSolutionNode = FALSE

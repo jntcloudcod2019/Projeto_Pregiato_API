@@ -42,14 +42,11 @@ namespace Pregiato.API.Services
             contract.JobId = jobId;
             contract.CodProposta = await GetNextCodPropostaAsync();
 
-            // Preenchimento do template HTML
             string htmlTemplate = await File.ReadAllTextAsync($"TemplatesContratos/{contract.TemplateFileName}");
             string populatedHtml = PopulateTemplate(htmlTemplate, parameters);
 
-            // Converte o HTML para PDF
             byte[] pdfBytes = ConvertHtmlToPdf(populatedHtml);
 
-            // Salva o contrato gerado
             await SaveContractAsync(contract, new MemoryStream(pdfBytes));
 
             return contract;
@@ -62,28 +59,24 @@ namespace Pregiato.API.Services
                 throw new ArgumentException("Pelo menos um dos parâmetros 'idModel', 'cpf' ou 'rg' deve ser fornecido.");
             }
 
-            // Busca o modelo no banco de dados
             var model = await _modelRepository.GetModelAllAsync( idModel,  cpf,  rg);
 
             if (model == null)
             {
-                throw new KeyNotFoundException("Modelo não encontrado.");
+                throw new KeyNotFoundException("Modelo de contrato não encontrado.");
             }
-
-            // Prepara os parâmetros para os contratos
             var parameters = new Dictionary<string, string>
             {
                 { "Nome-Modelo", model.Name },
                 { "CPF-Modelo", model.CPF },
                 { "RG-Modelo", model.RG },
-                { "Endereço-Modelo", model.Address ?? "N/A" },
-                { "Numero-Modelo", model.BankAccount ?? "N/A" },
-                { "Bairro-Modelo", "N/A" },
-                { "Cidade-Modelo", "N/A" },
-                { "CEP-Modelo", model.PostalCode ?? "N/A" }
+                { "Endereço-Modelo", model.Address },
+                { "Numero-Modelo", model.BankAccount },
+                { "Bairro-Modelo",model.Neighborhood },
+                { "Cidade-Modelo", model.City},
+                { "CEP-Modelo", model.PostalCode}
             };
 
-            // Gera a lista de contratos
             var contracts = new List<ContractBase>
             {
                 await GenerateContractAsync(model.IdModel, jobId.Value, "Agency", parameters),
@@ -101,8 +94,6 @@ namespace Pregiato.API.Services
                var contract =  await _contractRepository.GetByIdContractAsync(contractId);
                 if (contract == null)
                 {
-                    // throw new ContractNotFoundException(contractId); 
-                    // _logger.LogError("Contrato não encontrado com ID: {contractId}", contractId);
                     return null;
                 }
                 throw new InvalidCastException(" Contrato não encontrado.");
@@ -119,7 +110,6 @@ namespace Pregiato.API.Services
 
             private byte[] ConvertHtmlToPdf(string html)
             {
-                // Utilize uma biblioteca de conversão como DinkToPdf
                 return new byte[0];
             }
 
@@ -138,10 +128,8 @@ namespace Pregiato.API.Services
                 throw new InvalidOperationException($"Modelo com ID {contract.ModelId} não encontrado.");
 
             var sanitizedModelName = model.Name.Replace(" ", "_"); 
-            contract.ContractFilePath = $"{sanitizedModelName}_{contract.ModelId}.pdf";
-
            
-            contract.ContractFilePath = $"{model.Name}{DateTime.Now}{contract.ContractId}.pdf";
+            contract.ContractFilePath = $"{contract.CodProposta}_{contract.ContractId}_{contract.TemplateFileName}_{model.Name}.pdf";
 
             await _contractRepository.SaveContractAsync(contract);
         }

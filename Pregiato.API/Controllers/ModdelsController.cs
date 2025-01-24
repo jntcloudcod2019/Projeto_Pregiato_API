@@ -8,15 +8,18 @@ using System.Text.Json;
 
 namespace Pregiato.API.Controllers
 {
-    //[Authorize]
+    //[Authorize("AdministratorPolicy, ManagerPolicy")]
     [ApiController]
     [Route("api/Models")]
     public class ModdelsController : ControllerBase
     {
         private readonly IModelRepository _modelRepository;
-        public ModdelsController(IModelRepository modelRepository)
+        private readonly IUserRepository _userRepository;
+        private readonly IUserService _userService; 
+        public ModdelsController(IModelRepository modelRepository, IUserService userService)
         {
             _modelRepository = modelRepository ?? throw new ArgumentNullException(nameof(modelRepository));
+            _userService = userService ?? throw new ArgumentNullException(nameof(userService));
         }
 
         [HttpGet("/GetAllModels")]
@@ -57,9 +60,23 @@ namespace Pregiato.API.Controllers
                 City = createModelRequest.City,
                 DNA = dnaJson,  
             };
-
+            
             await _modelRepository.AddModelAsync(model);
-            return Ok("Modelo criado com sucesso!");
+
+            var modelUser = new LoginUserRequest
+            {
+              Username = model.Name,    
+              Password = model.PasswordHash,
+              UserType = "Model"
+            };
+
+            var userResult = await _userService.RegisterUserAsync(modelUser.Username,model.Email, modelUser.Password,modelUser.UserType.ToString());
+            if (userResult == null)
+            {
+                return StatusCode(500, "Erro ao criar usuário para o modelo.");
+            }
+
+            return Ok("Modelo e usuário criado com sucesso!");
         }
 
         [HttpPut("/UpdateModels{id}")]

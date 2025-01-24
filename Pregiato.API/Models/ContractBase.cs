@@ -7,9 +7,8 @@
         public Guid JobId { get; set; }
         public DateTime CreatedAt { get; set; } = DateTime.UtcNow;
         public DateTime UpdatedAt { get; set; } = DateTime.UtcNow;
-        public string Neighborhood { get; set; } = "N/A"; // Bairro com valor padrão
-        public string City { get; set; } = "N/A";
-
+        public string Neighborhood { get; set; } 
+        public string City { get; set; }
         // Propriedade que havia sido removida
         public string ContractFilePath { get; set; } = string.Empty;
 

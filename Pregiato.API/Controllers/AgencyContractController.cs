@@ -45,7 +45,9 @@ namespace Pregiato.API.Controllers
                 model.RG,
                 model.Address,
                 model.BankAccount,
-                model.PostalCode
+                model.PostalCode,
+                model.Neighborhood,
+                model.City
             });
         }
 
@@ -66,11 +68,11 @@ namespace Pregiato.API.Controllers
                 { "Nome-Modelo", model.Name },
                 { "CPF-Modelo", model.CPF },
                 { "RG-Modelo", model.RG },
-                { "Endereço-Modelo", model.Address ?? "N/A" },
-                { "Numero-Modelo", model.BankAccount ?? "N/A" },
-                { "Bairro-Modelo", "N/A" },
-                { "Cidade-Modelo", "N/A" },
-                { "CEP-Modelo", model.PostalCode ?? "N/A" }
+                { "Endereço-Modelo", model.Address},
+                { "Numero-Modelo", model.BankAccount},
+                { "Bairro-Modelo",model.Neighborhood},
+                { "Cidade-Modelo", model.City},
+                { "CEP-Modelo", model.PostalCode}
             };
 
             var contract = await _contractService.GenerateContractAsync(model.IdModel, request.JobId, "Agency", parameters);
@@ -92,14 +94,14 @@ namespace Pregiato.API.Controllers
 
             var parameters = new Dictionary<string, string>
             {
-                { "Nome-Modelo", model.Name },
-                { "CPF-Modelo", model.CPF },
-                { "RG-Modelo", model.RG },
-                { "Endereço-Modelo", model.Address ?? "N/A" },
-                { "Numero-Modelo", model.BankAccount ?? "N/A" },
-                { "Bairro-Modelo", "N/A" },
-                { "Cidade-Modelo", "N/A" },
-                { "CEP-Modelo", model.PostalCode ?? "N/A" }
+                { "Nome-Modelo", model.Name},
+                { "CPF-Modelo", model.CPF},
+                { "RG-Modelo", model.RG},
+                { "Endereço-Modelo", model.Address},
+                { "Numero-Modelo", model.BankAccount},
+                { "Bairro-Modelo", model.Neighborhood},
+                { "Cidade-Modelo",model.City },
+                { "CEP-Modelo", model.PostalCode}
             };
 
             var contract = await _contractService.GenerateContractAsync(model.IdModel, request.JobId, "Photography", parameters);
@@ -121,14 +123,14 @@ namespace Pregiato.API.Controllers
 
             var parameters = new Dictionary<string, string>
             {
-                { "Nome-Modelo", model.Name },
-                { "CPF-Modelo", model.CPF },
-                { "RG-Modelo", model.RG },
-                { "Endereço-Modelo", model.Address ?? "N/A" },
-                { "Numero-Modelo", model.BankAccount ?? "N/A" },
-                { "Bairro-Modelo", "N/A" },
-                { "Cidade-Modelo", "N/A" },
-                { "CEP-Modelo", model.PostalCode ?? "N/A" }
+                { "Nome-Modelo", model.Name},
+                { "CPF-Modelo", model.CPF},
+                { "RG-Modelo", model.RG},
+                { "Endereço-Modelo", model.Address},
+                { "Numero-Modelo", model.BankAccount},
+                { "Bairro-Modelo",model.Neighborhood},
+                { "Cidade-Modelo", model.City},
+                { "CEP-Modelo", model.PostalCode}
             };
 
             var contract = await _contractService.GenerateContractAsync(model.IdModel, request.JobId, "Commitment", parameters);
@@ -153,11 +155,11 @@ namespace Pregiato.API.Controllers
                 { "Nome-Modelo", model.Name },
                 { "CPF-Modelo", model.CPF },
                 { "RG-Modelo", model.RG },
-                { "Endereço-Modelo", model.Address ?? "N/A" },
-                { "Numero-Modelo", model.BankAccount ?? "N/A" },
-                { "Bairro-Modelo", "N/A" },
-                { "Cidade-Modelo", "N/A" },
-                { "CEP-Modelo", model.PostalCode ?? "N/A" }
+                { "Endereço-Modelo", model.Address },
+                { "Numero-Modelo", model.BankAccount },
+                { "Bairro-Modelo", model.Neighborhood},
+                { "Cidade-Modelo",model.City},
+                { "CEP-Modelo", model.PostalCode}
             };
 
             var contract = await _contractService.GenerateContractAsync(model.IdModel, request.JobId, "ImageRights", parameters);
@@ -184,20 +186,16 @@ namespace Pregiato.API.Controllers
                 return NotFound("Modelo não encontrado.");
             }
 
-            // Garantir que os valores de Cidade e Bairro estão preenchidos
-            model.Neighborhood ??= "N/A";
-            model.City ??= "N/A";
-
             var parameters = new Dictionary<string, string>
             {
                 { "Nome-Modelo", model.Name },
                 { "CPF-Modelo", model.CPF },
                 { "RG-Modelo", model.RG },
-                { "Endereço-Modelo", model.Address ?? "N/A" },
-                { "Numero-Modelo", model.BankAccount ?? "N/A" },
+                { "Endereço-Modelo", model.Address },
+                { "Numero-Modelo", model.BankAccount },
                 { "Bairro-Modelo", model.Neighborhood },
-                { "Cidade-Modelo", model.City },
-                { "CEP-Modelo", model.PostalCode ?? "N/A" }
+                { "Cidade-Modelo", model.City},
+                { "CEP-Modelo", model.PostalCode }
             };
 
             if (request?.JobId == null)
