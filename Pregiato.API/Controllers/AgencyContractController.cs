@@ -5,6 +5,9 @@ using Microsoft.EntityFrameworkCore;
 using Swashbuckle.AspNetCore.Annotations;
 using Pregiato.API.Data;
 using Pregiato.API.Models;
+using iText.Kernel.Pdf;
+using iText.Layout.Element;
+using iText.Layout;
 
 namespace Pregiato.API.Controllers
 {
@@ -217,39 +220,65 @@ namespace Pregiato.API.Controllers
             return Ok(contracts);
         }
 
-        //[HttpGet("download/{contractId}")]
-        //[SwaggerOperation("Busca e baixa um contrato pelo ID.")]
-        //public async Task<IActionResult> DownloadContractAsync(Guid contractId)
-        //{
-        //    // Busca o contrato pelo ID na base de dados
-        //    var contract = await _modelRepository.GetByIdModelAsync(contractId);    
+        [HttpGet("download-contract")]
+        public async Task<IActionResult> DownloadContract(int codProposta, Guid idContract, Guid idModel)
+        {
+            // Buscar o contrato no banco de dados
+            var contract = await _context.Contracts
+                .Where(c => c.CodProposta == codProposta|| c.ContractId == idContract || c.ModelId == idModel)
+                .FirstOrDefaultAsync();
 
-        //    if (contract == null)
-        //    {
-        //        return NotFound("Contrato não encontrado.");
-        //    }
+            if (contract == null)
+            {
+                return NotFound("Contrato não encontrado.");
+            }
 
-        //    // Verifica se o conteúdo do contrato está disponível
-        //    if (contract.Content == null || contract.Content.Length == 0)
-        //    {
-        //        return BadRequest("O conteúdo do contrato está vazio ou não foi salvo corretamente.");
-        //    }
+            // Gerar o PDF
+            string filePath = GenerateContractPdf(contract);
 
-        //    // Caminho para salvar o contrato na área de trabalho
-        //    var desktopPath = Environment.GetFolderPath(Environment.SpecialFolder.Desktop);
-        //    var filePath = Path.Combine(desktopPath, contract.ContractFilePath);
+            // Retornar o caminho do arquivo
+            return Ok(new { Message = "PDF gerado com sucesso.", FilePath = filePath });
+        }
 
-        //    // Salva o arquivo na área de trabalho
-        //    await System.IO.File.WriteAllBytesAsync(filePath, contract.Content);
 
-        //    // Retorna a confirmação do salvamento
-        //    return Ok($"Contrato salvo com sucesso na área de trabalho: {filePath}");
+        private string GenerateContractPdf(ContractBase contract)
+        {
+            // Caminho para salvar o PDF na área de trabalho
+            string desktopPath = Environment.GetFolderPath(Environment.SpecialFolder.Desktop);
+            string fileName = $"Contrato_{contract.CodProposta}_{contract.ContractId}.pdf";
+            string filePath = Path.Combine(desktopPath, fileName);
 
-        //    /*
-        //    // Código para fazer o download do arquivo (comente a linha acima e descomente abaixo para ativar o download)
-        //    return File(contract.Content, "application/pdf", contract.ContractFilePath);
-        //    */
-        //}
+            // Usando iText7 para criar o PDF
+            using (FileStream stream = new FileStream(filePath, FileMode.Create))
+            {
+                PdfWriter writer = new PdfWriter(stream);
+                PdfDocument pdfDoc = new PdfDocument(writer);
+                Document document = new Document(pdfDoc);
+
+                // Adicionar conteúdo ao PDF
+                document.Add(new Paragraph($"Contrato ID: {contract.ContractId}"));
+                document.Add(new Paragraph($"Código da Proposta: {contract.CodProposta}"));
+                document.Add(new Paragraph($"ID do Modelo: {contract.ModelId}"));
+                document.Add(new Paragraph($"Local: {contract.City ?? "N/A"}"));
+                document.Add(new Paragraph($"Bairro: {contract.Neighborhood ?? "N/A"}"));
+                document.Add(new Paragraph($"Data de Criação: {contract.CreatedAt}"));
+                document.Add(new Paragraph($"Última Atualização: {contract.UpdatedAt}"));
+
+                // Adicionar conteúdo específico do contrato
+                if (contract.Content != null)
+                {
+                    string contentText = System.Text.Encoding.UTF8.GetString(contract.Content);
+                    document.Add(new Paragraph("Conteúdo do Contrato:"));
+                    document.Add(new Paragraph(contentText));
+                }
+
+                document.Close();
+            }
+
+            return filePath;
+        }
+
+
 
 
     }

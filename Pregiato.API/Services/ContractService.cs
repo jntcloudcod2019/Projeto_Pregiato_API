@@ -1,4 +1,7 @@
-﻿using Microsoft.AspNetCore.Http.HttpResults;
+﻿using iText.Kernel.Pdf;
+using iText.Layout;
+using iText.Layout.Element;
+using Microsoft.AspNetCore.Http.HttpResults;
 using Microsoft.EntityFrameworkCore;
 using Pregiato.API.Data;
 using Pregiato.API.Interface;
@@ -42,14 +45,16 @@ namespace Pregiato.API.Services
             contract.JobId = jobId;
             contract.CodProposta = await GetNextCodPropostaAsync();
 
-            // Preenchimento do template HTML
+            // Leia o template HTML
             string htmlTemplate = await File.ReadAllTextAsync($"TemplatesContratos/{contract.TemplateFileName}");
+
+            // Substitua os placeholders
             string populatedHtml = PopulateTemplate(htmlTemplate, parameters);
 
-            // Converte o HTML para PDF
+            // Converta o HTML para PDF
             byte[] pdfBytes = ConvertHtmlToPdf(populatedHtml);
 
-            // Salva o contrato gerado
+            // Salve o contrato
             await SaveContractAsync(contract, new MemoryStream(pdfBytes));
 
             return contract;
@@ -119,30 +124,41 @@ namespace Pregiato.API.Services
 
             private byte[] ConvertHtmlToPdf(string html)
             {
-                // Utilize uma biblioteca de conversão como DinkToPdf
-                return new byte[0];
+            using var memoryStream = new MemoryStream();
+            using (var pdfWriter = new PdfWriter(memoryStream))
+            {
+                using var pdfDocument = new PdfDocument(pdfWriter);
+                using var document = new Document(pdfDocument);
+
+                // Você pode usar um conversor HTML para PDF ou adicionar o HTML manualmente.
+                document.Add(new Paragraph(html)); // Exemplo simples para adicionar texto.
+
+                document.Close();
             }
+
+            return memoryStream.ToArray();
+
+        }
 
         public async Task SaveContractAsync(ContractBase contract, Stream pdfStream)
         {
-        
+
             using var memoryStream = new MemoryStream();
             await pdfStream.CopyToAsync(memoryStream);
             var pdfBytes = memoryStream.ToArray();
 
-    
+            // Preenche o campo Content com os bytes do PDF
             contract.Content = pdfBytes;
 
+            // Verifica se o modelo existe
             var model = await _modelAgencyContext.Models.FindAsync(contract.ModelId);
             if (model == null)
                 throw new InvalidOperationException($"Modelo com ID {contract.ModelId} não encontrado.");
 
-            var sanitizedModelName = model.Name.Replace(" ", "_"); 
-            contract.ContractFilePath = $"{sanitizedModelName}_{contract.ModelId}.pdf";
+            // Gera o caminho do arquivo PDF
+            contract.ContractFilePath = $"{contract.CodProposta}_{contract.ContractId}_{contract.TemplateFileName}_{model.Name.Replace(" ", "_")}.pdf";
 
-           
-            contract.ContractFilePath = $"{model.Name}{DateTime.Now}{contract.ContractId}.pdf";
-
+            // Salva o contrato no banco de dados
             await _contractRepository.SaveContractAsync(contract);
         }
 
