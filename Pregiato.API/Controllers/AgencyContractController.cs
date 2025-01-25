@@ -8,6 +8,7 @@ using Pregiato.API.Models;
 using iText.Kernel.Pdf;
 using iText.Layout.Element;
 using iText.Layout;
+using Pregiato.API.Services;
 
 namespace Pregiato.API.Controllers
 {
@@ -18,6 +19,7 @@ namespace Pregiato.API.Controllers
         private readonly IContractService _contractService;
         private readonly IModelRepository _modelRepository;
         private readonly ModelAgencyContext _context;
+        private readonly ContractService contractService;
 
         // Construtor atualizado para incluir _context
         public AgencyContractController(
@@ -69,11 +71,11 @@ namespace Pregiato.API.Controllers
                 { "Nome-Modelo", model.Name },
                 { "CPF-Modelo", model.CPF },
                 { "RG-Modelo", model.RG },
-                { "Endereço-Modelo", model.Address ?? "N/A" },
-                { "Numero-Modelo", model.BankAccount ?? "N/A" },
-                { "Bairro-Modelo", "N/A" },
-                { "Cidade-Modelo", "N/A" },
-                { "CEP-Modelo", model.PostalCode ?? "N/A" }
+                { "Endereço-Modelo", model.Address },
+                { "Numero-Modelo", model.BankAccount },
+                { "Bairro-Modelo", model.Neighborhood },
+                { "Cidade-Modelo", model.City },
+                { "CEP-Modelo", model.PostalCode }
             };
 
             var contract = await _contractService.GenerateContractAsync(model.IdModel, request.JobId, "Agency", parameters);
@@ -98,11 +100,11 @@ namespace Pregiato.API.Controllers
                 { "Nome-Modelo", model.Name },
                 { "CPF-Modelo", model.CPF },
                 { "RG-Modelo", model.RG },
-                { "Endereço-Modelo", model.Address ?? "N/A" },
-                { "Numero-Modelo", model.BankAccount ?? "N/A" },
-                { "Bairro-Modelo", "N/A" },
-                { "Cidade-Modelo", "N/A" },
-                { "CEP-Modelo", model.PostalCode ?? "N/A" }
+                { "Endereço-Modelo", model.Address },
+                { "Numero-Modelo", model.BankAccount },
+                { "Bairro-Modelo",model.Neighborhood },
+                { "Cidade-Modelo", model.City },
+                { "CEP-Modelo", model.PostalCode }
             };
 
             var contract = await _contractService.GenerateContractAsync(model.IdModel, request.JobId, "Photography", parameters);
@@ -127,11 +129,11 @@ namespace Pregiato.API.Controllers
                 { "Nome-Modelo", model.Name },
                 { "CPF-Modelo", model.CPF },
                 { "RG-Modelo", model.RG },
-                { "Endereço-Modelo", model.Address ?? "N/A" },
-                { "Numero-Modelo", model.BankAccount ?? "N/A" },
-                { "Bairro-Modelo", "N/A" },
-                { "Cidade-Modelo", "N/A" },
-                { "CEP-Modelo", model.PostalCode ?? "N/A" }
+                { "Endereço-Modelo", model.Address },
+                { "Numero-Modelo", model.BankAccount },
+                { "Bairro-Modelo", model.Neighborhood },
+                { "Cidade-Modelo", model.City},
+                { "CEP-Modelo", model.PostalCode }
             };
 
             var contract = await _contractService.GenerateContractAsync(model.IdModel, request.JobId, "Commitment", parameters);
@@ -156,11 +158,11 @@ namespace Pregiato.API.Controllers
                 { "Nome-Modelo", model.Name },
                 { "CPF-Modelo", model.CPF },
                 { "RG-Modelo", model.RG },
-                { "Endereço-Modelo", model.Address ?? "N/A" },
-                { "Numero-Modelo", model.BankAccount ?? "N/A" },
-                { "Bairro-Modelo", "N/A" },
-                { "Cidade-Modelo", "N/A" },
-                { "CEP-Modelo", model.PostalCode ?? "N/A" }
+                { "Endereço-Modelo", model.Address },
+                { "Numero-Modelo", model.BankAccount },
+                { "Bairro-Modelo", model.Neighborhood },
+                { "Cidade-Modelo", model.City },
+                { "CEP-Modelo", model.PostalCode }
             };
 
             var contract = await _contractService.GenerateContractAsync(model.IdModel, request.JobId, "ImageRights", parameters);
@@ -187,20 +189,19 @@ namespace Pregiato.API.Controllers
                 return NotFound("Modelo não encontrado.");
             }
 
-            // Garantir que os valores de Cidade e Bairro estão preenchidos
-            model.Neighborhood ??= "N/A";
-            model.City ??= "N/A";
-
             var parameters = new Dictionary<string, string>
             {
+                { "Local-Contrato", "São Paulo, SP"},
+                { "Data-Contrato", DateTime.Now.ToString("dd/MM/yyyy") },
+                { "Mês-Contrato", DateTime.Now.ToString("MMMM")},
                 { "Nome-Modelo", model.Name },
                 { "CPF-Modelo", model.CPF },
                 { "RG-Modelo", model.RG },
-                { "Endereço-Modelo", model.Address ?? "N/A" },
-                { "Numero-Modelo", model.BankAccount ?? "N/A" },
+                { "Endereço-Modelo", model.Address },
+                { "Numero-Modelo", model.BankAccount },
                 { "Bairro-Modelo", model.Neighborhood },
                 { "Cidade-Modelo", model.City },
-                { "CEP-Modelo", model.PostalCode ?? "N/A" }
+                { "CEP-Modelo", model.PostalCode }
             };
 
             if (request?.JobId == null)
@@ -223,63 +224,28 @@ namespace Pregiato.API.Controllers
         [HttpGet("download-contract")]
         public async Task<IActionResult> DownloadContract(int codProposta, Guid idContract, Guid idModel)
         {
-            // Buscar o contrato no banco de dados
-            var contract = await _context.Contracts
-                .Where(c => c.CodProposta == codProposta|| c.ContractId == idContract || c.ModelId == idModel)
-                .FirstOrDefaultAsync();
-
-            if (contract == null)
+            try
             {
-                return NotFound("Contrato não encontrado.");
-            }
+                // Certifique-se de que o método retorne uma string
+                string filePath = await _contractService.GenerateContractPdf(codProposta, idContract);
 
-            // Gerar o PDF
-            string filePath = GenerateContractPdf(contract);
-
-            // Retornar o caminho do arquivo
-            return Ok(new { Message = "PDF gerado com sucesso.", FilePath = filePath });
-        }
-
-
-        private string GenerateContractPdf(ContractBase contract)
-        {
-            // Caminho para salvar o PDF na área de trabalho
-            string desktopPath = Environment.GetFolderPath(Environment.SpecialFolder.Desktop);
-            string fileName = $"Contrato_{contract.CodProposta}_{contract.ContractId}.pdf";
-            string filePath = Path.Combine(desktopPath, fileName);
-
-            // Usando iText7 para criar o PDF
-            using (FileStream stream = new FileStream(filePath, FileMode.Create))
-            {
-                PdfWriter writer = new PdfWriter(stream);
-                PdfDocument pdfDoc = new PdfDocument(writer);
-                Document document = new Document(pdfDoc);
-
-                // Adicionar conteúdo ao PDF
-                document.Add(new Paragraph($"Contrato ID: {contract.ContractId}"));
-                document.Add(new Paragraph($"Código da Proposta: {contract.CodProposta}"));
-                document.Add(new Paragraph($"ID do Modelo: {contract.ModelId}"));
-                document.Add(new Paragraph($"Local: {contract.City ?? "N/A"}"));
-                document.Add(new Paragraph($"Bairro: {contract.Neighborhood ?? "N/A"}"));
-                document.Add(new Paragraph($"Data de Criação: {contract.CreatedAt}"));
-                document.Add(new Paragraph($"Última Atualização: {contract.UpdatedAt}"));
-
-                // Adicionar conteúdo específico do contrato
-                if (contract.Content != null)
+                // Validação do arquivo gerado
+                if (string.IsNullOrEmpty(filePath) || !System.IO.File.Exists(filePath))
                 {
-                    string contentText = System.Text.Encoding.UTF8.GetString(contract.Content);
-                    document.Add(new Paragraph("Conteúdo do Contrato:"));
-                    document.Add(new Paragraph(contentText));
+                    return NotFound("O contrato não foi encontrado ou não foi gerado corretamente.");
                 }
 
-                document.Close();
+                // Retorna o arquivo para download
+                byte[] fileBytes = await System.IO.File.ReadAllBytesAsync(filePath);
+                string fileName = Path.GetFileName(filePath);
+
+                return File(fileBytes, "application/pdf", fileName);
+            }
+            catch (Exception ex)
+            {
+                return StatusCode(500, $"Erro ao gerar o contrato: {ex.Message}");
             }
 
-            return filePath;
         }
-
-
-
-
     }
 }

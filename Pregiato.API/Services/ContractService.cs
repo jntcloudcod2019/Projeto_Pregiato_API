@@ -6,24 +6,26 @@ using Microsoft.EntityFrameworkCore;
 using Pregiato.API.Data;
 using Pregiato.API.Interface;
 using Pregiato.API.Models;
+using System.Diagnostics.Contracts;
+using System.Text.RegularExpressions;
 
 namespace Pregiato.API.Services
 {
-        public class ContractService : IContractService
-        {
-        private readonly IContractService _contractService; 
+    public class ContractService : IContractService
+    {
+        private readonly IContractService _contractService;
         private readonly IContractRepository _contractRepository;
         private readonly DigitalSignatureService _digitalSignatureService;
-        private readonly ModelAgencyContext _modelAgencyContext;   
+        private readonly ModelAgencyContext _modelAgencyContext;
 
         private readonly IModelRepository _modelRepository;
 
         public ContractService(IContractRepository contractRepository,
                DigitalSignatureService digitalSignatureService,
-               IModelRepository modelRepository, 
+               IModelRepository modelRepository,
                ModelAgencyContext context)
         {
-            _contractRepository = contractRepository;
+            _contractRepository = contractRepository ?? throw new ArgumentNullException(nameof(context));
             _digitalSignatureService = digitalSignatureService;
             _modelRepository = modelRepository;
             _modelAgencyContext = context ?? throw new ArgumentNullException(nameof(context));
@@ -44,17 +46,23 @@ namespace Pregiato.API.Services
             contract.ModelId = modelId;
             contract.JobId = jobId;
             contract.CodProposta = await GetNextCodPropostaAsync();
+            contract.LocalContrato = parameters.ContainsKey("Local-Contrato") ? parameters["Local-Contrato"] : "São Paulo";
+            contract.DataContrato = parameters.ContainsKey("Data-Contrato") ? parameters["Data-Contrato"] : DateTime.UtcNow.ToString("dd/MM/yyyy");
+            contract.MesContrato = parameters.ContainsKey("Mês-Contrato") ? parameters["Mês-Contrato"] : DateTime.UtcNow.ToString("MMMM");
 
-            // Leia o template HTML
-            string htmlTemplate = await File.ReadAllTextAsync($"TemplatesContratos/{contract.TemplateFileName}");
+            string htmlTemplatePath = $"TemplatesContratos/{contract.TemplateFileName}";
+            if (!File.Exists(htmlTemplatePath))
+            {
+                throw new FileNotFoundException($"Template não encontrado: {htmlTemplatePath}");
+            }
 
-            // Substitua os placeholders
+            string htmlTemplate = await File.ReadAllTextAsync(htmlTemplatePath);
+
+
             string populatedHtml = PopulateTemplate(htmlTemplate, parameters);
 
-            // Converta o HTML para PDF
             byte[] pdfBytes = ConvertHtmlToPdf(populatedHtml);
 
-            // Salve o contrato
             await SaveContractAsync(contract, new MemoryStream(pdfBytes));
 
             return contract;
@@ -67,28 +75,27 @@ namespace Pregiato.API.Services
                 throw new ArgumentException("Pelo menos um dos parâmetros 'idModel', 'cpf' ou 'rg' deve ser fornecido.");
             }
 
-            // Busca o modelo no banco de dados
-            var model = await _modelRepository.GetModelAllAsync( idModel,  cpf,  rg);
+            var model = await _modelRepository.GetModelAllAsync(idModel, cpf, rg);
 
             if (model == null)
             {
                 throw new KeyNotFoundException("Modelo não encontrado.");
             }
 
-            // Prepara os parâmetros para os contratos
             var parameters = new Dictionary<string, string>
-            {
-                { "Nome-Modelo", model.Name },
-                { "CPF-Modelo", model.CPF },
-                { "RG-Modelo", model.RG },
-                { "Endereço-Modelo", model.Address ?? "N/A" },
-                { "Numero-Modelo", model.BankAccount ?? "N/A" },
-                { "Bairro-Modelo", "N/A" },
-                { "Cidade-Modelo", "N/A" },
-                { "CEP-Modelo", model.PostalCode ?? "N/A" }
+            {       { "Local-Contrato", "São Paulo, SP"},
+                    { "Data-Contrato", DateTime.Now.ToString("dd/MM/yyyy") },
+                    { "Mês-Contrato", DateTime.Now.ToString("MMMM")},
+                    { "Nome-Modelo", model.Name },
+                    { "CPF-Modelo", model.CPF },
+                    { "RG-Modelo", model.RG },
+                    { "Endereço-Modelo", model.Address},
+                    { "Bairro-Modelo", model.Neighborhood },
+                    { "Cidade-Modelo", model.City},
+                    { "CEP-Modelo", model.PostalCode}
+                   
             };
 
-            // Gera a lista de contratos
             var contracts = new List<ContractBase>
             {
                 await GenerateContractAsync(model.IdModel, jobId.Value, "Agency", parameters),
@@ -101,43 +108,66 @@ namespace Pregiato.API.Services
         }
 
         public async Task<ContractBase?> GetContractByIdAsync(Guid contractId)
+        {
+
+            var contract = await _contractRepository.GetByIdContractAsync(contractId);
+            if (contract == null)
             {
 
-               var contract =  await _contractRepository.GetByIdContractAsync(contractId);
-                if (contract == null)
-                {
-                    // throw new ContractNotFoundException(contractId); 
-                    // _logger.LogError("Contrato não encontrado com ID: {contractId}", contractId);
-                    return null;
-                }
-                throw new InvalidCastException(" Contrato não encontrado.");
-              }
+                return null;
+            }
+            throw new InvalidCastException(" Contrato não encontrado.");
+        }
 
-            private string PopulateTemplate(string template, Dictionary<string, string> parameters)
+        private string PopulateTemplate(string template, Dictionary<string, string> parameters)
+        {
+            if (string.IsNullOrWhiteSpace(template))
             {
-                foreach (var param in parameters)
-                {
-                    template = template.Replace($"{{{param.Key}}}", param.Value);
-                }
-                return template;
+                throw new ArgumentException("O template está vazio ou inválido.");
             }
 
-            private byte[] ConvertHtmlToPdf(string html)
+            if (parameters == null || !parameters.Any())
             {
+                throw new ArgumentException("Os parâmetros para preenchimento do template estão vazios ou nulos.");
+            }
+
+            foreach (var param in parameters)
+            {
+                template = template.Replace($"{{{param.Key}}}", param.Value);
+            }
+
+            var unfilledPlaceholders = Regex.Matches(template, @"\{.*?\}");
+            if (unfilledPlaceholders.Count > 0)
+            {
+                throw new InvalidOperationException("O template ainda contém placeholders não preenchidos: " +
+                                                    string.Join(", ", unfilledPlaceholders.Select(p => p.Value)));
+            }
+
+            return template; 
+        }
+
+
+        private byte[] ConvertHtmlToPdf(string html)
+        {
             using var memoryStream = new MemoryStream();
             using (var pdfWriter = new PdfWriter(memoryStream))
             {
                 using var pdfDocument = new PdfDocument(pdfWriter);
                 using var document = new Document(pdfDocument);
 
-                // Você pode usar um conversor HTML para PDF ou adicionar o HTML manualmente.
-                document.Add(new Paragraph(html)); // Exemplo simples para adicionar texto.
+                string plainText = ExtractPlainTextFromHtml(html);
+                document.Add(new Paragraph(plainText));
 
                 document.Close();
             }
 
             return memoryStream.ToArray();
 
+        }
+
+        private string ExtractPlainTextFromHtml(string html)
+        {
+            return Regex.Replace(html, "<.*?>", string.Empty);
         }
 
         public async Task SaveContractAsync(ContractBase contract, Stream pdfStream)
@@ -147,18 +177,14 @@ namespace Pregiato.API.Services
             await pdfStream.CopyToAsync(memoryStream);
             var pdfBytes = memoryStream.ToArray();
 
-            // Preenche o campo Content com os bytes do PDF
             contract.Content = pdfBytes;
 
-            // Verifica se o modelo existe
             var model = await _modelAgencyContext.Models.FindAsync(contract.ModelId);
             if (model == null)
                 throw new InvalidOperationException($"Modelo com ID {contract.ModelId} não encontrado.");
 
-            // Gera o caminho do arquivo PDF
             contract.ContractFilePath = $"{contract.CodProposta}_{contract.ContractId}_{contract.TemplateFileName}_{model.Name.Replace(" ", "_")}.pdf";
 
-            // Salva o contrato no banco de dados
             await _contractRepository.SaveContractAsync(contract);
         }
 
@@ -167,5 +193,72 @@ namespace Pregiato.API.Services
             var maxCodProposta = await _modelAgencyContext.Contracts.MaxAsync(c => (int?)c.CodProposta) ?? 109;
             return maxCodProposta + 1;
         }
+
+        public async Task<string> GenerateContractPdf(int? codProposta, Guid? contractId)
+        {
+            if (codProposta == null && contractId == null)
+            {
+                throw new ArgumentException("É necessário informar um Código de Proposta ou um ID de Contrato.");
+            }
+
+            var contract = await _contractRepository.GetContractByIdAsync(codProposta, contractId);
+            if (contract == null)
+            {
+                throw new KeyNotFoundException("Contrato não encontrado.");
+            }
+
+            string contractFilePath = contract.ContractFilePath;
+            if (string.IsNullOrEmpty(contractFilePath))
+            {
+                throw new InvalidOperationException("O caminho do arquivo do contrato está vazio.");
+            }
+
+            string templateType = contractFilePath.Split('_')[2]; 
+            string templatePath = Path.Combine("TemplatesContratos", $"{templateType}.html");
+
+            if (!File.Exists(templatePath))
+            {
+                throw new FileNotFoundException("Template do contrato não encontrado.", templatePath);
+            }
+
+
+            var model = await _modelRepository.GetByIdModelAsync(contract.ModelId);
+            if (model == null)
+            {
+                throw new KeyNotFoundException("Modelo relacionado ao contrato não encontrado.");
+            }
+
+            string htmlTemplate = File.ReadAllText(templatePath);
+
+            var parameters = new Dictionary<string, string>
+            {
+                { "Nome-Modelo", model.Name ?? "N/A" },
+                { "CPF-Modelo", model.CPF ?? "N/A" },
+                { "RG-Modelo", model.RG ?? "N/A" },
+                { "Endereço-Modelo", model.Address ?? "N/A" },
+                { "Bairro-Modelo", model.Neighborhood ?? "N/A" },
+                { "Cidade-Modelo", model.City ?? "N/A" },
+                { "CEP-Modelo", model.PostalCode ?? "N/A" }
+            };
+
+            string populatedHtml = PopulateTemplate(htmlTemplate, parameters);
+
+       
+            byte[] pdfBytes = ConvertHtmlToPdf(populatedHtml);
+
+        
+            string desktopPath = Environment.GetFolderPath(Environment.SpecialFolder.Desktop);
+            string outputPath = Path.Combine(desktopPath, contractFilePath);
+
+            File.WriteAllBytes(outputPath, pdfBytes);
+
+            if (!File.Exists(outputPath))
+            {
+                throw new IOException("Falha ao salvar o PDF do contrato.");
+            }
+
+            return outputPath; 
+        }
     }
+
 }

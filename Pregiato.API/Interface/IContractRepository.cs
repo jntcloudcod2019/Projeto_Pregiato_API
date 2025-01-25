@@ -10,5 +10,7 @@ namespace Pregiato.API.Interface
         Task UpdateAsync(ContractsModels contract);
         Task DeleteAsync(ContractsModels contract);
         Task SaveContractAsync(ContractBase contract);
+        Task<ContractBase?> GetContractByIdAsync( int? codProposta, Guid? contractId);
+
     }
 }

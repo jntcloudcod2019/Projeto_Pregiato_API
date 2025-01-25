@@ -1,4 +1,5 @@
 ﻿using iText.Kernel.Pdf;
+using Microsoft.EntityFrameworkCore;
 using Pregiato.API.Interface;
 using Pregiato.API.Models;
 using System.Diagnostics.Contracts;
@@ -40,8 +41,14 @@ namespace Pregiato.API.Data
 
         public async Task SaveContractAsync(ContractBase contract)
         {
-             _context.Add(contract); // Adiciona o contrato à tabela correspondente
-            await _context.SaveChangesAsync(); // Salva as alterações no banco
+             _context.Add(contract); 
+            await _context.SaveChangesAsync();
+        }
+
+        public async Task<ContractBase?> GetContractByIdAsync(int? codProposta, Guid? contractId)
+        {
+            return await _context.Contracts
+                .FirstOrDefaultAsync(c => c.CodProposta == codProposta || c.ContractId == contractId);
         }
     }
  }

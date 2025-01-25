@@ -9,8 +9,10 @@
         public DateTime UpdatedAt { get; set; } = DateTime.UtcNow;
         public string Neighborhood { get; set; } = "N/A"; // Bairro com valor padrão
         public string City { get; set; } = "N/A";
+        public string LocalContrato { get; set; } = "São Paulo";
+        public string DataContrato { get; set; } = DateTime.UtcNow.ToString("dd/MM/yyyy");
+        public string MesContrato { get; set; } = DateTime.UtcNow.ToString("MMMM");
 
-        // Propriedade que havia sido removida
         public string ContractFilePath { get; set; } = string.Empty;
 
         // Propriedade para conteúdo do contrato, se necessário
