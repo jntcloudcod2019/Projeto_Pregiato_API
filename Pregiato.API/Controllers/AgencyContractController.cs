@@ -9,6 +9,7 @@ using iText.Kernel.Pdf;
 using iText.Layout.Element;
 using iText.Layout;
 using Pregiato.API.Services;
+using static System.Runtime.InteropServices.JavaScript.JSType;
 
 namespace Pregiato.API.Controllers
 {
@@ -49,8 +50,12 @@ namespace Pregiato.API.Controllers
                 model.CPF,
                 model.RG,
                 model.Address,
+                model.NumberAddress,
                 model.BankAccount,
-                model.PostalCode
+                model.PostalCode,
+                model.Complement,
+                model.TelefonePrincipal,
+                model.TelefoneSecundario
             });
         }
 
@@ -58,29 +63,43 @@ namespace Pregiato.API.Controllers
         [HttpPost("generate/agency")]
         public async Task<IActionResult> GenerateAgencyContract([FromQuery] string query, [FromBody] ContractRequest request)
         {
-            var model = await _context.Models.FirstOrDefaultAsync(m =>
-                m.CPF == query || m.RG == query || m.Name.Contains(query) || m.IdModel.ToString() == query);
-
-            if (model == null)
+            try
             {
-                return NotFound("Modelo não encontrado.");
+                // Valida se o parâmetro de busca foi fornecido
+                if (string.IsNullOrEmpty(query))
+                {
+                    return BadRequest("O parâmetro de busca (CPF, RG, Nome ou ID do Modelo) é obrigatório.");
+                }
+
+                // Busca o modelo na base de dados
+                var model = await _context.Models.FirstOrDefaultAsync(m =>
+                    m.CPF == query || m.RG == query || m.Name.Contains(query) || m.IdModel.ToString() == query);
+
+                if (model == null)
+                {
+                    return NotFound("Modelo não encontrado.");
+                }
+
+                // Apenas chame GenerateContractAsync, pois ele já gerencia os parâmetros padrão
+                var contract = await _contractService.GenerateContractAsync(model.IdModel, request.JobId, "Agency", new Dictionary<string, string>());
+
+                return Ok(new
+                {
+                    Success = true,
+                    Message = "Contrato gerado com sucesso.",
+                    ContractId = contract.ContractId,
+                    CodProposta = contract.CodProposta,
+                    FilePath = contract.ContractFilePath
+                });
             }
-
-            var parameters = new Dictionary<string, string>
+            catch (Exception ex)
             {
-                { "Nome-Modelo", model.Name },
-                { "CPF-Modelo", model.CPF },
-                { "RG-Modelo", model.RG },
-                { "Endereço-Modelo", model.Address },
-                { "Numero-Modelo", model.BankAccount },
-                { "Bairro-Modelo", model.Neighborhood },
-                { "Cidade-Modelo", model.City },
-                { "CEP-Modelo", model.PostalCode }
-            };
-
-            var contract = await _contractService.GenerateContractAsync(model.IdModel, request.JobId, "Agency", parameters);
-
-            return Ok(contract);
+                return StatusCode(500, new
+                {
+                    Success = false,
+                    Message = $"Erro ao gerar o contrato: {ex.Message}"
+                });
+            }
         }
 
         [SwaggerOperation("Processo de gerar Contrato Photography.")]
@@ -97,14 +116,27 @@ namespace Pregiato.API.Controllers
 
             var parameters = new Dictionary<string, string>
             {
-                { "Nome-Modelo", model.Name },
-                { "CPF-Modelo", model.CPF },
-                { "RG-Modelo", model.RG },
-                { "Endereço-Modelo", model.Address },
-                { "Numero-Modelo", model.BankAccount },
-                { "Bairro-Modelo",model.Neighborhood },
-                { "Cidade-Modelo", model.City },
-                { "CEP-Modelo", model.PostalCode }
+                    {"Local-Contrato", "São Paulo, SP"},
+                    {"Data-Contrato", DateTime.Now.ToString("dd/MM/yyyy") },
+                    {"Mês-Contrato", DateTime.Now.ToString("Mmmm")},
+                    {"Nome-Modelo", model.Name },
+                    {"CPF-Modelo", model.CPF },
+                    {"RG-Modelo", model.RG },
+                    {"Endereço-Modelo", model.Address},
+                    {"Numero-Modelo",model.NumberAddress},
+                    {"Bairro-Modelo", model.Neighborhood},
+                    {"Cidade-Modelo", model.City},
+                    {"CEP-Modelo", model.PostalCode},
+                    {"Complemento-Modelo", model.Complement},
+                    {"Telefone-Principal", model.TelefonePrincipal},
+                    {"Telefone-Secundário", model.TelefoneSecundario},
+                    {"Nome-Empresa", "Pregiato management"},
+                    {"CNPJ-Empresa", "34871424/0001-43"},
+                    {"Endereço-Empresa", "Rua Butantã"},
+                    {"Numero-Empresa","468"},
+                    {"Complemento-Empresa", "3º Andar"},
+                    {"Bairro-Empresa", "Pinheiros"},
+                    {"CEP-Empresa","05424-000"}
             };
 
             var contract = await _contractService.GenerateContractAsync(model.IdModel, request.JobId, "Photography", parameters);
@@ -126,14 +158,27 @@ namespace Pregiato.API.Controllers
 
             var parameters = new Dictionary<string, string>
             {
-                { "Nome-Modelo", model.Name },
-                { "CPF-Modelo", model.CPF },
-                { "RG-Modelo", model.RG },
-                { "Endereço-Modelo", model.Address },
-                { "Numero-Modelo", model.BankAccount },
-                { "Bairro-Modelo", model.Neighborhood },
-                { "Cidade-Modelo", model.City},
-                { "CEP-Modelo", model.PostalCode }
+                    {"Local-Contrato", "São Paulo, SP"},
+                    {"Data-Contrato", DateTime.Now.ToString("dd/MM/yyyy") },
+                    {"Mês-Contrato", DateTime.Now.ToString("Mmmm")},
+                    {"Nome-Modelo", model.Name },
+                    {"CPF-Modelo", model.CPF },
+                    {"RG-Modelo", model.RG },
+                    {"Endereço-Modelo", model.Address},
+                    {"Numero-Modelo",model.NumberAddress},
+                    {"Bairro-Modelo", model.Neighborhood},
+                    {"Cidade-Modelo", model.City},
+                    {"CEP-Modelo", model.PostalCode},
+                    {"Complemento-Modelo", model.Complement},
+                    {"Telefone-Principal", model.TelefonePrincipal},
+                    {"Telefone-Secundário", model.TelefoneSecundario},
+                    {"Nome-Empresa", "Pregiato management"},
+                    {"CNPJ-Empresa", "34871424/0001-43"},
+                    {"Endereço-Empresa", "Rua Butantã"},
+                    {"Numero-Empresa","468"},
+                    {"Complemento-Empresa", "3º Andar"},
+                    {"Bairro-Empresa", "Pinheiros"},
+                    {"CEP-Empresa","05424-000"}
             };
 
             var contract = await _contractService.GenerateContractAsync(model.IdModel, request.JobId, "Commitment", parameters);
@@ -155,14 +200,27 @@ namespace Pregiato.API.Controllers
 
             var parameters = new Dictionary<string, string>
             {
-                { "Nome-Modelo", model.Name },
-                { "CPF-Modelo", model.CPF },
-                { "RG-Modelo", model.RG },
-                { "Endereço-Modelo", model.Address },
-                { "Numero-Modelo", model.BankAccount },
-                { "Bairro-Modelo", model.Neighborhood },
-                { "Cidade-Modelo", model.City },
-                { "CEP-Modelo", model.PostalCode }
+                    {"Local-Contrato", "São Paulo, SP"},
+                    {"Data-Contrato", DateTime.Now.ToString("dd/MM/yyyy") },
+                    {"Mês-Contrato", DateTime.Now.ToString("Mmmm")},
+                    {"Nome-Modelo", model.Name },
+                    {"CPF-Modelo", model.CPF },
+                    {"RG-Modelo", model.RG },
+                    {"Endereço-Modelo", model.Address},
+                    {"Numero-Modelo",model.NumberAddress},
+                    {"Bairro-Modelo", model.Neighborhood},
+                    {"Cidade-Modelo", model.City},
+                    {"CEP-Modelo", model.PostalCode},
+                    {"Complemento-Modelo", model.Complement},
+                    {"Telefone-Principal", model.TelefonePrincipal},
+                    {"Telefone-Secundário", model.TelefoneSecundario},
+                    {"Nome-Empresa", "Pregiato management"},
+                    {"CNPJ-Empresa", "34871424/0001-43"},
+                    {"Endereço-Empresa", "Rua Butantã"},
+                    {"Numero-Empresa","468"},
+                    {"Complemento-Empresa", "3º Andar"},
+                    {"Bairro-Empresa", "Pinheiros"},
+                    {"CEP-Empresa","05424-000"}
             };
 
             var contract = await _contractService.GenerateContractAsync(model.IdModel, request.JobId, "ImageRights", parameters);
@@ -191,17 +249,27 @@ namespace Pregiato.API.Controllers
 
             var parameters = new Dictionary<string, string>
             {
-                { "Local-Contrato", "São Paulo, SP"},
-                { "Data-Contrato", DateTime.Now.ToString("dd/MM/yyyy") },
-                { "Mês-Contrato", DateTime.Now.ToString("MMMM")},
-                { "Nome-Modelo", model.Name },
-                { "CPF-Modelo", model.CPF },
-                { "RG-Modelo", model.RG },
-                { "Endereço-Modelo", model.Address },
-                { "Numero-Modelo", model.BankAccount },
-                { "Bairro-Modelo", model.Neighborhood },
-                { "Cidade-Modelo", model.City },
-                { "CEP-Modelo", model.PostalCode }
+                    {"Local-Contrato", "São Paulo, SP"},
+                    {"Data-Contrato", DateTime.Now.ToString("dd/MM/yyyy") },
+                    {"Mês-Contrato", DateTime.Now.ToString("Mmmm")},
+                    {"Nome-Modelo", model.Name },
+                    {"CPF-Modelo", model.CPF },
+                    {"RG-Modelo", model.RG },
+                    {"Endereço-Modelo", model.Address},
+                    {"Numero-Modelo",model.NumberAddress},
+                    {"Bairro-Modelo", model.Neighborhood},
+                    {"Cidade-Modelo", model.City},
+                    {"CEP-Modelo", model.PostalCode},
+                    {"Complemento-Modelo", model.Complement},
+                    {"Telefone-Principal", model.TelefonePrincipal},
+                    {"Telefone-Secundário", model.TelefoneSecundario},
+                    {"Nome-Empresa", "Pregiato management"},
+                    {"CNPJ-Empresa", "34871424/0001-43"},
+                    {"Endereço-Empresa", "Rua Butantã"},
+                    {"Numero-Empresa","468"},
+                    {"Complemento-Empresa", "3º Andar"},
+                    {"Bairro-Empresa", "Pinheiros"},
+                    {"CEP-Empresa","05424-000"}
             };
 
             if (request?.JobId == null)

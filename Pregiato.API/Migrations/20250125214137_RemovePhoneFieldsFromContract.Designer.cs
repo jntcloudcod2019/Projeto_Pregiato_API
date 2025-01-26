@@ -3,6 +3,7 @@ using System;
 using System.Text.Json;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.EntityFrameworkCore.Infrastructure;
+using Microsoft.EntityFrameworkCore.Migrations;
 using Microsoft.EntityFrameworkCore.Storage.ValueConversion;
 using Npgsql.EntityFrameworkCore.PostgreSQL.Metadata;
 using Pregiato.API.Data;
@@ -12,9 +13,11 @@ using Pregiato.API.Data;
 namespace Pregiato.API.Migrations
 {
     [DbContext(typeof(ModelAgencyContext))]
-    partial class ModelAgencyContextModelSnapshot : ModelSnapshot
+    [Migration("20250125214137_RemovePhoneFieldsFromContract")]
+    partial class RemovePhoneFieldsFromContract
     {
-        protected override void BuildModel(ModelBuilder modelBuilder)
+        /// <inheritdoc />
+        protected override void BuildTargetModel(ModelBuilder modelBuilder)
         {
 #pragma warning disable 612, 618
             modelBuilder
@@ -174,10 +177,6 @@ namespace Pregiato.API.Migrations
                     b.Property<DateTime>("UpdatedAt")
                         .HasColumnType("timestamp with time zone");
 
-                    b.Property<string>("VigenciaContrato")
-                        .IsRequired()
-                        .HasColumnType("text");
-
                     b.HasKey("ContractId");
 
                     b.ToTable("Contracts", (string)null);
@@ -285,10 +284,6 @@ namespace Pregiato.API.Migrations
                     b.Property<string>("City")
                         .HasColumnType("text");
 
-                    b.Property<string>("Complement")
-                        .IsRequired()
-                        .HasColumnType("text");
-
                     b.Property<DateTime>("CreatedAt")
                         .ValueGeneratedOnAdd()
                         .HasColumnType("timestamp with time zone")
@@ -311,10 +306,6 @@ namespace Pregiato.API.Migrations
                         .HasColumnType("character varying(255)");
 
                     b.Property<string>("Neighborhood")
-                        .HasColumnType("text");
-
-                    b.Property<string>("NumberAddress")
-                        .IsRequired()
                         .HasColumnType("text");
 
                     b.Property<string>("PasswordHash")

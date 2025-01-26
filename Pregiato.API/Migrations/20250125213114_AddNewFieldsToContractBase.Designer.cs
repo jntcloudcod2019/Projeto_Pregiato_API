@@ -3,6 +3,7 @@ using System;
 using System.Text.Json;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.EntityFrameworkCore.Infrastructure;
+using Microsoft.EntityFrameworkCore.Migrations;
 using Microsoft.EntityFrameworkCore.Storage.ValueConversion;
 using Npgsql.EntityFrameworkCore.PostgreSQL.Metadata;
 using Pregiato.API.Data;
@@ -12,9 +13,11 @@ using Pregiato.API.Data;
 namespace Pregiato.API.Migrations
 {
     [DbContext(typeof(ModelAgencyContext))]
-    partial class ModelAgencyContextModelSnapshot : ModelSnapshot
+    [Migration("20250125213114_AddNewFieldsToContractBase")]
+    partial class AddNewFieldsToContractBase
     {
-        protected override void BuildModel(ModelBuilder modelBuilder)
+        /// <inheritdoc />
+        protected override void BuildTargetModel(ModelBuilder modelBuilder)
         {
 #pragma warning disable 612, 618
             modelBuilder
@@ -171,12 +174,16 @@ namespace Pregiato.API.Migrations
                         .IsRequired()
                         .HasColumnType("text");
 
-                    b.Property<DateTime>("UpdatedAt")
-                        .HasColumnType("timestamp with time zone");
-
-                    b.Property<string>("VigenciaContrato")
+                    b.Property<string>("TelefonePrincipal")
                         .IsRequired()
                         .HasColumnType("text");
+
+                    b.Property<string>("TelefoneSecundario")
+                        .IsRequired()
+                        .HasColumnType("text");
+
+                    b.Property<DateTime>("UpdatedAt")
+                        .HasColumnType("timestamp with time zone");
 
                     b.HasKey("ContractId");
 
@@ -285,10 +292,6 @@ namespace Pregiato.API.Migrations
                     b.Property<string>("City")
                         .HasColumnType("text");
 
-                    b.Property<string>("Complement")
-                        .IsRequired()
-                        .HasColumnType("text");
-
                     b.Property<DateTime>("CreatedAt")
                         .ValueGeneratedOnAdd()
                         .HasColumnType("timestamp with time zone")
@@ -313,10 +316,6 @@ namespace Pregiato.API.Migrations
                     b.Property<string>("Neighborhood")
                         .HasColumnType("text");
 
-                    b.Property<string>("NumberAddress")
-                        .IsRequired()
-                        .HasColumnType("text");
-
                     b.Property<string>("PasswordHash")
                         .IsRequired()
                         .HasMaxLength(255)
@@ -336,14 +335,6 @@ namespace Pregiato.API.Migrations
                         .ValueGeneratedOnAdd()
                         .HasColumnType("boolean")
                         .HasDefaultValue(true);
-
-                    b.Property<string>("TelefonePrincipal")
-                        .IsRequired()
-                        .HasColumnType("text");
-
-                    b.Property<string>("TelefoneSecundario")
-                        .IsRequired()
-                        .HasColumnType("text");
 
                     b.Property<DateTime>("UpdatedAt")
                         .ValueGeneratedOnAdd()

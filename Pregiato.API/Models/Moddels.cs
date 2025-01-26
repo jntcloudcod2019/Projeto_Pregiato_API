@@ -35,6 +35,12 @@ namespace Pregiato.API.Models
         [StringLength(255, ErrorMessage = "Endereço deve ter no máximo 255 caracteres.")]
         public string Address { get; set; }
 
+        [Required]
+        public string NumberAddress { get; set; }
+
+        [Required]
+        public string Complement{ get; set; } 
+
         [StringLength(30, ErrorMessage = "Conta bancária deve ter no máximo 30 caracteres.")]
         public string BankAccount { get; set; }
 
@@ -57,5 +63,9 @@ namespace Pregiato.API.Models
         public string? Neighborhood { get; set; } // Bairro
         [Required]
         public string ? City { get; set; } // Cidade
+        [Required]
+        public string TelefonePrincipal { get; set; }
+        [Required]
+        public string TelefoneSecundario { get; set; }
     }
 }

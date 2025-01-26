@@ -7,15 +7,24 @@
         public Guid JobId { get; set; }
         public DateTime CreatedAt { get; set; } = DateTime.UtcNow;
         public DateTime UpdatedAt { get; set; } = DateTime.UtcNow;
-        public string Neighborhood { get; set; } = "N/A"; // Bairro com valor padrão
+        public string Neighborhood { get; set; } = "N/A";
         public string City { get; set; } = "N/A";
         public string LocalContrato { get; set; } = "São Paulo";
         public string DataContrato { get; set; } = DateTime.UtcNow.ToString("dd/MM/yyyy");
         public string MesContrato { get; set; } = DateTime.UtcNow.ToString("MMMM");
+        public string NomeEmpresa { get; set; } 
+        public string CNPJEmpresa { get; set; } 
+        public string EnderecoEmpresa { get; set;} 
+        public string NumeroEmpresa { get; set; } 
+        public string ComplementoEmpresa { get; set;} 
+        public string BairroEmpresa { get; set; } 
+        public string CidadeEmpresa { get; set; } 
+        public string CEPEmpresa { get; set;}
+        public string VigenciaContrato {get; set; } = DateTime.UtcNow.ToString("dd/MM/yyyy");
+
 
         public string ContractFilePath { get; set; } = string.Empty;
 
-        // Propriedade para conteúdo do contrato, se necessário
         public byte[] Content { get; set; }
 
         public abstract string TemplateFileName { get; }

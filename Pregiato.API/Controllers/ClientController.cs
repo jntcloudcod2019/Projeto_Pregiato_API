@@ -9,7 +9,7 @@ using System;
 
 namespace Pregiato.API.Controllers
 {
-    [Authorize(Roles = "AdministratorPolicy,ManagerPolicy")]
+    //[Authorize(Roles = "AdministratorPolicy,ManagerPolicy")]
     [ApiController]
     [Route("api/Client")]
     public class ClientController : ControllerBase
