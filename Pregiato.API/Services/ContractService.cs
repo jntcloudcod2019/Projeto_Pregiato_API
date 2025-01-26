@@ -37,7 +37,7 @@ namespace Pregiato.API.Services
         private static readonly string DefaultCNPJEmpresa = "34871424/0001-43";
         private static readonly string DefaultEnderecoEmpresa = "Rua Butantã";
         private static readonly string DefaultNumeroEmpresa = "468";
-        private static readonly string DefaultComplementoEmpresa = "3 Andar";
+        private static readonly string DefaultComplementoEmpresa = "3º Andar";
         private static readonly string DefaultBairroEmpresa = "Pinheiros";
         private static readonly string DefaultCidadeEmpresa = "São Paulo";
         private static readonly string DefaultCEPEmpresa = "05424-000";
@@ -47,6 +47,9 @@ namespace Pregiato.API.Services
 
         public async Task<ContractBase> GenerateContractAsync(Guid modelId, Guid jobId, string contractType, Dictionary<string, string> parameters)
         {
+
+            parameters ??= new Dictionary<string, string>();
+
             ContractBase contract = contractType switch
             {
                 "Agency" => new AgencyContract(),
@@ -125,9 +128,10 @@ namespace Pregiato.API.Services
                     {"Endereço-Empresa", DefaultEnderecoEmpresa},
                     {"Numero-Empresa",DefaultNumeroEmpresa},
                     {"Complemento-Empresa", DefaultComplementoEmpresa},
+                    {"Cidade-Empresa", DefaultCidadeEmpresa},
                     {"Bairro-Empresa", DefaultBairroEmpresa},
                     {"CEP-Empresa",DefaultCEPEmpresa},
-                    {"Vigência-Contrato", DefaultVigenciaContrato}
+                    {"Vigência-Contrato",DefaultVigenciaContrato}
 
             };
 

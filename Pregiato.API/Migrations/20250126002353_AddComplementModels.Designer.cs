@@ -13,8 +13,8 @@ using Pregiato.API.Data;
 namespace Pregiato.API.Migrations
 {
     [DbContext(typeof(ModelAgencyContext))]
-    [Migration("20250126001330_FixComplementColumn")]
-    partial class FixComplementColumn
+    [Migration("20250126002353_AddComplementModels")]
+    partial class AddComplementModels
     {
         /// <inheritdoc />
         protected override void BuildTargetModel(ModelBuilder modelBuilder)

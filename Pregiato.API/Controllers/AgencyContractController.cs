@@ -230,13 +230,14 @@ namespace Pregiato.API.Controllers
 
         [SwaggerOperation("Processo de gerar todos os contratos")]
         [HttpPost("generate/all")]
-        public async Task<IActionResult> GenerateAllContractsAsync([FromQuery] string? idModel = null, [FromQuery] string? cpf = null, [FromQuery] string? rg = null, [FromBody] ContractRequest? request = null)
+        public async Task<IActionResult> GenerateAllContractsAsync
+        ([FromQuery] string? idModel = null, [FromQuery] string? cpf = null, 
+        [FromQuery] string? rg = null, [FromBody] ContractRequest? request = null)
         {
             if (string.IsNullOrEmpty(idModel) && string.IsNullOrEmpty(cpf) && string.IsNullOrEmpty(rg))
             {
                 return BadRequest("Pelo menos um dos parâmetros 'IdModel', 'CPF', ou 'RG' deve ser fornecido.");
             }
-
             var model = await _context.Models.FirstOrDefaultAsync(m =>
                 (idModel != null && m.IdModel.ToString() == idModel) ||
                 (cpf != null && m.CPF == cpf) ||
@@ -249,9 +250,9 @@ namespace Pregiato.API.Controllers
 
             var parameters = new Dictionary<string, string>
             {
-                    {"Local-Contrato", "São Paulo, SP"},
-                    {"Data-Contrato", DateTime.Now.ToString("dd/MM/yyyy") },
-                    {"Mês-Contrato", DateTime.Now.ToString("Mmmm")},
+                    {"Local-Contrato"," São Paulo"},
+                    {"Data-Contrato", DateTime.UtcNow.ToString("dd/MM/yyyy")},
+                    {"Mês-Contrato", DateTime.UtcNow.ToString("MMMM")},
                     {"Nome-Modelo", model.Name },
                     {"CPF-Modelo", model.CPF },
                     {"RG-Modelo", model.RG },
@@ -263,13 +264,15 @@ namespace Pregiato.API.Controllers
                     {"Complemento-Modelo", model.Complement},
                     {"Telefone-Principal", model.TelefonePrincipal},
                     {"Telefone-Secundário", model.TelefoneSecundario},
-                    {"Nome-Empresa", "Pregiato management"},
+                    {"Nome-Empresa","Pregiato Management"},
                     {"CNPJ-Empresa", "34871424/0001-43"},
-                    {"Endereço-Empresa", "Rua Butantã"},
-                    {"Numero-Empresa","468"},
-                    {"Complemento-Empresa", "3º Andar"},
-                    {"Bairro-Empresa", "Pinheiros"},
-                    {"CEP-Empresa","05424-000"}
+                    {"Endereço-Empresa","468"},
+                    {"Numero-Empresa","3 Andar"},
+                    {"Complemento-Empresa", "Pinheiros"},
+                    {"Cidade-Empresa", "São Paulo"},
+                    {"Bairro-Empresa",  "05424-000"},
+                    {"CEP-Empresa",DateTime.UtcNow.ToString("dd/MM/yyyy")},
+                    {"Vigência-Contrato", DateTime.UtcNow.ToString("MMMM")}
             };
 
             if (request?.JobId == null)
@@ -277,14 +280,12 @@ namespace Pregiato.API.Controllers
                 return BadRequest("O JobId é obrigatório para gerar os contratos.");
             }
 
-            // Lista para armazenar os contratos gerados
-            var contracts = new List<ContractBase>();
-
-            // Geração dos contratos
-            contracts.Add(await _contractService.GenerateContractAsync(model.IdModel, request.JobId, "Agency", parameters));
-            contracts.Add(await _contractService.GenerateContractAsync(model.IdModel, request.JobId, "Photography", parameters));
-            contracts.Add(await _contractService.GenerateContractAsync(model.IdModel, request.JobId, "Commitment", parameters));
-            contracts.Add(await _contractService.GenerateContractAsync(model.IdModel, request.JobId, "ImageRights", parameters));
+            var contracts = await _contractService.GenerateAllContractsAsync(
+              idModel: idModel,
+              cpf: cpf,
+              rg: rg,
+              jobId: request.JobId
+           );
 
             return Ok(contracts);
         }
