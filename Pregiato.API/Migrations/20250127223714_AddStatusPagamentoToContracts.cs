@@ -10,11 +10,13 @@ namespace Pregiato.API.Migrations
         /// <inheritdoc />
         protected override void Up(MigrationBuilder migrationBuilder)
         {
-            migrationBuilder.AddColumn<int>(
+            migrationBuilder.AlterColumn<int>(
                 name: "StatusPagamento",
                 table: "Contracts",
                 type: "StatusPagamentoEnum",
-                nullable: false);
+                nullable: false,
+                oldClrType: typeof(int),
+                oldType: "integer");
         }
 
         /// <inheritdoc />

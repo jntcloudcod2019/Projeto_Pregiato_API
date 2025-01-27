@@ -2,8 +2,8 @@
 {
     public enum StatusPagamentoEnum
     {
-        Paid = 1,
-        Pending =2,
-        Notdone =3
+        Pendente = 1,
+        Pago = 2,
+        Cancelado = 3
     }
 }
