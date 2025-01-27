@@ -4,6 +4,7 @@ using iText.Layout.Element;
 using Microsoft.AspNetCore.Http.HttpResults;
 using Microsoft.EntityFrameworkCore;
 using Pregiato.API.Data;
+using Pregiato.API.Enums;
 using Pregiato.API.Interface;
 using Pregiato.API.Models;
 using System.Diagnostics.Contracts;
@@ -15,11 +16,9 @@ namespace Pregiato.API.Services
     {
         private readonly IContractService _contractService;
         private readonly IContractRepository _contractRepository;
+        private readonly IModelRepository _modelRepository;
         private readonly DigitalSignatureService _digitalSignatureService;
         private readonly ModelAgencyContext _modelAgencyContext;
- 
-
-        private readonly IModelRepository _modelRepository;
 
         public ContractService(IContractRepository contractRepository,
                DigitalSignatureService digitalSignatureService,
@@ -30,7 +29,6 @@ namespace Pregiato.API.Services
             _digitalSignatureService = digitalSignatureService;
             _modelRepository = modelRepository;
             _modelAgencyContext = context ?? throw new ArgumentNullException(nameof(context));
-
         }
 
         private static readonly string DefaultNomeEmpresa = "Pregiato Management";
@@ -73,9 +71,15 @@ namespace Pregiato.API.Services
             contract.BairroEmpresa = parameters.ContainsKey("Bairro-Empresa") ? parameters["Bairro-Empresa"] : DefaultBairroEmpresa;
             contract.CidadeEmpresa = parameters.ContainsKey("Cidade-Empresa") ? parameters["Cidade-Empresa"] : DefaultCidadeEmpresa;
             contract.CEPEmpresa = parameters.ContainsKey("CEP-Empresa") ? parameters["CEP-Empresa"] : DefaultCEPEmpresa;
-            contract.VigenciaContrato = parameters.ContainsKey("Vigência-Contrato")  ? parameters["Vigência-Contrato"] : DefaultVigenciaContrato;
-             
+            contract.VigenciaContrato = parameters.ContainsKey("Vigência-Contrato")  ? parameters["Vigência-Contrato"] : DefaultVigenciaContrato;            
             contract.NomeEmpresa = parameters.ContainsValue("Nome-Empresa") ? parameters["Nome-Empresa"] : "Pregiato management";
+            contract.ValorContrato = parameters.ContainsKey("Valor-Contrato")
+         ?                          decimal.Parse(parameters["Valor-Contrato"]
+                                                 .Replace("R$", "")
+                                                 .Replace(".", "")
+                                                 .Replace(",", ".")
+                                                 .Trim()): throw new ArgumentException("A chave 'Valor-Contrato' é obrigatória.");
+            contract.FormaPagamento = Enum.Parse<MetodoPagamentoEnum>(parameters["Forma-Pagamento"]);
 
             string htmlTemplatePath = $"TemplatesContratos/{contract.TemplateFileName}";
             if (!File.Exists(htmlTemplatePath))
@@ -94,7 +98,7 @@ namespace Pregiato.API.Services
             return contract;
         }
 
-        public async Task<List<ContractBase>> GenerateAllContractsAsync(string? idModel = null, string? cpf = null, string? rg = null, Guid? jobId = null)
+        public async Task<List<ContractBase>> GenerateAllContractsAsync(string? idModel = null, string? cpf = null, string? rg = null, Guid? jobId = null, Dictionary<string, string>? paramet = null)
         {
             if (string.IsNullOrEmpty(idModel) && string.IsNullOrEmpty(cpf) && string.IsNullOrEmpty(rg))
             {
@@ -106,6 +110,15 @@ namespace Pregiato.API.Services
             if (model == null)
             {
                 throw new KeyNotFoundException("Modelo não encontrado.");
+            }
+
+            string? valorContrato = null;
+            string? formaPagamento = null;
+
+            if (paramet != null)
+            {
+                paramet.TryGetValue("Valor-Contrato", out valorContrato); // Substitua "param1" pela chave específica
+                paramet.TryGetValue("Forma-Pagamento", out formaPagamento); // Substitua "param2" pela outra chave específica
             }
 
             var parameters = new Dictionary<string, string>
@@ -131,8 +144,9 @@ namespace Pregiato.API.Services
                     {"Cidade-Empresa", DefaultCidadeEmpresa},
                     {"Bairro-Empresa", DefaultBairroEmpresa},
                     {"CEP-Empresa",DefaultCEPEmpresa},
-                    {"Vigência-Contrato",DefaultVigenciaContrato}
-
+                    {"Vigência-Contrato",DefaultVigenciaContrato},
+                    {"Valor-Contrato", valorContrato},
+                    {"Forma-Pagamento", formaPagamento}
             };
 
             var contracts = new List<ContractBase>

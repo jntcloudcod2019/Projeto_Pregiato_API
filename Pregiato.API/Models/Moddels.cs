@@ -60,9 +60,10 @@ namespace Pregiato.API.Models
         [Required]
         public JsonDocument DNA { get; set; }
         [Required]
-        public string? Neighborhood { get; set; } // Bairro
+        public string? Neighborhood { get; set; } 
         [Required]
-        public string ? City { get; set; } // Cidade
+        public string ? City { get; set; } 
+
         [Required]
         public string TelefonePrincipal { get; set; }
         [Required]

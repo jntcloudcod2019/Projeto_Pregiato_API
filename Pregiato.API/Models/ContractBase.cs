@@ -1,4 +1,6 @@
-﻿namespace Pregiato.API.Models
+﻿using Pregiato.API.Enums;
+
+namespace Pregiato.API.Models
 {
     public abstract class ContractBase
     {
@@ -7,8 +9,8 @@
         public Guid JobId { get; set; }
         public DateTime CreatedAt { get; set; } = DateTime.UtcNow;
         public DateTime UpdatedAt { get; set; } = DateTime.UtcNow;
-        public string Neighborhood { get; set; } = "N/A";
-        public string City { get; set; } = "N/A";
+        public string Neighborhood { get; set; } 
+        public string City { get; set; } 
         public string LocalContrato { get; set; } = "São Paulo";
         public string DataContrato { get; set; } = DateTime.UtcNow.ToString("dd/MM/yyyy");
         public string MesContrato { get; set; } = DateTime.UtcNow.ToString("MMMM");
@@ -21,6 +23,10 @@
         public string CidadeEmpresa { get; set; } 
         public string CEPEmpresa { get; set;}
         public string VigenciaContrato {get; set; } = DateTime.UtcNow.ToString("dd/MM/yyyy");
+        public decimal ValorContrato { get; set; } 
+        public MetodoPagamentoEnum FormaPagamento { get; set; } 
+
+        public StatusPagamentoEnum StatusPagamento { get; set; }
 
 
         public string ContractFilePath { get; set; } = string.Empty;

@@ -3,6 +3,7 @@ using System;
 using System.Text.Json;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.EntityFrameworkCore.Infrastructure;
+using Microsoft.EntityFrameworkCore.Migrations;
 using Microsoft.EntityFrameworkCore.Storage.ValueConversion;
 using Npgsql.EntityFrameworkCore.PostgreSQL.Metadata;
 using Pregiato.API.Data;
@@ -12,9 +13,11 @@ using Pregiato.API.Data;
 namespace Pregiato.API.Migrations
 {
     [DbContext(typeof(ModelAgencyContext))]
-    partial class ModelAgencyContextModelSnapshot : ModelSnapshot
+    [Migration("20250127000151_UpdateEnumsToStrings")]
+    partial class UpdateEnumsToStrings
     {
-        protected override void BuildModel(ModelBuilder modelBuilder)
+        /// <inheritdoc />
+        protected override void BuildTargetModel(ModelBuilder modelBuilder)
         {
 #pragma warning disable 612, 618
             modelBuilder
@@ -27,7 +30,8 @@ namespace Pregiato.API.Migrations
                 {
                     b.Property<Guid>("IdClient")
                         .ValueGeneratedOnAdd()
-                        .HasColumnType("uuid");
+                        .HasColumnType("uuid")
+                        .HasDefaultValueSql("gen_random_uuid()");
 
                     b.Property<string>("ClientDocument")
                         .IsRequired()
@@ -40,7 +44,9 @@ namespace Pregiato.API.Migrations
                         .HasColumnType("character varying(20)");
 
                     b.Property<DateTime>("CreatedAt")
-                        .HasColumnType("timestamp with time zone");
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("timestamp with time zone")
+                        .HasDefaultValueSql("NOW()");
 
                     b.Property<string>("Email")
                         .IsRequired()
@@ -56,7 +62,9 @@ namespace Pregiato.API.Migrations
                         .HasColumnType("boolean");
 
                     b.Property<DateTime>("UpdatedAt")
-                        .HasColumnType("timestamp with time zone");
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("timestamp with time zone")
+                        .HasDefaultValueSql("NOW()");
 
                     b.HasKey("IdClient");
 
@@ -141,9 +149,9 @@ namespace Pregiato.API.Migrations
                         .IsRequired()
                         .HasColumnType("text");
 
-                    b.Property<int>("FormaPagamento")
-                        .HasMaxLength(50)
-                        .HasColumnType("integer");
+                    b.Property<string>("FormaPagamento")
+                        .IsRequired()
+                        .HasColumnType("text");
 
                     b.Property<Guid>("JobId")
                         .HasColumnType("uuid");
@@ -170,9 +178,6 @@ namespace Pregiato.API.Migrations
                         .IsRequired()
                         .HasColumnType("text");
 
-                    b.Property<int>("StatusPagamento")
-                        .HasColumnType("integer");
-
                     b.Property<DateTime>("UpdatedAt")
                         .HasColumnType("timestamp with time zone");
 
@@ -194,24 +199,33 @@ namespace Pregiato.API.Migrations
                 {
                     b.Property<Guid>("ContractId")
                         .ValueGeneratedOnAdd()
-                        .HasColumnType("uuid");
+                        .HasColumnType("uuid")
+                        .HasDefaultValueSql("gen_random_uuid()");
 
                     b.Property<string>("ContractFile")
                         .IsRequired()
+                        .HasMaxLength(255)
                         .HasColumnType("text");
 
                     b.Property<DateTime>("CreatedAt")
-                        .HasColumnType("timestamp with time zone");
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("timestamp with time zone")
+                        .HasDefaultValueSql("NOW()");
 
                     b.Property<Guid>("ModelId")
                         .HasColumnType("uuid");
 
                     b.Property<DateTime?>("UpdatedAt")
-                        .HasColumnType("timestamp with time zone");
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("timestamp with time zone")
+                        .HasDefaultValueSql("NOW()");
 
                     b.HasKey("ContractId");
 
-                    b.ToTable("ContractsModels");
+                    b.ToTable("ContractsModels", t =>
+                        {
+                            t.HasCheckConstraint("CK_ContractsModels_FileFormat", "\"ContractFile\" ~ '\\.(doc|docx|pdf)$'");
+                        });
                 });
 
             modelBuilder.Entity("Pregiato.API.Models.Job", b =>
@@ -279,7 +293,6 @@ namespace Pregiato.API.Migrations
                         .HasColumnType("character varying(14)");
 
                     b.Property<string>("City")
-                        .IsRequired()
                         .HasColumnType("text");
 
                     b.Property<string>("Complement")
@@ -308,7 +321,6 @@ namespace Pregiato.API.Migrations
                         .HasColumnType("character varying(255)");
 
                     b.Property<string>("Neighborhood")
-                        .IsRequired()
                         .HasColumnType("text");
 
                     b.Property<string>("NumberAddress")
@@ -430,6 +442,7 @@ namespace Pregiato.API.Migrations
                         .HasColumnType("uuid");
 
                     b.Property<byte[]>("Comprovante")
+                        .IsRequired()
                         .HasColumnType("bytea");
 
                     b.Property<Guid>("ContractId")
@@ -442,17 +455,19 @@ namespace Pregiato.API.Migrations
                         .HasColumnType("timestamp with time zone");
 
                     b.Property<string>("FinalCartao")
-                        .HasMaxLength(4)
-                        .HasColumnType("character varying(4)");
+                        .IsRequired()
+                        .HasColumnType("text");
 
-                    b.Property<int>("MetodoPagamento")
-                        .HasColumnType("MetodoPagamento");
+                    b.Property<string>("MetodoPagamento")
+                        .IsRequired()
+                        .HasColumnType("text");
 
                     b.Property<int?>("QuantidadeParcela")
                         .HasColumnType("integer");
 
-                    b.Property<int>("StatusPagamento")
-                        .HasColumnType("StatusPagamento");
+                    b.Property<string>("StatusPagamento")
+                        .IsRequired()
+                        .HasColumnType("text");
 
                     b.Property<decimal>("Valor")
                         .HasColumnType("numeric");
@@ -461,17 +476,20 @@ namespace Pregiato.API.Migrations
 
                     b.HasIndex("ContractId");
 
-                    b.ToTable("Payment", (string)null);
+                    b.ToTable("Payment");
                 });
 
             modelBuilder.Entity("Pregiato.API.Models.User", b =>
                 {
                     b.Property<Guid>("UserId")
                         .ValueGeneratedOnAdd()
-                        .HasColumnType("uuid");
+                        .HasColumnType("uuid")
+                        .HasDefaultValueSql("gen_random_uuid()");
 
                     b.Property<DateTime>("CreatedAt")
-                        .HasColumnType("timestamp with time zone");
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("timestamp with time zone")
+                        .HasDefaultValueSql("NOW()");
 
                     b.Property<string>("Email")
                         .IsRequired()
@@ -489,7 +507,9 @@ namespace Pregiato.API.Migrations
                         .HasColumnType("character varying(255)");
 
                     b.Property<DateTime>("UpdatedAt")
-                        .HasColumnType("timestamp with time zone");
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("timestamp with time zone")
+                        .HasDefaultValueSql("NOW()");
 
                     b.Property<string>("UserType")
                         .IsRequired()
