@@ -10,22 +10,23 @@ namespace Pregiato.API.Migrations
         /// <inheritdoc />
         protected override void Up(MigrationBuilder migrationBuilder)
         {
-            // Adiciona a coluna StatusPagamento como StatusPagamentoEnum
-            migrationBuilder.AddColumn<string>(
+            migrationBuilder.AddColumn<int>(
                 name: "StatusPagamento",
                 table: "Contracts",
                 type: "StatusPagamentoEnum",
                 nullable: false);
-               // defaultValue: "Pendente"); // Ajuste o valor padrão se necessário
         }
 
         /// <inheritdoc />
         protected override void Down(MigrationBuilder migrationBuilder)
         {
-            // Remove a coluna StatusPagamento em caso de reversão
-            migrationBuilder.DropColumn(
+            migrationBuilder.AlterColumn<int>(
                 name: "StatusPagamento",
-                table: "Contracts");
+                table: "Contracts",
+                type: "integer",
+                nullable: false,
+                oldClrType: typeof(int),
+                oldType: "StatusPagamentoEnum");
         }
     }
 }

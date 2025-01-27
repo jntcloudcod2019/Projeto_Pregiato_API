@@ -13,7 +13,7 @@ using Pregiato.API.Data;
 namespace Pregiato.API.Migrations
 {
     [DbContext(typeof(ModelAgencyContext))]
-    [Migration("20250127215040_AddStatusPagamentoToContracts")]
+    [Migration("20250127220903_AddStatusPagamentoToContracts")]
     partial class AddStatusPagamentoToContracts
     {
         /// <inheritdoc />
