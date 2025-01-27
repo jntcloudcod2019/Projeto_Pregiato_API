@@ -13,8 +13,8 @@ using Pregiato.API.Data;
 namespace Pregiato.API.Migrations
 {
     [DbContext(typeof(ModelAgencyContext))]
-    [Migration("20250127193712_CapturePendingChanges")]
-    partial class CapturePendingChanges
+    [Migration("20250127201033_RevertUpdateEnumsToStrings")]
+    partial class RevertUpdateEnumsToStrings
     {
         /// <inheritdoc />
         protected override void BuildTargetModel(ModelBuilder modelBuilder)

@@ -41,19 +41,13 @@ namespace Pregiato.API.Data
                       .HasColumnType("StatusPagamento") // Novo campo como ENUM no banco
                       .IsRequired();
 
-                //entity.Property(e => e.MetodoPagamento)
-                //      .HasConversion(
-                //          v => v.ToString(),
-                //          v => (MetodoPagamento)Enum.Parse(typeof(MetodoPagamento), v))
-                //      .HasMaxLength(50)
-                //      .IsRequired();
+                entity.Property(e => e.MetodoPagamento)
+                      .HasColumnType("MetodoPagamentoEnum")
+                      .IsRequired();
 
-                //entity.Property(e => e.StatusPagamento)
-                //      .HasConversion(
-                //          v => v.ToString(),
-                //          v => (StatusPagamento)Enum.Parse(typeof(StatusPagamento), v))
-                //      .HasMaxLength(50)
-                //      .IsRequired();
+                entity.Property(e => e.StatusPagamento)
+                      .HasColumnType("StatusPagamentoEnum")
+                      .IsRequired();
 
                 entity.Property(e => e.Valor).IsRequired();
                 entity.Property(e => e.QuantidadeParcela).IsRequired(false);
