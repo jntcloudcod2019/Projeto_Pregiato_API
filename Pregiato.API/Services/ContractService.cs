@@ -74,11 +74,7 @@ namespace Pregiato.API.Services
             contract.VigenciaContrato = parameters.ContainsKey("Vigência-Contrato")  ? parameters["Vigência-Contrato"] : DefaultVigenciaContrato;            
             contract.NomeEmpresa = parameters.ContainsValue("Nome-Empresa") ? parameters["Nome-Empresa"] : "Pregiato management";
             contract.ValorContrato = parameters.ContainsKey("Valor-Contrato")
-         ?                          decimal.Parse(parameters["Valor-Contrato"]
-                                                 .Replace("R$", "")
-                                                 .Replace(".", "")
-                                                 .Replace(",", ".")
-                                                 .Trim()): throw new ArgumentException("A chave 'Valor-Contrato' é obrigatória.");
+            ?decimal.Parse(parameters["Valor-Contrato"] .Replace("R$", "").Replace(".", "").Replace(",", ".").Trim()): throw new ArgumentException("A chave 'Valor-Contrato' é obrigatória.");
             contract.FormaPagamento = Enum.Parse<MetodoPagamentoEnum>(parameters["Forma-Pagamento"]);
 
             string htmlTemplatePath = $"TemplatesContratos/{contract.TemplateFileName}";
@@ -199,7 +195,6 @@ namespace Pregiato.API.Services
             return template; 
         }
 
-
         private byte[] ConvertHtmlToPdf(string html)
         {
             using var memoryStream = new MemoryStream();
@@ -215,7 +210,6 @@ namespace Pregiato.API.Services
             }
 
             return memoryStream.ToArray();
-
         }
 
         private string ExtractPlainTextFromHtml(string html)

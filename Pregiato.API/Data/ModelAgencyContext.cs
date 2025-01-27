@@ -17,37 +17,30 @@ namespace Pregiato.API.Data
         public DbSet<Job> Jobs { get; set; }
         public DbSet<ModelsBilling> ModelsBilling { get; set; }
         public DbSet<ContractBase> Contracts { get; set; }
-        public DbSet<Payment> Payments { get; set; } 
+        public DbSet<Payment> Payments { get; set; }
 
         protected override void OnModelCreating(ModelBuilder modelBuilder)
         {
             base.OnModelCreating(modelBuilder);
 
+            // Configuração para a tabela ContractsModels
             modelBuilder.Entity<ContractsModels>()
-              .HasKey(c => c.ContractId);
+                .HasKey(c => c.ContractId);
 
+            // Configuração para a tabela Payment
             modelBuilder.Entity<Payment>(entity =>
             {
                 entity.ToTable("Payment");
 
                 entity.HasKey(e => e.Id);
 
-
                 entity.Property(e => e.MetodoPagamento)
-              .HasColumnType("MetodoPagamento") // Confirme que o tipo no banco é ENUM
-              .IsRequired();
+                    .HasColumnType("MetodoPagamentoEnum")
+                    .IsRequired();
 
                 entity.Property(e => e.StatusPagamento)
-                      .HasColumnType("StatusPagamento") // Novo campo como ENUM no banco
-                      .IsRequired();
-
-                entity.Property(e => e.MetodoPagamento)
-                      .HasColumnType("MetodoPagamentoEnum")
-                      .IsRequired();
-
-                entity.Property(e => e.StatusPagamento)
-                      .HasColumnType("StatusPagamentoEnum")
-                      .IsRequired();
+                    .HasColumnType("StatusPagamentoEnum")
+                    .IsRequired();
 
                 entity.Property(e => e.Valor).IsRequired();
                 entity.Property(e => e.QuantidadeParcela).IsRequired(false);
@@ -57,9 +50,9 @@ namespace Pregiato.API.Data
                 entity.Property(e => e.DataAcordoPagamento).IsRequired(false);
 
                 entity.HasOne<ContractBase>()
-                      .WithMany()
-                      .HasForeignKey(e => e.ContractId)
-                      .OnDelete(DeleteBehavior.Cascade);
+                    .WithMany()
+                    .HasForeignKey(e => e.ContractId)
+                    .OnDelete(DeleteBehavior.Cascade);
             });
 
             // Configuração para a tabela ModelJob
@@ -73,14 +66,14 @@ namespace Pregiato.API.Data
                 entity.Property(e => e.AdditionalDescription).HasMaxLength(500);
 
                 entity.HasOne(e => e.Model)
-                      .WithMany()
-                      .HasForeignKey(e => e.ModelId)
-                      .OnDelete(DeleteBehavior.Cascade);
+                    .WithMany()
+                    .HasForeignKey(e => e.ModelId)
+                    .OnDelete(DeleteBehavior.Cascade);
 
                 entity.HasOne(e => e.Job)
-                      .WithMany()
-                      .HasForeignKey(e => e.JobId)
-                      .OnDelete(DeleteBehavior.Cascade);
+                    .WithMany()
+                    .HasForeignKey(e => e.JobId)
+                    .OnDelete(DeleteBehavior.Cascade);
             });
 
             // Configuração para a tabela ContractBase
@@ -90,18 +83,22 @@ namespace Pregiato.API.Data
 
                 entity.HasKey(c => c.ContractId);
                 entity.Property(c => c.CodProposta)
-                      .IsRequired()
-                      .ValueGeneratedOnAdd()
-                      .HasDefaultValue(110);
+                    .IsRequired()
+                    .ValueGeneratedOnAdd()
+                    .HasDefaultValue(110);
 
                 entity.Property(c => c.City).IsRequired(false);
                 entity.Property(c => c.Neighborhood).IsRequired(false);
                 entity.Property(c => c.ContractFilePath).IsRequired(false);
                 entity.Property(c => c.Content).HasColumnType("bytea");
 
-                // Campos adicionais de pagamento
                 entity.Property(c => c.ValorContrato).IsRequired();
                 entity.Property(c => c.FormaPagamento).HasMaxLength(50).IsRequired();
+
+                // Configuração para o campo StatusPagamento
+                entity.Property(c => c.StatusPagamento)
+                    .HasColumnType("StatusPagamentoEnum")
+                    .IsRequired();
             });
 
             modelBuilder.Entity<AgencyContract>().ToTable("AgencyContracts");
@@ -114,8 +111,8 @@ namespace Pregiato.API.Data
             {
                 entity.HasKey(e => e.IdModel);
                 entity.Property(e => e.IdModel)
-                      .ValueGeneratedOnAdd()
-                      .HasDefaultValueSql("gen_random_uuid()");
+                    .ValueGeneratedOnAdd()
+                    .HasDefaultValueSql("gen_random_uuid()");
 
                 entity.Property(e => e.CPF).IsRequired().HasMaxLength(14);
                 entity.Property(e => e.RG).IsRequired().HasMaxLength(20);
@@ -127,8 +124,8 @@ namespace Pregiato.API.Data
                 entity.Property(e => e.CreatedAt).HasDefaultValueSql("NOW()");
                 entity.Property(e => e.UpdatedAt).HasDefaultValueSql("NOW()");
                 entity.Property(e => e.DNA)
-                      .HasColumnType("jsonb")
-                      .HasDefaultValueSql("'{}'::jsonb");
+                    .HasColumnType("jsonb")
+                    .HasDefaultValueSql("'{}'::jsonb");
             });
 
             // Configuração para a tabela Jobs
@@ -136,8 +133,8 @@ namespace Pregiato.API.Data
             {
                 entity.HasKey(e => e.IdJob);
                 entity.Property(e => e.IdJob)
-                      .ValueGeneratedOnAdd()
-                      .HasDefaultValueSql("gen_random_uuid()");
+                    .ValueGeneratedOnAdd()
+                    .HasDefaultValueSql("gen_random_uuid()");
 
                 entity.Property(e => e.Description).HasMaxLength(500);
                 entity.Property(e => e.Status).HasMaxLength(20).HasDefaultValue("Pending");
@@ -150,8 +147,8 @@ namespace Pregiato.API.Data
             {
                 entity.HasKey(e => e.Id);
                 entity.Property(e => e.Id)
-                      .ValueGeneratedOnAdd()
-                      .HasDefaultValueSql("gen_random_uuid()");
+                    .ValueGeneratedOnAdd()
+                    .HasDefaultValueSql("gen_random_uuid()");
 
                 entity.Property(e => e.Amount).IsRequired().HasColumnType("numeric(10, 2)");
                 entity.Property(e => e.BillingDate).IsRequired();
