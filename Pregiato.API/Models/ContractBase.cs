@@ -24,9 +24,9 @@ namespace Pregiato.API.Models
         public string CEPEmpresa { get; set;}
         public string VigenciaContrato {get; set; } = DateTime.UtcNow.ToString("dd/MM/yyyy");
         public decimal ValorContrato { get; set; } 
-        public MetodoPagamento FormaPagamento { get; set; } 
+        public string FormaPagamento { get; set; } 
 
-        public StatusPagamento StatusPagamento { get; set; }
+        public string StatusPagamento { get; set; }
 
 
         public string ContractFilePath { get; set; } = string.Empty;

@@ -1,4 +1,5 @@
-﻿using iText.Kernel.Pdf;
+﻿using iText.Commons.Actions.Contexts;
+using iText.Kernel.Pdf;
 using iText.Layout;
 using iText.Layout.Element;
 using Microsoft.AspNetCore.Http.HttpResults;
@@ -6,6 +7,7 @@ using Microsoft.EntityFrameworkCore;
 using Pregiato.API.Data;
 using Pregiato.API.Interface;
 using Pregiato.API.Models;
+using Pregiato.API.Requests;
 using System.Diagnostics.Contracts;
 using System.Text.RegularExpressions;
 
@@ -44,58 +46,8 @@ namespace Pregiato.API.Services
         private static readonly MetodoPagamento DefaulMetodoPagamento;
         private static readonly StatusPagamento DefaultStatusPagamento;
 
-        public async Task<ContractBase> GenerateContractAsync(Guid modelId, Guid jobId, string contractType, Dictionary<string, string> parameters)
-        {
 
-            parameters ??= new Dictionary<string, string>();
-
-            ContractBase contract = contractType switch
-            {
-                "Agency" => new AgencyContract(),
-                "Photography" => new PhotographyProductionContract(),
-                "Commitment" => new CommitmentTerm(),
-                "ImageRights" => new ImageRightsTerm(),
-                _ => throw new ArgumentException("Invalid contract type.")
-            };
-
-            contract.ModelId = modelId;
-            contract.JobId = jobId;
-            contract.CodProposta = await GetNextCodPropostaAsync();
-            contract.LocalContrato = parameters.ContainsKey("Local-Contrato") ? parameters["Local-Contrato"] : DefaultCidadeEmpresa;
-            contract.DataContrato = parameters.ContainsKey("Data-Contrato") ? parameters["Data-Contrato"] : DefaultDataContrato;
-            contract.MesContrato = parameters.ContainsKey("Mês-Contrato") ? parameters["Mês-Contrato"] : DefaultMesContrato;   
-            contract.NomeEmpresa = parameters.ContainsKey("Nome-Empresa}") ? parameters["Nome-Empresa}"] : DefaultNomeEmpresa;
-            contract.CNPJEmpresa = parameters.ContainsKey("CNPJ-Empresa") ? parameters["CNPJ-Empresa"] : DefaultCNPJEmpresa;
-            contract.EnderecoEmpresa = parameters.ContainsKey("Endereço-Empresa") ? parameters["Endereço-Empresa"] : DefaultEnderecoEmpresa;    
-            contract.NumeroEmpresa = parameters.ContainsKey("Numero-Empresa") ? parameters["Numero-Empresa"] : DefaultNumeroEmpresa;
-            contract.ComplementoEmpresa = parameters.ContainsKey("Complemento-Empresa") ? parameters["Complemento-Empresa"] : DefaultComplementoEmpresa;
-            contract.BairroEmpresa = parameters.ContainsKey("Bairro-Empresa") ? parameters["Bairro-Empresa"] : DefaultBairroEmpresa;
-            contract.CidadeEmpresa = parameters.ContainsKey("Cidade-Empresa") ? parameters["Cidade-Empresa"] : DefaultCidadeEmpresa;
-            contract.CEPEmpresa = parameters.ContainsKey("CEP-Empresa") ? parameters["CEP-Empresa"] : DefaultCEPEmpresa;
-            contract.VigenciaContrato = parameters.ContainsKey("Vigência-Contrato")  ? parameters["Vigência-Contrato"] : DefaultVigenciaContrato;            
-            contract.NomeEmpresa = parameters.ContainsValue("Nome-Empresa") ? parameters["Nome-Empresa"] : "Pregiato management";
-            contract.ValorContrato = parameters.ContainsKey("Valor-Contrato")
-            ?decimal.Parse(parameters["Valor-Contrato"] .Replace("R$", "").Replace(".", "").Replace(",", ".").Trim()): throw new ArgumentException("A chave 'Valor-Contrato' é obrigatória.");
- 
-
-            string htmlTemplatePath = $"TemplatesContratos/{contract.TemplateFileName}";
-            if (!File.Exists(htmlTemplatePath))
-            {
-                throw new FileNotFoundException($"Template não encontrado: {htmlTemplatePath}");
-            }
-
-            string htmlTemplate = await File.ReadAllTextAsync(htmlTemplatePath);
-
-            string populatedHtml = PopulateTemplate(htmlTemplate, parameters);
-
-            byte[] pdfBytes = ConvertHtmlToPdf(populatedHtml);
-
-            await SaveContractAsync(contract, new MemoryStream(pdfBytes));
-
-            return contract;
-        }
-
-        public async Task<List<ContractBase>> GenerateAllContractsAsync(string? idModel = null, string? cpf = null, string? rg = null, Guid? jobId = null, Dictionary<string, string>? paramet = null)
+        public async Task<List<ContractBase>> GenerateAllContractsAsync(PaymentRequest paymentRequest, string? idModel = null, string? cpf = null, string? rg = null, Dictionary<string, string>? paramet = null)
         {
             if (string.IsNullOrEmpty(idModel) && string.IsNullOrEmpty(cpf) && string.IsNullOrEmpty(rg))
             {
@@ -108,15 +60,7 @@ namespace Pregiato.API.Services
             {
                 throw new KeyNotFoundException("Modelo não encontrado.");
             }
-
-            string? valorContrato = null;
-            string? formaPagamento = null;
-
-            if (paramet != null)
-            {
-                paramet.TryGetValue("Valor-Contrato", out valorContrato); // Substitua "param1" pela chave específica
-                paramet.TryGetValue("Forma-Pagamento", out formaPagamento); // Substitua "param2" pela outra chave específica
-            }
+       
 
             var parameters = new Dictionary<string, string>
             {       {"Local-Contrato", DefaultCidadeEmpresa},
@@ -142,16 +86,16 @@ namespace Pregiato.API.Services
                     {"Bairro-Empresa", DefaultBairroEmpresa},
                     {"CEP-Empresa",DefaultCEPEmpresa},
                     {"Vigência-Contrato",DefaultVigenciaContrato},
-                    {"Valor-Contrato", valorContrato},
-                    {"Forma-Pagamento", DefaulMetodoPagamento.ToString()}
+                    {"Valor-Contrato",paymentRequest.Valor.ToString("C")},
+                    {"Forma-Pagamento", paymentRequest.MetodoPagamento}
             };
 
             var contracts = new List<ContractBase>
             {
-                await GenerateContractAsync(model.IdModel, jobId.Value, "Agency", parameters),
-                await GenerateContractAsync(model.IdModel, jobId.Value, "Photography", parameters),
-                await GenerateContractAsync(model.IdModel, jobId.Value, "Commitment", parameters),
-                await GenerateContractAsync(model.IdModel, jobId.Value, "ImageRights", parameters)
+                await GenerateContractAsync(paymentRequest, model.IdModel, "Agency", parameters),
+                await GenerateContractAsync(paymentRequest, model.IdModel,  "Photography", parameters),
+                await GenerateContractAsync( paymentRequest,model.IdModel,  "Commitment", parameters),
+                await GenerateContractAsync( paymentRequest, model.IdModel,  "ImageRights", parameters)
             };
 
             return contracts;
@@ -319,6 +263,71 @@ namespace Pregiato.API.Services
             }
 
             return outputPath; 
+        }
+
+        public async Task<ContractBase> GenerateContractAsync(PaymentRequest paymentRequest, Guid modelId, string contractType, Dictionary<string, string> parameters)
+        {
+            parameters ??= new Dictionary<string, string>();
+
+            ContractBase contract = contractType switch
+            {
+                "Agency" => new AgencyContract(),
+                "Photography" => new PhotographyProductionContract(),
+                "Commitment" => new CommitmentTerm(),
+                "ImageRights" => new ImageRightsTerm(),
+                _ => throw new ArgumentException("Invalid contract type.")
+            };
+
+            contract.ModelId = modelId;
+            contract.CodProposta = await GetNextCodPropostaAsync();
+            contract.LocalContrato = parameters.ContainsKey("Local-Contrato") ? parameters["Local-Contrato"] : DefaultCidadeEmpresa;
+            contract.DataContrato = parameters.ContainsKey("Data-Contrato") ? parameters["Data-Contrato"] : DefaultDataContrato;
+            contract.MesContrato = parameters.ContainsKey("Mês-Contrato") ? parameters["Mês-Contrato"] : DefaultMesContrato;   
+            contract.NomeEmpresa = parameters.ContainsKey("Nome-Empresa}") ? parameters["Nome-Empresa}"] : DefaultNomeEmpresa;
+            contract.CNPJEmpresa = parameters.ContainsKey("CNPJ-Empresa") ? parameters["CNPJ-Empresa"] : DefaultCNPJEmpresa;
+            contract.EnderecoEmpresa = parameters.ContainsKey("Endereço-Empresa") ? parameters["Endereço-Empresa"] : DefaultEnderecoEmpresa;    
+            contract.NumeroEmpresa = parameters.ContainsKey("Numero-Empresa") ? parameters["Numero-Empresa"] : DefaultNumeroEmpresa;
+            contract.ComplementoEmpresa = parameters.ContainsKey("Complemento-Empresa") ? parameters["Complemento-Empresa"] : DefaultComplementoEmpresa;
+            contract.BairroEmpresa = parameters.ContainsKey("Bairro-Empresa") ? parameters["Bairro-Empresa"] : DefaultBairroEmpresa;
+            contract.CidadeEmpresa = parameters.ContainsKey("Cidade-Empresa") ? parameters["Cidade-Empresa"] : DefaultCidadeEmpresa;
+            contract.CEPEmpresa = parameters.ContainsKey("CEP-Empresa") ? parameters["CEP-Empresa"] : DefaultCEPEmpresa;
+            contract.VigenciaContrato = parameters.ContainsKey("Vigência-Contrato")  ? parameters["Vigência-Contrato"] : DefaultVigenciaContrato;            
+            contract.NomeEmpresa = parameters.ContainsValue("Nome-Empresa") ? parameters["Nome-Empresa"] : "Pregiato management";
+            contract.ValorContrato = parameters.ContainsKey("Valor-Contrato")
+            ?decimal.Parse(parameters["Valor-Contrato"] .Replace("R$", "").Replace(".", "").Replace(",", ".").Trim()): throw new ArgumentException("A chave 'Valor-Contrato' é obrigatória.");
+            
+
+            string htmlTemplatePath = $"TemplatesContratos/{contract.TemplateFileName}";
+            if (!File.Exists(htmlTemplatePath))
+            {
+                throw new FileNotFoundException($"Template não encontrado: {htmlTemplatePath}");
+            }
+
+            string htmlTemplate = await File.ReadAllTextAsync(htmlTemplatePath);
+
+            string populatedHtml = PopulateTemplate(htmlTemplate, parameters);
+
+            byte[] pdfBytes = ConvertHtmlToPdf(populatedHtml);
+
+            await SaveContractAsync(contract, new MemoryStream(pdfBytes));
+
+             var payment = new Payment
+             {
+                Id = Guid.NewGuid(),
+                ContractId = contract.ContractId , 
+                Valor = contract.ValorContrato,
+                QuantidadeParcela = paymentRequest.QuantidadeParcela ,
+                FinalCartao = paymentRequest.FinalCartao,
+                DataPagamento = paymentRequest.DataPagamento,
+                MetodoPagamento = paymentRequest.MetodoPagamento,
+                StatusPagamento = paymentRequest.StatusPagamento,
+                Comprovante = paymentRequest.Comprovante,
+                DataAcordoPagamento = paymentRequest.DataAcordoPagamento,
+            };
+
+            await _modelAgencyContext.AddAsync(payment);    
+
+            return contract;
         }
     }
 

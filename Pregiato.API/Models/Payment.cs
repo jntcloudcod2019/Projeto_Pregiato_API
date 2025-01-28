@@ -10,9 +10,9 @@ namespace Pregiato.API.Models
         public int? QuantidadeParcela { get; set; } 
         public string FinalCartao { get; set; } 
         public DateTime? DataPagamento { get; set; } = DateTime.UtcNow; 
-        public  StatusPagamento  StatusPagamento{ get; set; } 
+        public string  StatusPagamento{ get; set; } 
         public byte[]? Comprovante { get; set; } 
         public DateTime? DataAcordoPagamento { get; set; }
-        public MetodoPagamento MetodoPagamento { get; set; }
+        public string MetodoPagamento { get; set; }
     }
 }
