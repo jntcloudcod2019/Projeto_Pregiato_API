@@ -1,4 +1,4 @@
-﻿using Pregiato.API.Enums;
+﻿
 
 namespace Pregiato.API.Models
 {
@@ -10,9 +10,9 @@ namespace Pregiato.API.Models
         public int? QuantidadeParcela { get; set; } 
         public string FinalCartao { get; set; } 
         public DateTime? DataPagamento { get; set; } = DateTime.UtcNow; 
-        public  StatusPagamentoEnum  StatusPagamento{ get; set; } 
-        public byte[] Comprovante { get; set; } 
+        public  StatusPagamento  StatusPagamento{ get; set; } 
+        public byte[]? Comprovante { get; set; } 
         public DateTime? DataAcordoPagamento { get; set; }
-        public MetodoPagamentoEnum MetodoPagamento { get; set; }
+        public MetodoPagamento MetodoPagamento { get; set; }
     }
 }

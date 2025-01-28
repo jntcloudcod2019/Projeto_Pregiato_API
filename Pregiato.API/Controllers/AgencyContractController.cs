@@ -10,7 +10,7 @@ using iText.Layout.Element;
 using iText.Layout;
 using Pregiato.API.Services;
 using static System.Runtime.InteropServices.JavaScript.JSType;
-using Pregiato.API.Enums;
+
 
 namespace Pregiato.API.Controllers
 {
@@ -319,6 +319,7 @@ namespace Pregiato.API.Controllers
             {
                 return BadRequest("Pelo menos um pagamento deve ser fornecido.");
             }
+
             decimal valorContrato = 0;
             var metodosPagamento = new List<string>();
 
@@ -371,9 +372,9 @@ namespace Pregiato.API.Controllers
             // Preencher os parâmetros com base no modelo e no valor do contrato
             var parameters = new Dictionary<string, string>
             {
-                {"Local-Contrato", "São Paulo"},
-                {"Data-Contrato", DateTime.UtcNow.ToString("dd/MM/yyyy")},
-                {"Mês-Contrato", DateTime.UtcNow.ToString("MMMM")},
+                //{"Local-Contrato", "São Paulo"},
+                //{"Data-Contrato", DateTime.UtcNow.ToString("dd/MM/yyyy")},
+                //{"Mês-Contrato", DateTime.UtcNow.ToString("MMMM")},
                 {"Nome-Modelo", model.Name},
                 {"CPF-Modelo", model.CPF},
                 {"RG-Modelo", model.RG},
@@ -385,17 +386,17 @@ namespace Pregiato.API.Controllers
                 {"Complemento-Modelo", model.Complement},
                 {"Telefone-Principal", model.TelefonePrincipal},
                 {"Telefone-Secundário", model.TelefoneSecundario},
-                {"Nome-Empresa", "Pregiato Management"},
-                {"CNPJ-Empresa", "34871424/0001-43"},
-                {"Endereço-Empresa", "Rua Butantã"},
-                {"Numero-Empresa", "468"},
-                {"Complemento-Empresa", "3 Andar"},
-                {"Cidade-Empresa", "São Paulo"},
-                {"Bairro-Empresa", "Pinheiros"},
-                {"CEP-Empresa", "05424-000"},
-                {"Vigência-Contrato", DateTime.UtcNow.ToString("MMMM")},
+                //{"Nome-Empresa", "Pregiato Management"},
+                //{"CNPJ-Empresa", "34871424/0001-43"},
+                //{"Endereço-Empresa", "Rua Butantã"},
+                //{"Numero-Empresa", "468"},
+                //{"Complemento-Empresa", "3 Andar"},
+                //{"Cidade-Empresa", "São Paulo"},
+                //{"Bairro-Empresa", "Pinheiros"},
+                //{"CEP-Empresa", "05424-000"},
+               // {"Vigência-Contrato", DateTime.UtcNow.ToString("MMMM")},
                 {"Valor-Contrato", valorContrato.ToString("C")},
-                {"Forma-Pagamento",  string.Join(", ", metodosPagamento)}
+                {"Forma-Pagamento",  request.Payments.FirstOrDefault()?.MetodoPagamento?.ToString()}
             };
 
             if (request.JobId == null)

@@ -41,7 +41,8 @@ namespace Pregiato.API.Data
 
         public async Task SaveContractAsync(ContractBase contract)
         {
-             _context.Add(contract); 
+          
+            _context.Add(contract); 
             await _context.SaveChangesAsync();
         }
 

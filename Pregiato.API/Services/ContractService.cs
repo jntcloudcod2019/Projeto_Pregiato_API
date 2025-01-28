@@ -4,7 +4,6 @@ using iText.Layout.Element;
 using Microsoft.AspNetCore.Http.HttpResults;
 using Microsoft.EntityFrameworkCore;
 using Pregiato.API.Data;
-using Pregiato.API.Enums;
 using Pregiato.API.Interface;
 using Pregiato.API.Models;
 using System.Diagnostics.Contracts;
@@ -42,6 +41,8 @@ namespace Pregiato.API.Services
         private static readonly string DefaultDataContrato = DateTime.UtcNow.ToString("dd/MM/yyyy");
         private static readonly string DefaultVigenciaContrato = DateTime.UtcNow.ToString("dd/MM/yyyy");
         private static readonly string DefaultMesContrato = DateTime.UtcNow.ToString("MMMM");
+        private static readonly MetodoPagamento DefaulMetodoPagamento;
+        private static readonly StatusPagamento DefaultStatusPagamento;
 
         public async Task<ContractBase> GenerateContractAsync(Guid modelId, Guid jobId, string contractType, Dictionary<string, string> parameters)
         {
@@ -75,7 +76,7 @@ namespace Pregiato.API.Services
             contract.NomeEmpresa = parameters.ContainsValue("Nome-Empresa") ? parameters["Nome-Empresa"] : "Pregiato management";
             contract.ValorContrato = parameters.ContainsKey("Valor-Contrato")
             ?decimal.Parse(parameters["Valor-Contrato"] .Replace("R$", "").Replace(".", "").Replace(",", ".").Trim()): throw new ArgumentException("A chave 'Valor-Contrato' é obrigatória.");
-            contract.FormaPagamento = Enum.Parse<MetodoPagamentoEnum>(parameters["Forma-Pagamento"]);
+ 
 
             string htmlTemplatePath = $"TemplatesContratos/{contract.TemplateFileName}";
             if (!File.Exists(htmlTemplatePath))
@@ -142,7 +143,7 @@ namespace Pregiato.API.Services
                     {"CEP-Empresa",DefaultCEPEmpresa},
                     {"Vigência-Contrato",DefaultVigenciaContrato},
                     {"Valor-Contrato", valorContrato},
-                    {"Forma-Pagamento", formaPagamento}
+                    {"Forma-Pagamento", DefaulMetodoPagamento.ToString()}
             };
 
             var contracts = new List<ContractBase>

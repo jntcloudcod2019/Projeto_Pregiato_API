@@ -1,5 +1,4 @@
 ﻿using Microsoft.EntityFrameworkCore;
-using Pregiato.API.Enums;
 using Pregiato.API.Models;
 using Pregiato.API.Requests;
 
@@ -35,11 +34,11 @@ namespace Pregiato.API.Data
                 entity.HasKey(e => e.Id);
 
                 entity.Property(e => e.MetodoPagamento)
-                    .HasColumnType("MetodoPagamentoEnum")
+                    .HasColumnType("text") // Altere para 'text'
                     .IsRequired();
 
                 entity.Property(e => e.StatusPagamento)
-                    .HasColumnType("StatusPagamentoEnum")
+                    .HasColumnType("text") // Altere para 'text'
                     .IsRequired();
 
                 entity.Property(e => e.Valor).IsRequired();
@@ -93,11 +92,13 @@ namespace Pregiato.API.Data
                 entity.Property(c => c.Content).HasColumnType("bytea");
 
                 entity.Property(c => c.ValorContrato).IsRequired();
-                entity.Property(c => c.FormaPagamento).HasMaxLength(50).IsRequired();
 
-                // Configuração para o campo StatusPagamento
+                entity.Property(c => c.FormaPagamento)
+                    .HasColumnType("text") // Altere para 'text'
+                    .IsRequired();
+
                 entity.Property(c => c.StatusPagamento)
-                    .HasColumnType("StatusPagamentoEnum")
+                    .HasColumnType("text") // Altere para 'text'
                     .IsRequired();
             });
 
