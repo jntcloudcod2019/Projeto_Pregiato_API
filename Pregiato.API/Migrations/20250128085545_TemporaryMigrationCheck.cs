@@ -5,7 +5,7 @@
 namespace Pregiato.API.Migrations
 {
     /// <inheritdoc />
-    public partial class AddFieldsToTermoCompromisso : Migration
+    public partial class TemporaryMigrationCheck : Migration
     {
         /// <inheritdoc />
         protected override void Up(MigrationBuilder migrationBuilder)

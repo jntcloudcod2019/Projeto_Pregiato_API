@@ -13,8 +13,8 @@ using Pregiato.API.Data;
 namespace Pregiato.API.Migrations
 {
     [DbContext(typeof(ModelAgencyContext))]
-    [Migration("20250128082050_AddFieldsToTermoCompromisso")]
-    partial class AddFieldsToTermoCompromisso
+    [Migration("20250128085545_TemporaryMigrationCheck")]
+    partial class TemporaryMigrationCheck
     {
         /// <inheritdoc />
         protected override void BuildTargetModel(ModelBuilder modelBuilder)

@@ -167,12 +167,9 @@ namespace Pregiato.API.Services
             var pdfBytes = memoryStream.ToArray();
 
             contract.Content = pdfBytes;
+        
 
-            var model = await _modelAgencyContext.Models.FindAsync(contract.ModelId);
-            if (model == null)
-                throw new InvalidOperationException($"Modelo com ID {contract.ModelId} não encontrado.");
-
-            contract.ContractFilePath = $"{contract.CodProposta}_{contract.ContractId}_{contract.TemplateFileName}_{model.Name.Replace(" ", "_")}.pdf";
+            contract.ContractFilePath = $"{contract.CodProposta}_{contract.TemplateFileName}.pdf";
 
             await _contractRepository.SaveContractAsync(contract);
         }
@@ -456,7 +453,6 @@ namespace Pregiato.API.Services
             {
                 await GenerateContractAsync(paymentRequest, model.IdModel, "Agency", parameters),
                 await GenerateContractAsync(paymentRequest, model.IdModel,  "Photography", parameters),
-                await GenerateContractAsync( paymentRequest,model.IdModel,  "Commitment", parameters),
                 await GenerateContractAsync( paymentRequest, model.IdModel,  "ImageRights", parameters)
             };
 
