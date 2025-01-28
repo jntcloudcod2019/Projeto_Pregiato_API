@@ -8,6 +8,7 @@ using Pregiato.API.Data;
 using Pregiato.API.Interface;
 using Pregiato.API.Models;
 using Pregiato.API.Requests;
+using Microsoft.AspNetCore.Mvc;
 using System.Diagnostics.Contracts;
 using System.Text.RegularExpressions;
 
@@ -43,9 +44,6 @@ namespace Pregiato.API.Services
         private static readonly string DefaultDataContrato = DateTime.UtcNow.ToString("dd/MM/yyyy");
         private static readonly string DefaultVigenciaContrato = DateTime.UtcNow.ToString("dd/MM/yyyy");
         private static readonly string DefaultMesContrato = DateTime.UtcNow.ToString("MMMM");
-        private static readonly MetodoPagamento DefaulMetodoPagamento;
-        private static readonly StatusPagamento DefaultStatusPagamento;
-
 
         public async Task<List<ContractBase>> GenerateAllContractsAsync(PaymentRequest paymentRequest, string? idModel = null, string? cpf = null, string? rg = null, Dictionary<string, string>? paramet = null)
         {
@@ -94,7 +92,6 @@ namespace Pregiato.API.Services
             {
                 await GenerateContractAsync(paymentRequest, model.IdModel, "Agency", parameters),
                 await GenerateContractAsync(paymentRequest, model.IdModel,  "Photography", parameters),
-                await GenerateContractAsync( paymentRequest,model.IdModel,  "Commitment", parameters),
                 await GenerateContractAsync( paymentRequest, model.IdModel,  "ImageRights", parameters)
             };
 
@@ -328,6 +325,142 @@ namespace Pregiato.API.Services
             await _modelAgencyContext.AddAsync(payment);    
 
             return contract;
+        }
+
+        public async Task GenerateContractCommitmentTerm(DateTime dataAgendamento, string horaAgendamento, decimal valorChache, string queryModel )
+        {
+
+            var model = await _modelRepository.GetModelByCriteriaAsync(queryModel);
+
+            if (model == null)
+            {
+               //Inseri retorno
+            }
+
+            var parameters = new Dictionary<string, string>
+            {
+                    {"Local-Contrato", DefaultCidadeEmpresa},
+                     {"Data-Contrato", DefaultDataContrato},
+                    {"Mês-Contrato", DefaultMesContrato},
+                     {"Nome-Empresa", DefaultNomeEmpresa},
+                      {"CNPJ-Empresa", DefaultCNPJEmpresa},
+                      {"Endereço-Empresa", DefaultEnderecoEmpresa},
+                      {"Numero-Empresa",DefaultNumeroEmpresa},
+                      {"Complemento-Empresa", DefaultComplementoEmpresa},
+                      {"Cidade-Empresa", DefaultCidadeEmpresa},
+                      {"Bairro-Empresa", DefaultBairroEmpresa},
+                      {"CEP-Empresa",DefaultCEPEmpresa},
+                    {"Nome-Modelo", model.Name },
+                    {"CPF-Modelo", model.CPF },
+                    {"RG-Modelo", model.RG },
+                    {"Endereço-Modelo", model.Address},
+                    {"Numero-Modelo",model.NumberAddress},
+                    {"Bairro-Modelo", model.Neighborhood},
+                    {"Cidade-Modelo", model.City},
+                    {"CEP-Modelo", model.PostalCode},
+                    {"Complemento-Modelo", model.Complement},
+                    {"Telefone-Principal", model.TelefonePrincipal},
+                    {"Telefone-Secundário", model.TelefoneSecundario},
+                    {"Data-Agendamento",dataAgendamento.ToString()},
+                    {"Horário-Agendamento", horaAgendamento},
+                    { "Valor-Cache", valorChache.ToString("C")}
+            };
+
+            string contractType = "Commitment";
+            ContractBase contract = contractType switch
+            {
+                "Commitment" => new CommitmentTerm(),
+                _ => throw new ArgumentException("Invalid contract type.")
+            };
+
+            contract.ModelId = model.IdModel;
+            contract.CodProposta = await GetNextCodPropostaAsync();
+            contract.LocalContrato = parameters.ContainsKey("Local-Contrato") ? parameters["Local-Contrato"] : DefaultCidadeEmpresa;
+            contract.DataContrato = parameters.ContainsKey("Data-Contrato") ? parameters["Data-Contrato"] : DefaultDataContrato;
+            contract.MesContrato = parameters.ContainsKey("Mês-Contrato") ? parameters["Mês-Contrato"] : DefaultMesContrato;
+            contract.NomeEmpresa = parameters.ContainsKey("Nome-Empresa}") ? parameters["Nome-Empresa}"] : DefaultNomeEmpresa;
+            contract.CNPJEmpresa = parameters.ContainsKey("CNPJ-Empresa") ? parameters["CNPJ-Empresa"] : DefaultCNPJEmpresa;
+            contract.EnderecoEmpresa = parameters.ContainsKey("Endereço-Empresa") ? parameters["Endereço-Empresa"] : DefaultEnderecoEmpresa;
+            contract.NumeroEmpresa = parameters.ContainsKey("Numero-Empresa") ? parameters["Numero-Empresa"] : DefaultNumeroEmpresa;
+            contract.ComplementoEmpresa = parameters.ContainsKey("Complemento-Empresa") ? parameters["Complemento-Empresa"] : DefaultComplementoEmpresa;
+            contract.BairroEmpresa = parameters.ContainsKey("Bairro-Empresa") ? parameters["Bairro-Empresa"] : DefaultBairroEmpresa;
+            contract.CidadeEmpresa = parameters.ContainsKey("Cidade-Empresa") ? parameters["Cidade-Empresa"] : DefaultCidadeEmpresa;
+            contract.CEPEmpresa = parameters.ContainsKey("CEP-Empresa") ? parameters["CEP-Empresa"] : DefaultCEPEmpresa;
+            contract.VigenciaContrato = parameters.ContainsKey("Vigência-Contrato") ? parameters["Vigência-Contrato"] : DefaultVigenciaContrato;
+            contract.NomeEmpresa = parameters.ContainsValue("Nome-Empresa") ? parameters["Nome-Empresa"] : "Pregiato management";
+            contract.ValorContrato = parameters.ContainsKey("Valor-Contrato")''
+            ? decimal.Parse(parameters["Valor-Contrato"].Replace("R$", "").Replace(".", "").Replace(",", ".").Trim()) : throw new ArgumentException("A chave 'Valor-Contrato' é obrigatória.");
+
+            string htmlTemplatePath = $"TemplatesContratos/{contract.TemplateFileName}";
+            if (!File.Exists(htmlTemplatePath))
+            {
+                throw new FileNotFoundException($"Template não encontrado: {htmlTemplatePath}");
+            }
+
+            string htmlTemplate = await File.ReadAllTextAsync(htmlTemplatePath);
+
+            string populatedHtml = PopulateTemplate(htmlTemplate, parameters);
+
+            byte[] pdfBytes = ConvertHtmlToPdf(populatedHtml);
+
+            await SaveContractAsync(contract, new MemoryStream(pdfBytes));
+
+
+
+        }
+
+        public async Task<List<ContractBase>> GenerateAllContractsAsync(PaymentRequest paymentRequest, string? idModel = null, string? cpf = null, string? rg = null)
+        {
+            if (string.IsNullOrEmpty(idModel) && string.IsNullOrEmpty(cpf) && string.IsNullOrEmpty(rg))
+            {
+                throw new ArgumentException("Pelo menos um dos parâmetros 'idModel', 'cpf' ou 'rg' deve ser fornecido.");
+            }
+
+            var model = await _modelRepository.GetModelAllAsync(idModel, cpf, rg);
+
+            if (model == null)
+            {
+                throw new KeyNotFoundException("Modelo não encontrado.");
+            }
+
+
+            var parameters = new Dictionary<string, string>
+            {       {"Local-Contrato", DefaultCidadeEmpresa},
+                    {"Data-Contrato", DefaultDataContrato},
+                    {"Mês-Contrato", DefaultMesContrato},
+                    {"Nome-Modelo", model.Name },
+                    {"CPF-Modelo", model.CPF },
+                    {"RG-Modelo", model.RG },
+                    {"Endereço-Modelo", model.Address},
+                    {"Numero-Modelo",model.NumberAddress},
+                    {"Bairro-Modelo", model.Neighborhood},
+                    {"Cidade-Modelo", model.City},
+                    {"CEP-Modelo", model.PostalCode},
+                    {"Complemento-Modelo", model.Complement},
+                    {"Telefone-Principal", model.TelefonePrincipal},
+                    {"Telefone-Secundário", model.TelefoneSecundario},
+                    {"Nome-Empresa", DefaultNomeEmpresa},
+                    {"CNPJ-Empresa", DefaultCNPJEmpresa},
+                    {"Endereço-Empresa", DefaultEnderecoEmpresa},
+                    {"Numero-Empresa",DefaultNumeroEmpresa},
+                    {"Complemento-Empresa", DefaultComplementoEmpresa},
+                    {"Cidade-Empresa", DefaultCidadeEmpresa},
+                    {"Bairro-Empresa", DefaultBairroEmpresa},
+                    {"CEP-Empresa",DefaultCEPEmpresa},
+                    {"Vigência-Contrato",DefaultVigenciaContrato},
+                    {"Valor-Contrato",paymentRequest.Valor.ToString("C")},
+                    {"Forma-Pagamento", paymentRequest.MetodoPagamento}
+            };
+
+            var contracts = new List<ContractBase>
+            {
+                await GenerateContractAsync(paymentRequest, model.IdModel, "Agency", parameters),
+                await GenerateContractAsync(paymentRequest, model.IdModel,  "Photography", parameters),
+                await GenerateContractAsync( paymentRequest,model.IdModel,  "Commitment", parameters),
+                await GenerateContractAsync( paymentRequest, model.IdModel,  "ImageRights", parameters)
+            };
+
+            return contracts;
         }
     }
 

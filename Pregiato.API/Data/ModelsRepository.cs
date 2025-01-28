@@ -61,6 +61,8 @@ namespace Pregiato.API.Data
                 (idModel != null && m.IdModel.ToString() == idModel) ||
                 (cpf != null && m.CPF == cpf) ||
                 (rg != null && m.RG == rg));
+
+           
         }
     }
 
