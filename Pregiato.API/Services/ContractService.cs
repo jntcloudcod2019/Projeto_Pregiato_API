@@ -340,16 +340,16 @@ namespace Pregiato.API.Services
             var parameters = new Dictionary<string, string>
             {
                     {"Local-Contrato", DefaultCidadeEmpresa},
-                     {"Data-Contrato", DefaultDataContrato},
+                    {"Data-Contrato", DefaultDataContrato},
                     {"Mês-Contrato", DefaultMesContrato},
-                     {"Nome-Empresa", DefaultNomeEmpresa},
-                      {"CNPJ-Empresa", DefaultCNPJEmpresa},
-                      {"Endereço-Empresa", DefaultEnderecoEmpresa},
-                      {"Numero-Empresa",DefaultNumeroEmpresa},
-                      {"Complemento-Empresa", DefaultComplementoEmpresa},
-                      {"Cidade-Empresa", DefaultCidadeEmpresa},
-                      {"Bairro-Empresa", DefaultBairroEmpresa},
-                      {"CEP-Empresa",DefaultCEPEmpresa},
+                    {"Nome-Empresa", DefaultNomeEmpresa},
+                    {"CNPJ-Empresa", DefaultCNPJEmpresa},
+                    {"Endereço-Empresa", DefaultEnderecoEmpresa},
+                    {"Numero-Empresa",DefaultNumeroEmpresa},
+                    {"Complemento-Empresa", DefaultComplementoEmpresa},
+                    {"Cidade-Empresa", DefaultCidadeEmpresa},
+                    {"Bairro-Empresa", DefaultBairroEmpresa},
+                    {"CEP-Empresa",DefaultCEPEmpresa},
                     {"Nome-Modelo", model.Name },
                     {"CPF-Modelo", model.CPF },
                     {"RG-Modelo", model.RG },
@@ -388,8 +388,10 @@ namespace Pregiato.API.Services
             contract.CEPEmpresa = parameters.ContainsKey("CEP-Empresa") ? parameters["CEP-Empresa"] : DefaultCEPEmpresa;
             contract.VigenciaContrato = parameters.ContainsKey("Vigência-Contrato") ? parameters["Vigência-Contrato"] : DefaultVigenciaContrato;
             contract.NomeEmpresa = parameters.ContainsValue("Nome-Empresa") ? parameters["Nome-Empresa"] : "Pregiato management";
-            contract.ValorContrato = parameters.ContainsKey("Valor-Contrato")''
-            ? decimal.Parse(parameters["Valor-Contrato"].Replace("R$", "").Replace(".", "").Replace(",", ".").Trim()) : throw new ArgumentException("A chave 'Valor-Contrato' é obrigatória.");
+            contract.DataAgendamento = parameters.ContainsKey("Data-Agendamento") ? parameters["Data-Agendamento"] : dataAgendamento.ToString();
+            contract.HorarioAgendamento = parameters.ContainsKey("Horário-Agendamento") ? parameters["Horário-Agendamento"] : horaAgendamento;
+            contract.ValorCache = parameters.ContainsKey("Valor-Cache") ?  decimal.Parse(parameters["Valor-Cache"].Replace("R$", "")
+            .Replace(".", "").Replace(",", ".").Trim()) : throw new ArgumentException("A chave 'Valor-Contrato' é obrigatória.");
 
             string htmlTemplatePath = $"TemplatesContratos/{contract.TemplateFileName}";
             if (!File.Exists(htmlTemplatePath))
@@ -404,8 +406,6 @@ namespace Pregiato.API.Services
             byte[] pdfBytes = ConvertHtmlToPdf(populatedHtml);
 
             await SaveContractAsync(contract, new MemoryStream(pdfBytes));
-
-
 
         }
 

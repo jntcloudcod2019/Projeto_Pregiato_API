@@ -11,31 +11,31 @@ namespace Pregiato.API.Migrations
         /// <inheritdoc />
         protected override void Up(MigrationBuilder migrationBuilder)
         {
-            // Reverter alterações nos contratos
-            migrationBuilder.AlterColumn<int>(
-                name: "FormaPagamento",
-                table: "Contracts",
-                type: "MetodoPagamentoEnum",
-                nullable: false,
-                oldClrType: typeof(string),
-                oldType: "text");
+            //// Reverter alterações nos contratos
+            //migrationBuilder.AlterColumn<int>(
+            //    name: "FormaPagamento",
+            //    table: "Contracts",
+            //    type: "MetodoPagamentoEnum",
+            //    nullable: false,
+            //    oldClrType: typeof(string),
+            //    oldType: "text");
 
-            // Reverter alterações nos pagamentos
-            migrationBuilder.AlterColumn<int>(
-                name: "StatusPagamento",
-                table: "Payment",
-                type: "StatusPagamentoEnum",
-                nullable: false,
-                oldClrType: typeof(string),
-                oldType: "text");
+            //// Reverter alterações nos pagamentos
+            //migrationBuilder.AlterColumn<int>(
+            //    name: "StatusPagamento",
+            //    table: "Payment",
+            //    type: "StatusPagamentoEnum",
+            //    nullable: false,
+            //    oldClrType: typeof(string),
+            //    oldType: "text");
 
-            migrationBuilder.AlterColumn<int>(
-                name: "MetodoPagamento",
-                table: "Payment",
-                type: "MetodoPagamentoEnum",
-                nullable: false,
-                oldClrType: typeof(string),
-                oldType: "text");
+            //migrationBuilder.AlterColumn<int>(
+            //    name: "MetodoPagamento",
+            //    table: "Payment",
+            //    type: "MetodoPagamentoEnum",
+            //    nullable: false,
+            //    oldClrType: typeof(string),
+            //    oldType: "text");
 
             migrationBuilder.AlterColumn<string>(
                 name: "FinalCartao",
@@ -100,30 +100,30 @@ namespace Pregiato.API.Migrations
         protected override void Down(MigrationBuilder migrationBuilder)
         {
             // Restaurar alterações nos contratos
-            migrationBuilder.AlterColumn<string>(
-                name: "FormaPagamento",
-                table: "Contracts",
-                type: "text",
-                nullable: false,
-                oldClrType: typeof(int),
-                oldType: "MetodoPagamentoEnum");
+            //migrationBuilder.AlterColumn<string>(
+            //    name: "FormaPagamento",
+            //    table: "Contracts",
+            //    type: "text",
+            //    nullable: false,
+            //    oldClrType: typeof(int),
+            //    oldType: "MetodoPagamentoEnum");
 
-            // Restaurar alterações nos pagamentos
-            migrationBuilder.AlterColumn<string>(
-                name: "StatusPagamento",
-                table: "Payment",
-                type: "text",
-                nullable: false,
-                oldClrType: typeof(int),
-                oldType: "StatusPagamentoEnum");
+            //// Restaurar alterações nos pagamentos
+            //migrationBuilder.AlterColumn<string>(
+            //    name: "StatusPagamento",
+            //    table: "Payment",
+            //    type: "text",
+            //    nullable: false,
+            //    oldClrType: typeof(int),
+            //    oldType: "StatusPagamentoEnum");
 
-            migrationBuilder.AlterColumn<string>(
-                name: "MetodoPagamento",
-                table: "Payment",
-                type: "text",
-                nullable: false,
-                oldClrType: typeof(int),
-                oldType: "MetodoPagamentoEnum");
+            //migrationBuilder.AlterColumn<string>(
+            //    name: "MetodoPagamento",
+            //    table: "Payment",
+            //    type: "text",
+            //    nullable: false,
+            //    oldClrType: typeof(int),
+            //    oldType: "MetodoPagamentoEnum");
 
             migrationBuilder.AlterColumn<string>(
                 name: "FinalCartao",

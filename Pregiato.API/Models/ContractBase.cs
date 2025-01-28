@@ -25,8 +25,10 @@ namespace Pregiato.API.Models
         public string VigenciaContrato {get; set; } = DateTime.UtcNow.ToString("dd/MM/yyyy");
         public decimal ValorContrato { get; set; } 
         public string FormaPagamento { get; set; } 
-
         public string StatusPagamento { get; set; }
+        public string DataAgendamento { get; set; } = "N/A"; // Pode ser preenchido ou conter "N/A"
+        public string HorarioAgendamento { get; set; } = "N/A"; // Pode ser preenchido ou conter "N/A"
+        public decimal? ValorCache { get; set; } // Valor do cachê, pode ser nulo
 
 
         public string ContractFilePath { get; set; } = string.Empty;
