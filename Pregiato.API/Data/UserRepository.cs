@@ -1,6 +1,8 @@
-﻿using Microsoft.EntityFrameworkCore;
+﻿using Microsoft.AspNetCore.Http.HttpResults;
+using Microsoft.EntityFrameworkCore;
 using Pregiato.API.Interface;
 using Pregiato.API.Models;
+using Pregiato.API.Requests;
 
 namespace Pregiato.API.Data
 {
@@ -15,17 +17,17 @@ namespace Pregiato.API.Data
 
         public async Task AddUserAsync(User user)
         {
-            _context.Users.Add(user);   
-            await _context.SaveChangesAsync();
-        }
 
-        public async Task DeleteUserAsync(User user)
-        {
-           var idUser = await _context.Users.FindAsync(user);
-            if (idUser != null) 
-            {
-                _context.Users.Remove(idUser);
+            try
+{
+                // Tente salvar o usuário
+                _context.Users.Add(user);
                 await _context.SaveChangesAsync();
+            }
+             catch (DbUpdateException ex)
+{
+                Console.WriteLine($"Erro ao salvar o usuário: {ex.Message}");
+                Console.WriteLine($"Exceção interna: {ex.InnerException?.Message}");
             }
         }
 
@@ -39,10 +41,42 @@ namespace Pregiato.API.Data
             return await _context.Users.FindAsync(id);
         }
 
+        public async Task<User> GetByUsernameAsync(string username)
+        {
+            return await _context.Users.SingleOrDefaultAsync(u => u.Name == username);
+        }
+
         public async Task UpdateUserAsync(User user)
         {
             _context.Users.Update(user);
             await _context.SaveChangesAsync();
+        }
+
+        public async Task SaveChangesAsync()
+        {
+            await _context.SaveChangesAsync();
+        }
+
+        public async Task DeleteUserAsync(Guid id)
+        {
+            var idUser = await _context.Users.FindAsync(id);
+            if (idUser != null)
+            {
+                _context.Users.Remove(idUser);
+                await _context.SaveChangesAsync();
+            }
+        }
+
+        public async Task GetByUserAsync(LoginUserRequest loginUserRequest)
+        {
+            var loginRequest = (from l in _context.Users
+                                where l.Name == loginUserRequest.Username
+                                select new LoginUserRequest
+                                {
+                                    Username = loginUserRequest.Username,
+                                    Password = l.PasswordHash
+                                }).FirstOrDefault();
+
         }
     }
 }

@@ -1,6 +1,8 @@
-﻿using Microsoft.EntityFrameworkCore;
+﻿using iText.Kernel.Pdf;
+using Microsoft.EntityFrameworkCore;
 using Pregiato.API.Interface;
 using Pregiato.API.Models;
+using System.Diagnostics.Contracts;
 
 namespace Pregiato.API.Data
 {
@@ -8,42 +10,46 @@ namespace Pregiato.API.Data
     {
         private readonly ModelAgencyContext _context;
 
-        public ContractRepository(ModelAgencyContext context) 
+        public ContractRepository(ModelAgencyContext context)
         {
-              _context = context; 
+            _context = context;
         }
 
-        public async Task AddContractAsync(Contract contract)
+        public async Task AddAsync(ContractsModels contract)
         {
-            _context.Contracts.Add(contract);
+            _context.ContractsModels.Add(contract);
             await _context.SaveChangesAsync();
         }
 
-        public async Task DeleteContractAsync(Guid id)
+        public async Task UpdateAsync(ContractsModels contract)
         {
-            var idContract = await _context.Contracts.FindAsync(id);
-            if (idContract != null) 
-            {
-             _context.Remove(idContract);
-             await _context.SaveChangesAsync();
-
-            }
+            _context.ContractsModels.Update(contract);
+            await _context.SaveChangesAsync();
         }
 
-        public async Task<IEnumerable<Contract>> GetAllContractAsync()
+        public async Task DeleteAsync(ContractsModels contract)
         {
-            return await _context.Contracts.ToListAsync();
+            _context.ContractsModels.Remove(contract);
+            await _context.SaveChangesAsync();
         }
 
-        public async Task<Contract> GetByIdContractAsync(Guid id)
+
+        public async Task<ContractsModels> GetByIdContractAsync(Guid id)
         {
-            return await _context.Contracts.FindAsync(id);
+            return await _context.ContractsModels.FindAsync(id);
         }
 
-        public async Task UpdateContractAsync(Contract contract)
+        public async Task SaveContractAsync(ContractBase contract)
         {
-           _context.Contracts.Update(contract);
-           await _context.SaveChangesAsync();
+          
+            _context.Add(contract); 
+            _context.SaveChangesAsync();
+        }
+
+        public async Task<ContractBase?> GetContractByIdAsync(int? codProposta, Guid? contractId)
+        {
+            return await _context.Contracts
+                .FirstOrDefaultAsync(c => c.CodProposta == codProposta || c.ContractId == contractId);
         }
     }
-}
+ }

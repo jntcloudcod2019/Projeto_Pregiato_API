@@ -1,58 +1,111 @@
 using Microsoft.EntityFrameworkCore;
 using Microsoft.OpenApi.Models;
 using Pregiato.API.Data;
+using Microsoft.IdentityModel.Tokens;
 using Pregiato.API.Interface;
+using Microsoft.AspNetCore.Authentication.JwtBearer;
+using System.Text;
+using Pregiato.API.Services;
+
+
 
 var builder = WebApplication.CreateBuilder(args);
-
-// Add services to the container.
-
-// 
 builder.Services.AddDbContext<ModelAgencyContext>(options =>
     options.UseNpgsql(builder.Configuration.GetConnectionString("DefaultConnection")));
-
-// 
 builder.Services.AddAutoMapper(AppDomain.CurrentDomain.GetAssemblies());
-
-// 
 builder.Services.AddScoped<IClientRepository, ClientRepository>();
-// 
+builder.Services.AddScoped<IModelRepository, ModelsRepository>();
+builder.Services.AddScoped<IClientBillingRepository, ClientBillingRepository>();
+builder.Services.AddScoped<IJobRepository, JobRepository>();
+builder.Services.AddScoped<IUserRepository, UserRepository>();
+builder.Services.AddScoped<IUserService, UserService>();
+builder.Services.AddScoped<IPaymentService, PaymentService>();
 builder.Services.AddControllers();
-
-// 
+builder.Services.AddScoped<IJwtService, JwtService>();
+builder.Services.AddScoped<IContractService, ContractService>();
+builder.Services.AddScoped<IContractRepository, ContractRepository>();
+builder.Services.AddScoped<DigitalSignatureService>();
 builder.Services.AddEndpointsApiExplorer();
 builder.Services.AddSwaggerGen(c =>
 {
-    c.SwaggerDoc("v1", new OpenApiInfo
+    c.AddSecurityDefinition("Bearer", new Microsoft.OpenApi.Models.OpenApiSecurityScheme
     {
-        Title = "Model Agency API",
-        Version = "v1",
-        Description = "API for managing models, clients, contracts, and jobs in a model agency."
+        Name = "Authorization",
+        Type = Microsoft.OpenApi.Models.SecuritySchemeType.Http,
+        Scheme = "Bearer",
+        BearerFormat = "JWT",
+        In = Microsoft.OpenApi.Models.ParameterLocation.Header,
+        Description = "Enter 'Bearer' [space] and then your token."
+    });
+    c.AddSecurityRequirement(new Microsoft.OpenApi.Models.OpenApiSecurityRequirement
+    {
+        {
+            new Microsoft.OpenApi.Models.OpenApiSecurityScheme
+            {
+                Reference = new Microsoft.OpenApi.Models.OpenApiReference
+                {
+                    Type = Microsoft.OpenApi.Models.ReferenceType.SecurityScheme,
+                    Id = "Bearer"
+                }
+            },
+            new string[] { }
+        }
     });
 });
+var jwtSettings = builder.Configuration.GetSection("JwtSettings");
+builder.Services.AddAuthentication(JwtBearerDefaults.AuthenticationScheme)
+    .AddJwtBearer(options =>
+    {
+        options.TokenValidationParameters = new TokenValidationParameters
+        {
+            ValidateIssuer = true,
+            ValidateAudience = true,
+            ValidateLifetime = true,
+            ValidateIssuerSigningKey = true,
+            ValidIssuer = jwtSettings["PregiatoAPI"],
+            ValidAudience = jwtSettings["PregiatoAPIToken"],
+            IssuerSigningKey = new SymmetricSecurityKey(Encoding.UTF8.GetBytes(jwtSettings["SecretKey"]))
+        };
+    });
+
+builder.Services.AddControllers()
+    .AddJsonOptions(options =>
+    {
+        options.JsonSerializerOptions.PropertyNamingPolicy = null;
+        options.JsonSerializerOptions.DefaultIgnoreCondition = System.Text.Json.Serialization.JsonIgnoreCondition.WhenWritingNull;
+        options.JsonSerializerOptions.Converters.Add(new System.Text.Json.Serialization.JsonStringEnumConverter()); // Serializa enums como strings
+        options.JsonSerializerOptions.Converters.Add(new System.Text.Json.Serialization.JsonDateTimeConverter("dd-MM-yyyy"));
+        options.JsonSerializerOptions.DefaultIgnoreCondition = System.Text.Json.Serialization.JsonIgnoreCondition.WhenWritingNull;
+        options.JsonSerializerOptions.IgnoreReadOnlyProperties = true;
+    });
+
+builder.Services.AddAuthorization(options =>
+{
+    options.AddPolicy("AdministratorPolicy", policy => policy.RequireRole("Administrator"));
+    options.AddPolicy("ManagerPolicy", policy => policy.RequireRole("Manager"));
+    options.AddPolicy("ModelPolicy", policy => policy.RequireRole("Model"));
+});
+
+
+
 
 var app = builder.Build();
 
-// Configure the HTTP request pipeline.
 if (app.Environment.IsDevelopment())
 {
     app.UseSwagger();
     app.UseSwaggerUI(c =>
     {
         c.SwaggerEndpoint("/swagger/v1/swagger.json", "Model Agency API v1");
-        c.RoutePrefix = string.Empty; // Swagger será acessado na raiz (http://localhost:5000)
+        c.RoutePrefix = string.Empty; // Swagger  (http://localhost:5000)
     });
 }
 
 app.UseHttpsRedirection();
-
 app.UseAuthorization();
-
 app.MapControllers();
-
 app.Run();
-
-// Ensure database creation (opcional, para ambiente de desenvolvimento)
+ 
 using (var scope = app.Services.CreateScope())
 {
     var dbContext = scope.ServiceProvider.GetRequiredService<ModelAgencyContext>();

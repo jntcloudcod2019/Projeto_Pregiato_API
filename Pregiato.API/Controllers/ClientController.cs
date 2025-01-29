@@ -1,16 +1,17 @@
-﻿using Microsoft.AspNetCore.Mvc;
-using NuGet.Protocol.Core.Types;
+﻿using Microsoft.AspNetCore.Authorization;
+using Microsoft.AspNetCore.Mvc;
 using Pregiato.API.Interface;
 using Pregiato.API.Models;
 using Pregiato.API.Requests;
+using Pregiato.API.Response;
 using Swashbuckle.AspNetCore.Annotations;
-using System.ComponentModel;
-using System.Net;
+using System;
 
 namespace Pregiato.API.Controllers
 {
+    //[Authorize(Roles = "AdministratorPolicy,ManagerPolicy")]
     [ApiController]
-    [Route("api/[controller]")]
+    [Route("api/Client")]
     public class ClientController : ControllerBase
     {
         private readonly IClientRepository _clientRepository;
@@ -22,17 +23,29 @@ namespace Pregiato.API.Controllers
 
         [HttpGet("/GetAllClients")]
         [SwaggerOperation("Retorna todos os clientes cadastrados.")]
-        //[ProducesResponseType(typeof(ApiSuccessResponse<IdStatusResponse>), (int)HttpStatusCode.OK)]
         public async Task<IActionResult> GetAllClients()
         {
             var clients = await _clientRepository.GetAllClientsAsync();
-            return Ok(clients);
+            var activeClients = clients.Where(c => c.Status).Select(c => new ClientResponse
+            {
+                IdClient = c.IdClient,
+                Name = c.Name,
+                Email = c.Email,
+                Contact = c.Contact,
+                ClientDocument = c.ClientDocument,
+                Status = c.Status,
+                CreatedAt = c.CreatedAt,
+                UpdatedAt = c.UpdatedAt
+            }).ToList();
+
+            return Ok(activeClients);
         }
 
-        [HttpPost("/AddClients")]
         [SwaggerOperation("Criação de clientes.")]
-        public async Task<IActionResult> AddNewClient([FromBody] CreateClientRequest createClientRequest) 
-        
+        [SwaggerResponse(201, "Cliente criado com sucesso.", typeof(ClientResponse))]
+        [SwaggerResponse(400, "Erro de validação.")]
+        [HttpPost("/AddClients")]
+        public async Task<IActionResult> AddNewClient([FromBody] CreateClientRequest createClientRequest)
         {
             if (!ModelState.IsValid)
             {
@@ -41,44 +54,78 @@ namespace Pregiato.API.Controllers
 
             var client = new Client
             {
-                Name = createClientRequest.Name,    
-                Email = createClientRequest.Email,  
-                Contact = createClientRequest.Contact,  
-                ClientDocument = createClientRequest.ClientDocument,    
-
+                IdClient = Guid.NewGuid(),
+                Name = createClientRequest.Name,
+                Email = createClientRequest.Email,
+                Contact = createClientRequest.Contact,
+                ClientDocument = createClientRequest.ClientDocument,
+                CreatedAt = DateTime.UtcNow,
+                UpdatedAt = DateTime.UtcNow,
+                Status = true
             };
 
             await _clientRepository.AddClientAsync(client);
 
-            return CreatedAtAction(nameof(_clientRepository.GetByClientIdAsync), new { client.ClientId });
+            var response = new ClientResponse
+            {
+                IdClient = client.IdClient,
+                Name = client.Name,
+                Email = client.Email,
+                Contact = client.Contact,
+                ClientDocument = client.ClientDocument,
+                Status = client.Status,
+                CreatedAt = client.CreatedAt,
+                UpdatedAt = client.UpdatedAt
+            };
+
+            return CreatedAtAction(nameof(GetAllClients), new { client.IdClient }, response);
         }
 
         [HttpPut("/UpdateClients/{id}")]
         [SwaggerOperation("Atualizar cadastro de clientes.")]
-        public async Task<IActionResult> UpdateClient(int id, [FromBody] UpdateClientRequest request)
+        public async Task<IActionResult> UpdateClient(Guid id, [FromBody] UpdateClientRequest request)
         {
             if (!ModelState.IsValid)
             {
                 return BadRequest(ModelState);
             }
 
-            var clientExists = await _clientRepository.GetByClientIdAsync(id);
+            var client = await _clientRepository.GetByClientIdAsync(id);
 
-            if (clientExists == null)
+            if (client == null || !client.Status)
             {
-                return NotFound();
+                return NotFound(new { message = "Cliente não encontrado ou inativo." });
             }
 
-            clientExists.Name = request.Name;
-            clientExists.ClientDocument = request.ClientDocument;
-            clientExists.Contact = request.Contact;
-            clientExists.Email = request.Email;
+            client.Name = request.Name;
+            client.Email = request.Email;
+            client.Contact = request.Contact;
+            client.ClientDocument = request.ClientDocument;
+            client.UpdatedAt = DateTime.UtcNow;
 
-            await _clientRepository.UpdateClientAsync(clientExists);
+            await _clientRepository.UpdateClientAsync(client);
 
             return NoContent();
         }
 
+        [HttpDelete("/DeleteClients/{id}")]
+        [SwaggerOperation("Deletar cadastro de clientes.")]
+        public async Task<IActionResult> DeleteClient(Guid id)
+        {
+            var client = await _clientRepository.GetByClientIdAsync(id);
 
+            if (client == null || !client.Status)
+            {
+                return NotFound(new { message = "Cliente não encontrado ou já inativo." });
+            }
+
+            // Inativar cliente ao invés de deletar
+            client.Status = false;
+            client.UpdatedAt = DateTime.UtcNow;
+
+            await _clientRepository.UpdateClientAsync(client);
+
+            return NoContent();
+        }
     }
 }

@@ -36,6 +36,7 @@ namespace Pregiato.API.Data
 
         public async Task<Moddels> GetByIdModelAsync(Guid id)
         {
+
             return await _context.Models.FindAsync(id);
         }
 
@@ -43,6 +44,25 @@ namespace Pregiato.API.Data
         {
            _context.Models.Update(model);
             await _context.SaveChangesAsync();        
+        }
+
+        public async Task<Moddels?> GetModelByCriteriaAsync(string query)
+        {
+            return await _context.Models.FirstOrDefaultAsync(m =>
+                m.CPF == query ||
+                m.RG == query ||
+                m.Name.Contains(query) ||
+                m.IdModel.ToString() == query);
+        }
+
+        public async Task<Moddels> GetModelAllAsync(string? idModel, string? cpf, string? rg)
+        {
+            return await _context.Models.FirstOrDefaultAsync(m =>
+                (idModel != null && m.IdModel.ToString() == idModel) ||
+                (cpf != null && m.CPF == cpf) ||
+                (rg != null && m.RG == rg));
+
+           
         }
     }
 
