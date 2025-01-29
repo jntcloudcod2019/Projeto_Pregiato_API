@@ -9,11 +9,27 @@ using Pregiato.API.Services;
 
 var builder = WebApplication.CreateBuilder(args);
 
-// Configuração do Banco de Dados
-builder.Services.AddDbContext<ModelAgencyContext>(options =>
-    options.UseNpgsql(builder.Configuration.GetConnectionString("DefaultConnection")));
 
-// Configuração dos Serviços
+var environment = Environment.GetEnvironmentVariable("ASPNETCORE_ENVIRONMENT") ?? "Production";
+Console.WriteLine($" Ambiente Atual: {environment}");
+
+
+var config = new ConfigurationBuilder()
+    .SetBasePath(Directory.GetCurrentDirectory())
+    .AddJsonFile("appsettings.json", optional: false, reloadOnChange: true)
+    .AddJsonFile($"appsettings.{environment}.json", optional: true, reloadOnChange: true)
+    .AddEnvironmentVariables()
+    .Build();
+
+Console.WriteLine($" String de Conexão Usada: {config.GetConnectionString("DefaultConnection")}");
+
+builder.Configuration.AddConfiguration(config);
+
+
+builder.Services.AddDbContext<ModelAgencyContext>(options =>
+    options.UseNpgsql(config.GetConnectionString("DefaultConnection")));
+
+
 builder.Services.AddAutoMapper(AppDomain.CurrentDomain.GetAssemblies());
 builder.Services.AddScoped<IClientRepository, ClientRepository>();
 builder.Services.AddScoped<IModelRepository, ModelsRepository>();
@@ -27,7 +43,7 @@ builder.Services.AddScoped<IContractService, ContractService>();
 builder.Services.AddScoped<IContractRepository, ContractRepository>();
 builder.Services.AddScoped<DigitalSignatureService>();
 
-// Configuração do Swagger
+
 builder.Services.AddEndpointsApiExplorer();
 builder.Services.AddSwaggerGen(c =>
 {
@@ -56,8 +72,15 @@ builder.Services.AddSwaggerGen(c =>
     });
 });
 
-// Configuração do JWT
+
 var jwtSettings = builder.Configuration.GetSection("JwtSettings");
+var secretKey = jwtSettings["SecretKey"];
+
+if (string.IsNullOrEmpty(secretKey))
+{
+    throw new ArgumentNullException("SecretKey", " ERRO: A chave secreta do JWT não foi encontrada no appsettings.json!");
+}
+
 builder.Services.AddAuthentication(JwtBearerDefaults.AuthenticationScheme)
     .AddJwtBearer(options =>
     {
@@ -67,13 +90,13 @@ builder.Services.AddAuthentication(JwtBearerDefaults.AuthenticationScheme)
             ValidateAudience = true,
             ValidateLifetime = true,
             ValidateIssuerSigningKey = true,
-            ValidIssuer = jwtSettings["PregiatoAPI"],
-            ValidAudience = jwtSettings["PregiatoAPIToken"],
-            IssuerSigningKey = new SymmetricSecurityKey(Encoding.UTF8.GetBytes(jwtSettings["SecretKey"]))
+            ValidIssuer = jwtSettings["Issuer"],
+            ValidAudience = jwtSettings["Audience"],
+            IssuerSigningKey = new SymmetricSecurityKey(Encoding.UTF8.GetBytes(secretKey))
         };
     });
 
-// Configuração do JSON
+
 builder.Services.AddControllers()
     .AddJsonOptions(options =>
     {
@@ -81,36 +104,34 @@ builder.Services.AddControllers()
         options.JsonSerializerOptions.DefaultIgnoreCondition = System.Text.Json.Serialization.JsonIgnoreCondition.WhenWritingNull;
         options.JsonSerializerOptions.Converters.Add(new System.Text.Json.Serialization.JsonStringEnumConverter());
         options.JsonSerializerOptions.Converters.Add(new System.Text.Json.Serialization.JsonDateTimeConverter("dd-MM-yyyy"));
-        options.JsonSerializerOptions.DefaultIgnoreCondition = System.Text.Json.Serialization.JsonIgnoreCondition.WhenWritingNull;
         options.JsonSerializerOptions.IgnoreReadOnlyProperties = true;
     });
 
-// Configuração da Autorização
-builder.Services.AddAuthorization(options =>
-{
-    options.AddPolicy("AdministratorPolicy", policy => policy.RequireRole("Administrator"));
-    options.AddPolicy("ManagerPolicy", policy => policy.RequireRole("Manager"));
-    options.AddPolicy("ModelPolicy", policy => policy.RequireRole("Model"));
-});
+builder.Services.AddAuthorization();
 
 var app = builder.Build();
 
 if (app.Environment.IsDevelopment())
 {
     app.UseSwagger();
-    app.UseSwaggerUI();
+    app.UseSwaggerUI(c =>
+    {
+        c.SwaggerEndpoint("/swagger/v1/swagger.json", "Model Agency API v1");
+        c.RoutePrefix = string.Empty; // Swagger  (http://localhost:5000)
+    });
 }
 
-app.UseHttpsRedirection();
+
+
 app.UseAuthentication();
 app.UseAuthorization();
 app.MapControllers();
+app.Run();
 
-// Criar Banco de Dados Antes de Iniciar a API
 using (var scope = app.Services.CreateScope())
 {
     var dbContext = scope.ServiceProvider.GetRequiredService<ModelAgencyContext>();
-    dbContext.Database.EnsureCreated();
+    dbContext.Database.EnsureCreated(); 
 }
 
-app.Run();
+
