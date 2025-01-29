@@ -1,9 +1,12 @@
 ﻿using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
+using Microsoft.EntityFrameworkCore;
+using Pregiato.API.Data;
 using Pregiato.API.Interface;
 using Pregiato.API.Models;
 using Pregiato.API.Requests;
 using Swashbuckle.AspNetCore.Annotations;
+using System.IdentityModel.Tokens.Jwt;
 using System.Text.Json;
 
 namespace Pregiato.API.Controllers
@@ -14,9 +17,13 @@ namespace Pregiato.API.Controllers
     public class ModdelsController : ControllerBase
     {
         private readonly IModelRepository _modelRepository;
-        public ModdelsController(IModelRepository modelRepository)
+
+        private readonly ModelAgencyContext _agencyContext;
+
+        public ModdelsController(IModelRepository modelRepository, ModelAgencyContext agencyContext)
         {
             _modelRepository = modelRepository ?? throw new ArgumentNullException(nameof(modelRepository));
+            _agencyContext = agencyContext ?? throw new ArgumentNullException(nameof(agencyContext));
         }
 
         [HttpGet("/GetAllModels")]
@@ -130,6 +137,72 @@ namespace Pregiato.API.Controllers
             return NoContent(); 
         }
 
+        [HttpGet("/model-feed")]
+        public async Task<IActionResult> GetModelFeed()
+        {
+            var authorizationHeader = HttpContext.Request.Headers["Authorization"].ToString();
+            if (string.IsNullOrEmpty(authorizationHeader) || !authorizationHeader.StartsWith("Bearer "))
+            {
+                return Unauthorized("Token de autenticação não fornecido ou inválido.");
+            }
+
+            var token = authorizationHeader.Substring("Bearer ".Length).Trim();
+
+            var handler = new JwtSecurityTokenHandler();
+            JwtSecurityToken jwtToken;
+            try
+            {
+                jwtToken = handler.ReadJwtToken(token);
+            }
+            catch (Exception)
+            {
+                return Unauthorized("Token inválido.");
+            }
+
+            var usernameClaim = jwtToken.Claims.FirstOrDefault(c => c.Type == "http://schemas.xmlsoap.org/ws/2005/05/identity/claims/name");
+            if (usernameClaim == null)
+            {
+                return Unauthorized("Usuário não autenticado.");
+            }
+
+            var username = usernameClaim.Value;
+
+            var model = await _agencyContext.Models
+                .FirstOrDefaultAsync(m => m.Name == username);
+
+            if (model == null)
+            {
+                return Unauthorized("Usuário não encontrado na base de dados.");
+            }
+
+            var roleClaim = jwtToken.Claims.FirstOrDefault(c => c.Type == "http://schemas.microsoft.com/ws/2008/06/identity/claims/role");
+            if (roleClaim == null || roleClaim.Value != "Model")
+            {
+                return Forbid("Permissão insuficiente.");
+            }
+
+            var feed = await _agencyContext.ModelJob
+           .Where(mj => mj.ModelId == model.IdModel && mj.Status == "Pending")
+           .Select(mj => new
+           {
+               mj.ModelId,
+               mj.JobId,
+               mj.JobDate,
+               mj.Location,
+               mj.Time,
+               mj.AdditionalDescription,
+               mj.Status
+           })
+           .ToListAsync();
+
+            return Ok(new
+            {
+                Feed = feed
+            });
+        }
 
     }
 }
+
+
+    

@@ -3,8 +3,6 @@ using Microsoft.AspNetCore.Mvc;
 using Pregiato.API.Interface;
 using Pregiato.API.Requests;
 
-
-
 namespace Pregiato.API.Controllers
 {
     [ApiController]

@@ -17,6 +17,7 @@ namespace Pregiato.API.Data
         public DbSet<ModelsBilling> ModelsBilling { get; set; }
         public DbSet<ContractBase> Contracts { get; set; }
         public DbSet<Payment> Payments { get; set; }
+        public DbSet<ModelJob> ModelJob { get; set; }  
 
         protected override void OnModelCreating(ModelBuilder modelBuilder)
         {

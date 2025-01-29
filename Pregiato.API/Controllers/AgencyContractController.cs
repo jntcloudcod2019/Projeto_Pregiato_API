@@ -65,12 +65,10 @@ namespace Pregiato.API.Controllers
             });
         }
 
-        [SwaggerOperation("Processp de gerar o contrato: TERMO DE COMPROMETIMENTO")]
+        [SwaggerOperation("Processo de gerar o contrato: TERMO DE COMPROMETIMENTO")]
         [HttpPost("generate/ContractCommitmentTerm")]
-        public async Task<IActionResult> GenerateContractCommitmentTerm
-        ([FromQuery] DateTime dataAgendamento,
-        [FromQuery] string horaAgendamento,
-        [FromQuery] decimal valorChache, 
+        public async Task<IActionResult> GenerateCommitmentTerm
+        ([FromBody] CreateRequestContractImageRights createRequestContractImageRights,
         [FromQuery] string queryModel)
         {
             var model = await _modelRepository.GetModelByCriteriaAsync(queryModel);
@@ -80,10 +78,7 @@ namespace Pregiato.API.Controllers
                 return NotFound("Modelo não encontrado.");
             }
 
-            ////  var validationResult = await _paymentService.ValidatePayment(payment);
-            //  if (validationResult != "validação de pagamento ok")
-            //  {
-            //      return BadRequest($"Erro ao validar o pagamento: {validationResult}");
+
             var parameters = new Dictionary<string, string>
             {
                     {"Nome-Modelo", model.Name },
@@ -100,10 +95,9 @@ namespace Pregiato.API.Controllers
             };
 
 
-            var contracts =  _contractService.GenerateContractCommitmentTerm
-              (dataAgendamento, horaAgendamento, valorChache, queryModel);
+            var contracts = await _contractService.GenerateContractCommitmentTerm(createRequestContractImageRights, queryModel);
 
-            await _context.SaveChangesAsync();
+            _context.SaveChangesAsync();
 
             return Ok(contracts);
         }

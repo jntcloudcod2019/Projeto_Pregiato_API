@@ -10,7 +10,7 @@ namespace Pregiato.API.Interface
      Task<List<ContractBase>> GenerateAllContractsAsync(PaymentRequest paymentRequest, string? idModel = null, string? cpf = null, string? rg = null);
      Task SaveContractAsync(ContractBase contract, Stream pdfStream);
      Task<string> GenerateContractPdf(int? codProposta, Guid? contractId);
-     Task GenerateContractCommitmentTerm(DateTime dataAgendamento, string horaAgendamento, decimal valorChach,  string querymodel);
+     Task<ContractBase> GenerateContractCommitmentTerm(CreateRequestContractImageRights createRequestContractImageRights,  string querymodel);
 
     }
 }

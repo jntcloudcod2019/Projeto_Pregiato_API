@@ -8,6 +8,7 @@ using System.Text;
 using Pregiato.API.Services;
 
 
+
 var builder = WebApplication.CreateBuilder(args);
 builder.Services.AddDbContext<ModelAgencyContext>(options =>
     options.UseNpgsql(builder.Configuration.GetConnectionString("DefaultConnection")));
@@ -66,12 +67,26 @@ builder.Services.AddAuthentication(JwtBearerDefaults.AuthenticationScheme)
             IssuerSigningKey = new SymmetricSecurityKey(Encoding.UTF8.GetBytes(jwtSettings["SecretKey"]))
         };
     });
+
+builder.Services.AddControllers()
+    .AddJsonOptions(options =>
+    {
+        options.JsonSerializerOptions.PropertyNamingPolicy = null;
+        options.JsonSerializerOptions.DefaultIgnoreCondition = System.Text.Json.Serialization.JsonIgnoreCondition.WhenWritingNull;
+        options.JsonSerializerOptions.Converters.Add(new System.Text.Json.Serialization.JsonStringEnumConverter()); // Serializa enums como strings
+        options.JsonSerializerOptions.Converters.Add(new System.Text.Json.Serialization.JsonDateTimeConverter("dd-MM-yyyy"));
+        options.JsonSerializerOptions.DefaultIgnoreCondition = System.Text.Json.Serialization.JsonIgnoreCondition.WhenWritingNull;
+        options.JsonSerializerOptions.IgnoreReadOnlyProperties = true;
+    });
+
 builder.Services.AddAuthorization(options =>
 {
     options.AddPolicy("AdministratorPolicy", policy => policy.RequireRole("Administrator"));
     options.AddPolicy("ManagerPolicy", policy => policy.RequireRole("Manager"));
     options.AddPolicy("ModelPolicy", policy => policy.RequireRole("Model"));
 });
+
+
 
 
 var app = builder.Build();

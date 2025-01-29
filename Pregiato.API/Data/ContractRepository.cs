@@ -43,7 +43,7 @@ namespace Pregiato.API.Data
         {
           
             _context.Add(contract); 
-            await _context.SaveChangesAsync();
+            _context.SaveChangesAsync();
         }
 
         public async Task<ContractBase?> GetContractByIdAsync(int? codProposta, Guid? contractId)
