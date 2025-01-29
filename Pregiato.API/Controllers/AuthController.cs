@@ -21,8 +21,8 @@ namespace Pregiato.API.Controllers
             _userService = userService; 
         }
         
-        [Authorize(Roles = "AdministratorPolicy, ManagerPolicy, ModelPolicy")]
-        [HttpPost("/Auth/login/")]
+       // [Authorize(Roles = "AdministratorPolicy, ManagerPolicy, ModelPolicy")]
+        [HttpPost("login")]
         public async Task<IActionResult> Login([FromBody] LoginUserRequest loginRequest)
         {
            var user =  await _userRepository.GetByUsernameAsync(loginRequest.Username);    
