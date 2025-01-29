@@ -17,5 +17,8 @@ WORKDIR /app
 # Copiar os arquivos publicados na etapa anterior
 COPY --from=build /app/publish .
 
+# Definir a porta corretamente para evitar erro de bind
+ENV ASPNETCORE_URLS=http://+:80
+
 # Comando para iniciar a aplicação
 ENTRYPOINT ["dotnet", "Pregiato.API.dll"]
