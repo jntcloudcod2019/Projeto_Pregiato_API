@@ -159,7 +159,7 @@ namespace Pregiato.API.Services
             return Regex.Replace(html, "<.*?>", string.Empty);
         }
 
-        public async Task SaveContractAsync(ContractBase contract, Stream pdfStream)
+        public async Task SaveContractAsync(ContractBase contract, Stream pdfStream, string cpfModelo)
         {
             using var memoryStream = new MemoryStream();
             await pdfStream.CopyToAsync(memoryStream);
@@ -168,8 +168,7 @@ namespace Pregiato.API.Services
             contract.Content = pdfBytes;
         
 
-            contract.ContractFilePath = $"{contract.CodProposta}_{contract.TemplateFileName}.pdf";
-
+            contract.ContractFilePath = $"CodigoPorposta_{contract.CodProposta}_CPF:{cpfModelo}_{contract.TemplateFileName}.pdf";
 
            await _contractRepository.SaveContractAsync(contract);
         }
@@ -303,7 +302,8 @@ namespace Pregiato.API.Services
 
             byte[] pdfBytes = ConvertHtmlToPdf(populatedHtml);
 
-            await SaveContractAsync(contract, new MemoryStream(pdfBytes));
+           
+            await SaveContractAsync(contract, new MemoryStream(pdfBytes), parameters["CPF-Modelo"]);
 
              var payment = new Payment
              {
@@ -337,7 +337,6 @@ namespace Pregiato.API.Services
             {
                 throw new KeyNotFoundException("Modelo não encontrado.");
             }
-
 
             var parameters = new Dictionary<string, string>
             {       {"Local-Contrato", DefaultCidadeEmpresa},
@@ -454,9 +453,8 @@ namespace Pregiato.API.Services
 
             byte[] pdfBytes = ConvertHtmlToPdf(populatedHtml);
 
-            await SaveContractAsync(contract, new MemoryStream(pdfBytes));
+            await SaveContractAsync(contract, new MemoryStream(pdfBytes), model.CPF);
             
-
             return contract;
 
         }

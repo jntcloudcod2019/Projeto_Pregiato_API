@@ -1,4 +1,5 @@
-﻿using Microsoft.AspNetCore.Authorization;
+﻿
+using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.EntityFrameworkCore;
 using Pregiato.API.Data;
@@ -11,7 +12,6 @@ using System.Text.Json;
 
 namespace Pregiato.API.Controllers
 {
-    //[Authorize]
     [ApiController]
     [Route("api/Models")]
     public class ModdelsController : ControllerBase
@@ -198,6 +198,32 @@ namespace Pregiato.API.Controllers
             return Ok(new
             {
                 Feed = feed
+            });
+        }
+
+        [HttpGet("find-model")]
+        public async Task<IActionResult> FindModel([FromQuery] string query)
+        {
+            var model = await _modelRepository.GetModelByCriteriaAsync(query);
+
+            if (model == null)
+            {
+                return NotFound("Modelo não encontrado.");
+            }
+
+            return Ok(new
+            {
+                model.IdModel,
+                model.Name,
+                model.CPF,
+                model.RG,
+                model.Address,
+                model.NumberAddress,
+                model.BankAccount,
+                model.PostalCode,
+                model.Complement,
+                model.TelefonePrincipal,
+                model.TelefoneSecundario
             });
         }
 

@@ -1,5 +1,8 @@
 ﻿
 
+using Swashbuckle.AspNetCore.Annotations;
+using System.ComponentModel.DataAnnotations;
+
 namespace Pregiato.API.Models
 {
     public abstract class ContractBase
@@ -11,7 +14,7 @@ namespace Pregiato.API.Models
         public DateTime UpdatedAt { get; set; } = DateTime.UtcNow;
         public string Neighborhood { get; set; } 
         public string City { get; set; } 
-        public string LocalContrato { get; set; } = "São Paulo";
+        public string LocalContrato { get; set; } 
         public string DataContrato { get; set; } = DateTime.UtcNow.ToString("dd/MM/yyyy");
         public string MesContrato { get; set; } = DateTime.UtcNow.ToString("MMMM");
         public string NomeEmpresa { get; set; } 
@@ -26,17 +29,15 @@ namespace Pregiato.API.Models
         public decimal ValorContrato { get; set; } 
         public string FormaPagamento { get; set; } 
         public string StatusPagamento { get; set; }
-        public string DataAgendamento { get; set; } = "N/A"; // Pode ser preenchido ou conter "N/A"
-        public string HorarioAgendamento { get; set; } = "N/A"; // Pode ser preenchido ou conter "N/A"
-        public decimal? ValorCache { get; set; } // Valor do cachê, pode ser nulo
 
-
+        [SwaggerSchema("Data do Pagamento")]
+        [DisplayFormat(DataFormatString = "{dd-MM-yyyy}", ApplyFormatInEditMode = true)]
+        public string DataAgendamento { get; set; } = "N/A"; 
+        public string HorarioAgendamento { get; set; } = "N/A"; 
+        public decimal? ValorCache { get; set; } 
         public string ContractFilePath { get; set; } = string.Empty;
-
         public byte[] Content { get; set; }
-
         public abstract string TemplateFileName { get; }
-
         public int CodProposta { get; set; }
     }
 

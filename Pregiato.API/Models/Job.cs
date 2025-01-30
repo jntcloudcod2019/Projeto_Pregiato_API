@@ -24,6 +24,7 @@ namespace Pregiato.API.Models
         public string Location { get; set; }
 
         [System.ComponentModel.DataAnnotations.Required]
+
         public DateTime CreatedAt { get; set; } = DateTime.UtcNow;
 
         [System.ComponentModel.DataAnnotations.Required]
