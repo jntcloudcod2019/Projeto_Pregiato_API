@@ -44,6 +44,7 @@ builder.Services.AddScoped<IJwtService, JwtService>();
 builder.Services.AddScoped<IContractService, ContractService>();
 builder.Services.AddScoped<IContractRepository, ContractRepository>();
 builder.Services.AddScoped<DigitalSignatureService>();
+builder.Services.AddScoped<IPasswordHasherService, PasswordHasherService>();
 
 
 builder.Services.AddEndpointsApiExplorer();

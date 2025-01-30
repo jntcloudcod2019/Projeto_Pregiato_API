@@ -32,6 +32,8 @@ namespace Pregiato.API.Services
             }
 
             var passwordHash = BCrypt.Net.BCrypt.HashPassword(password);
+            Console.WriteLine($"Hash Gerado: {passwordHash}");
+
             var user = new User
 
             {
@@ -45,19 +47,32 @@ namespace Pregiato.API.Services
             await _userRepository.AddUserAsync(user);
             await _userRepository.SaveChangesAsync();
 
-            return "User registered successfully.";
+            return "Usuário cadastrado comsucesso.";
         }
 
         public async Task<string> AuthenticateUserAsync(LoginUserRequest loginUserRequest)
         {
-            var user = await _userRepository.GetByUsernameAsync(loginUserRequest.Username);
-
-            if (user == null || !BCrypt.Net.BCrypt.Verify(loginUserRequest.Password, user.PasswordHash))
+            try
             {
-                throw new Exception("Invalid username or password.");
-            }
+                var user = await _userRepository.GetByUsernameAsync(loginUserRequest.Username);
 
-            return _jwtService.GenerateToken(loginUserRequest);
+                if (user == null)
+                {
+                    throw new Exception("Usuário não encontrado. Verifique o nome de usuário e tente novamente.");
+                }
+
+                if (!BCrypt.Net.BCrypt.Verify(loginUserRequest.Password, user.PasswordHash))
+                {
+                    throw new Exception("Senha inválida. Verifique a senha digitada e tente novamente.");
+                }
+
+                return _jwtService.GenerateToken(loginUserRequest);
+            }
+            catch (Exception ex)
+            {
+                Console.WriteLine($"[Erro na Autenticação] {ex.Message}");
+                throw new Exception("Erro durante o processo de autenticação. Por favor, contate o time de I.T.");
+            }
         }
     }
   }

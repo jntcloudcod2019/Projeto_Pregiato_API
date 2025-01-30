@@ -34,6 +34,7 @@ namespace Pregiato.API.Controllers
             {
                 return Unauthorized("Senha incorreta.");
             }
+            loginRequest.UserType = user.UserType;
 
             var token = _userService.AuthenticateUserAsync(loginRequest);
 
