@@ -27,7 +27,9 @@ builder.Configuration.AddConfiguration(config);
 
 
 builder.Services.AddDbContext<ModelAgencyContext>(options =>
-    options.UseNpgsql(config.GetConnectionString("DefaultConnection")));
+    options.UseNpgsql(config.GetConnectionString("DefaultConnection"))
+           .EnableSensitiveDataLogging(environment == "Development")
+           .LogTo(Console.WriteLine, LogLevel.Information));
 
 
 builder.Services.AddAutoMapper(AppDomain.CurrentDomain.GetAssemblies());
