@@ -131,7 +131,7 @@ app.Run();
 using (var scope = app.Services.CreateScope())
 {
     var dbContext = scope.ServiceProvider.GetRequiredService<ModelAgencyContext>();
-    dbContext.Database.EnsureCreated(); 
+    dbContext.Database.EnsureCreated();
 }
 
 
