@@ -38,6 +38,16 @@ namespace Pregiato.API.Requests
         public PhysicalCharacteristics PhysicalCharacteristics { get; set; }
         public Appearance Appearance { get; set; }
         public AdditionalAttributes AdditionalAttributes { get; set; }
+
+        public string TelefonePrincipal { get; set; }
+        [Required]
+        public string TelefoneSecundario { get; set; }
+
+        [Required]
+        public string NumberAddress { get; set; }
+
+        [Required]
+        public string Complement { get; set; }
     }
 
     public class PhysicalCharacteristics

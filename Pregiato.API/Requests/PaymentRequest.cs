@@ -1,4 +1,6 @@
 ﻿using Pregiato.API.Models;
+using Swashbuckle.AspNetCore.Annotations;
+using System.ComponentModel.DataAnnotations;
 
 namespace Pregiato.API.Requests
 {
@@ -8,10 +10,15 @@ namespace Pregiato.API.Requests
         public decimal Valor { get; set; }
         public int? QuantidadeParcela { get; set; }
         public string? FinalCartao { get; set; }
+
+        [SwaggerSchema("Data Pagamento")]
+        [DisplayFormat(DataFormatString = "{dd-MM-yyyy}", ApplyFormatInEditMode = true)]
         public DateTime? DataPagamento { get; set; }
         public string StatusPagamento { get; set; }
         public byte[]? Comprovante { get; set; }
-        public DateTime? DataAcordoPagamento { get; set; }
+        [SwaggerSchema("Data Pagamento")]
+        [DisplayFormat(DataFormatString = "{dd-MM-yyyy}", ApplyFormatInEditMode = true)]
+        public DateTime? DataAcordoPagamento { get; set; } = null;
 
     }
 

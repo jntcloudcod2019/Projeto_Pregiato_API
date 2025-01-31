@@ -6,12 +6,33 @@ using Pregiato.API.Interface;
 using Microsoft.AspNetCore.Authentication.JwtBearer;
 using System.Text;
 using Pregiato.API.Services;
-
-
+using System.Text.Json.Serialization;
 
 var builder = WebApplication.CreateBuilder(args);
+
+
+var environment = Environment.GetEnvironmentVariable("ASPNETCORE_ENVIRONMENT") ?? "Production";
+Console.WriteLine($" Ambiente Atual: {environment}");
+
+
+var config = new ConfigurationBuilder()
+    .SetBasePath(Directory.GetCurrentDirectory())
+    .AddJsonFile("appsettings.json", optional: false, reloadOnChange: true)
+    .AddJsonFile($"appsettings.{environment}.json", optional: true, reloadOnChange: true)
+    .AddEnvironmentVariables()
+    .Build();
+
+Console.WriteLine($" String de Conexão Usada: {config.GetConnectionString("DefaultConnection")}");
+
+builder.Configuration.AddConfiguration(config);
+
+
 builder.Services.AddDbContext<ModelAgencyContext>(options =>
-    options.UseNpgsql(builder.Configuration.GetConnectionString("DefaultConnection")));
+    options.UseNpgsql(config.GetConnectionString("DefaultConnection"))
+           .EnableSensitiveDataLogging(environment == "Development")
+           .LogTo(Console.WriteLine, LogLevel.Information));
+
+
 builder.Services.AddAutoMapper(AppDomain.CurrentDomain.GetAssemblies());
 builder.Services.AddScoped<IClientRepository, ClientRepository>();
 builder.Services.AddScoped<IModelRepository, ModelsRepository>();
@@ -20,31 +41,34 @@ builder.Services.AddScoped<IJobRepository, JobRepository>();
 builder.Services.AddScoped<IUserRepository, UserRepository>();
 builder.Services.AddScoped<IUserService, UserService>();
 builder.Services.AddScoped<IPaymentService, PaymentService>();
-builder.Services.AddControllers();
 builder.Services.AddScoped<IJwtService, JwtService>();
 builder.Services.AddScoped<IContractService, ContractService>();
 builder.Services.AddScoped<IContractRepository, ContractRepository>();
 builder.Services.AddScoped<DigitalSignatureService>();
+builder.Services.AddScoped<IPasswordHasherService, PasswordHasherService>();
+
+
+builder.Services.AddHttpContextAccessor();
 builder.Services.AddEndpointsApiExplorer();
 builder.Services.AddSwaggerGen(c =>
 {
-    c.AddSecurityDefinition("Bearer", new Microsoft.OpenApi.Models.OpenApiSecurityScheme
+    c.AddSecurityDefinition("Bearer", new OpenApiSecurityScheme
     {
         Name = "Authorization",
-        Type = Microsoft.OpenApi.Models.SecuritySchemeType.Http,
+        Type = SecuritySchemeType.Http,
         Scheme = "Bearer",
         BearerFormat = "JWT",
-        In = Microsoft.OpenApi.Models.ParameterLocation.Header,
+        In = ParameterLocation.Header,
         Description = "Enter 'Bearer' [space] and then your token."
     });
-    c.AddSecurityRequirement(new Microsoft.OpenApi.Models.OpenApiSecurityRequirement
+    c.AddSecurityRequirement(new OpenApiSecurityRequirement
     {
         {
-            new Microsoft.OpenApi.Models.OpenApiSecurityScheme
+            new OpenApiSecurityScheme
             {
-                Reference = new Microsoft.OpenApi.Models.OpenApiReference
+                Reference = new OpenApiReference
                 {
-                    Type = Microsoft.OpenApi.Models.ReferenceType.SecurityScheme,
+                    Type = ReferenceType.SecurityScheme,
                     Id = "Bearer"
                 }
             },
@@ -52,7 +76,16 @@ builder.Services.AddSwaggerGen(c =>
         }
     });
 });
+
+
 var jwtSettings = builder.Configuration.GetSection("JwtSettings");
+var secretKey = jwtSettings["SecretKey"];
+
+if (string.IsNullOrEmpty(secretKey))
+{
+    throw new ArgumentNullException("SecretKey", " ERRO: A chave secreta do JWT não foi encontrada no appsettings.json!");
+}
+
 builder.Services.AddAuthentication(JwtBearerDefaults.AuthenticationScheme)
     .AddJwtBearer(options =>
     {
@@ -62,32 +95,25 @@ builder.Services.AddAuthentication(JwtBearerDefaults.AuthenticationScheme)
             ValidateAudience = true,
             ValidateLifetime = true,
             ValidateIssuerSigningKey = true,
-            ValidIssuer = jwtSettings["PregiatoAPI"],
-            ValidAudience = jwtSettings["PregiatoAPIToken"],
-            IssuerSigningKey = new SymmetricSecurityKey(Encoding.UTF8.GetBytes(jwtSettings["SecretKey"]))
+            ValidIssuer = jwtSettings["Issuer"],
+            ValidAudience = jwtSettings["Audience"],
+            IssuerSigningKey = new SymmetricSecurityKey(Encoding.UTF8.GetBytes(secretKey))
         };
     });
+
 
 builder.Services.AddControllers()
     .AddJsonOptions(options =>
     {
         options.JsonSerializerOptions.PropertyNamingPolicy = null;
         options.JsonSerializerOptions.DefaultIgnoreCondition = System.Text.Json.Serialization.JsonIgnoreCondition.WhenWritingNull;
-        options.JsonSerializerOptions.Converters.Add(new System.Text.Json.Serialization.JsonStringEnumConverter()); // Serializa enums como strings
-        options.JsonSerializerOptions.Converters.Add(new System.Text.Json.Serialization.JsonDateTimeConverter("dd-MM-yyyy"));
-        options.JsonSerializerOptions.DefaultIgnoreCondition = System.Text.Json.Serialization.JsonIgnoreCondition.WhenWritingNull;
+        options.JsonSerializerOptions.Converters.Add(new System.Text.Json.Serialization.JsonStringEnumConverter());
+        options.JsonSerializerOptions.Converters.Add(new JsonDateTimeConverter("dd-MM-yyyy", "yyyy-MM-dd", "MM/dd/yyyy", "dd/MM/yyyy"));
         options.JsonSerializerOptions.IgnoreReadOnlyProperties = true;
+        options.JsonSerializerOptions.WriteIndented = true;
     });
 
-builder.Services.AddAuthorization(options =>
-{
-    options.AddPolicy("AdministratorPolicy", policy => policy.RequireRole("Administrator"));
-    options.AddPolicy("ManagerPolicy", policy => policy.RequireRole("Manager"));
-    options.AddPolicy("ModelPolicy", policy => policy.RequireRole("Model"));
-});
-
-
-
+builder.Services.AddAuthorization();
 
 var app = builder.Build();
 
@@ -101,13 +127,17 @@ if (app.Environment.IsDevelopment())
     });
 }
 
-app.UseHttpsRedirection();
+
+
+app.UseAuthentication();
 app.UseAuthorization();
 app.MapControllers();
 app.Run();
- 
+
 using (var scope = app.Services.CreateScope())
 {
     var dbContext = scope.ServiceProvider.GetRequiredService<ModelAgencyContext>();
     dbContext.Database.EnsureCreated();
 }
+
+

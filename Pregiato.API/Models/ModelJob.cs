@@ -19,9 +19,11 @@ namespace Pregiato.API.Models
         public string AdditionalDescription { get; set; }
 
         [ForeignKey("ModelId")]
-        public Moddels Model { get; set; }
+        public Model Model { get; set; }
 
         [ForeignKey("JobId")]
         public Job Job { get; set; }
+
+        public string Status { get; set; }
     }
 }

@@ -13,51 +13,51 @@ namespace Pregiato.API.Data
            _context = context;
         }
 
-        public async Task AddModelAsync(Moddels model)
+        public async Task AddModelAsync(Model model)
         {
-           _context.Models.Add(model);  
+           _context.Model.Add(model);  
             await _context.SaveChangesAsync();  
         }
 
         public async Task DeleteModelAsync(Guid id)
         {
-           var idModel = await _context.Models.FindAsync(id);
+           var idModel = await _context.Model.FindAsync(id);
             if (idModel != null) 
             { 
-                _context.Models.Remove(idModel);    
+                _context.Model.Remove(idModel);    
                 await _context.SaveChangesAsync();  
             }
         }
 
-        public async Task<IEnumerable<Moddels>> GetAllModelAsync()
+        public async Task<IEnumerable<Model>> GetAllModelAsync()
         {
-           return await _context.Models.ToListAsync();  
+           return await _context.Model.ToListAsync();  
         }
 
-        public async Task<Moddels> GetByIdModelAsync(Guid id)
+        public async Task<Model> GetByIdModelAsync(Guid id)
         {
 
-            return await _context.Models.FindAsync(id);
+            return await _context.Model.FindAsync(id);
         }
 
-        public async Task UpdateModelAsync(Moddels model)
+        public async Task UpdateModelAsync(Model model)
         {
-           _context.Models.Update(model);
+           _context.Model.Update(model);
             await _context.SaveChangesAsync();        
         }
 
-        public async Task<Moddels?> GetModelByCriteriaAsync(string query)
+        public async Task<Model?> GetModelByCriteriaAsync(string query)
         {
-            return await _context.Models.FirstOrDefaultAsync(m =>
+            return await _context.Model.FirstOrDefaultAsync(m =>
                 m.CPF == query ||
                 m.RG == query ||
                 m.Name.Contains(query) ||
                 m.IdModel.ToString() == query);
         }
 
-        public async Task<Moddels> GetModelAllAsync(string? idModel, string? cpf, string? rg)
+        public async Task<Model> GetModelAllAsync(string? idModel, string? cpf, string? rg)
         {
-            return await _context.Models.FirstOrDefaultAsync(m =>
+            return await _context.Model.FirstOrDefaultAsync(m =>
                 (idModel != null && m.IdModel.ToString() == idModel) ||
                 (cpf != null && m.CPF == cpf) ||
                 (rg != null && m.RG == rg));

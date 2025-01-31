@@ -7,5 +7,7 @@ namespace Pregiato.API.Interface
     public interface IJwtService
     {
         string GenerateToken(LoginUserRequest loginRequest);
+        Task<string> GetUsernameFromTokenAsync(string token);
+        Task<string> GetAuthenticatedUsernameAsync();
     }
 }

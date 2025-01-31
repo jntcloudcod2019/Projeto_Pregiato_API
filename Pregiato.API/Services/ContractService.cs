@@ -1,15 +1,12 @@
-﻿using iText.Commons.Actions.Contexts;
-using iText.Kernel.Pdf;
+﻿using iText.Kernel.Pdf;
 using iText.Layout;
 using iText.Layout.Element;
-using Microsoft.AspNetCore.Http.HttpResults;
 using Microsoft.EntityFrameworkCore;
 using Pregiato.API.Data;
 using Pregiato.API.Interface;
 using Pregiato.API.Models;
 using Pregiato.API.Requests;
 using Microsoft.AspNetCore.Mvc;
-using System.Diagnostics.Contracts;
 using System.Text.RegularExpressions;
 
 namespace Pregiato.API.Services
@@ -21,16 +18,19 @@ namespace Pregiato.API.Services
         private readonly IModelRepository _modelRepository;
         private readonly DigitalSignatureService _digitalSignatureService;
         private readonly ModelAgencyContext _modelAgencyContext;
+        private readonly IJwtService _jwtService;   
 
         public ContractService(IContractRepository contractRepository,
                DigitalSignatureService digitalSignatureService,
                IModelRepository modelRepository,
-               ModelAgencyContext context)
+               ModelAgencyContext context,
+               IJwtService jwtService)
         {
             _contractRepository = contractRepository ?? throw new ArgumentNullException(nameof(context));
             _digitalSignatureService = digitalSignatureService;
             _modelRepository = modelRepository;
             _modelAgencyContext = context ?? throw new ArgumentNullException(nameof(context));
+            _jwtService = jwtService;   
         }
 
         private static readonly string DefaultNomeEmpresa = "Pregiato Management";
@@ -44,71 +44,6 @@ namespace Pregiato.API.Services
         private static readonly string DefaultDataContrato = DateTime.UtcNow.ToString("dd/MM/yyyy");
         private static readonly string DefaultVigenciaContrato = DateTime.UtcNow.ToString("dd/MM/yyyy");
         private static readonly string DefaultMesContrato = DateTime.UtcNow.ToString("MMMM");
-
-        public async Task<List<ContractBase>> GenerateAllContractsAsync(PaymentRequest paymentRequest, string? idModel = null, string? cpf = null, string? rg = null, Dictionary<string, string>? paramet = null)
-        {
-            if (string.IsNullOrEmpty(idModel) && string.IsNullOrEmpty(cpf) && string.IsNullOrEmpty(rg))
-            {
-                throw new ArgumentException("Pelo menos um dos parâmetros 'idModel', 'cpf' ou 'rg' deve ser fornecido.");
-            }
-
-            var model = await _modelRepository.GetModelAllAsync(idModel, cpf, rg);
-
-            if (model == null)
-            {
-                throw new KeyNotFoundException("Modelo não encontrado.");
-            }
-       
-
-            var parameters = new Dictionary<string, string>
-            {       {"Local-Contrato", DefaultCidadeEmpresa},
-                    {"Data-Contrato", DefaultDataContrato},
-                    {"Mês-Contrato", DefaultMesContrato},
-                    {"Nome-Modelo", model.Name },
-                    {"CPF-Modelo", model.CPF },
-                    {"RG-Modelo", model.RG },
-                    {"Endereço-Modelo", model.Address},
-                    {"Numero-Modelo",model.NumberAddress},
-                    {"Bairro-Modelo", model.Neighborhood},
-                    {"Cidade-Modelo", model.City},
-                    {"CEP-Modelo", model.PostalCode},
-                    {"Complemento-Modelo", model.Complement},
-                    {"Telefone-Principal", model.TelefonePrincipal},
-                    {"Telefone-Secundário", model.TelefoneSecundario},
-                    {"Nome-Empresa", DefaultNomeEmpresa},
-                    {"CNPJ-Empresa", DefaultCNPJEmpresa},
-                    {"Endereço-Empresa", DefaultEnderecoEmpresa},
-                    {"Numero-Empresa",DefaultNumeroEmpresa},
-                    {"Complemento-Empresa", DefaultComplementoEmpresa},
-                    {"Cidade-Empresa", DefaultCidadeEmpresa},
-                    {"Bairro-Empresa", DefaultBairroEmpresa},
-                    {"CEP-Empresa",DefaultCEPEmpresa},
-                    {"Vigência-Contrato",DefaultVigenciaContrato},
-                    {"Valor-Contrato",paymentRequest.Valor.ToString("C")},
-                    {"Forma-Pagamento", paymentRequest.MetodoPagamento}
-            };
-
-            var contracts = new List<ContractBase>
-            {
-                await GenerateContractAsync(paymentRequest, model.IdModel, "Agency", parameters),
-                await GenerateContractAsync(paymentRequest, model.IdModel,  "Photography", parameters),
-                await GenerateContractAsync( paymentRequest, model.IdModel,  "ImageRights", parameters)
-            };
-
-            return contracts;
-        }
-
-        public async Task<ContractBase?> GetContractByIdAsync(Guid contractId)
-        {
-
-            var contract = await _contractRepository.GetByIdContractAsync(contractId);
-            if (contract == null)
-            {
-
-                return null;
-            }
-            throw new InvalidCastException(" Contrato não encontrado.");
-        }
 
         private string PopulateTemplate(string template, Dictionary<string, string> parameters)
         {
@@ -137,7 +72,7 @@ namespace Pregiato.API.Services
             return template; 
         }
 
-        private byte[] ConvertHtmlToPdf(string html)
+        public byte[] ConvertHtmlToPdf(string html)
         {
             using var memoryStream = new MemoryStream();
             using (var pdfWriter = new PdfWriter(memoryStream))
@@ -159,7 +94,7 @@ namespace Pregiato.API.Services
             return Regex.Replace(html, "<.*?>", string.Empty);
         }
 
-        public async Task SaveContractAsync(ContractBase contract, Stream pdfStream)
+        public async Task SaveContractAsync(ContractBase contract, Stream pdfStream, string cpfModelo)
         {
             using var memoryStream = new MemoryStream();
             await pdfStream.CopyToAsync(memoryStream);
@@ -168,8 +103,7 @@ namespace Pregiato.API.Services
             contract.Content = pdfBytes;
         
 
-            contract.ContractFilePath = $"{contract.CodProposta}_{contract.TemplateFileName}.pdf";
-
+            contract.ContractFilePath = $"CodigoPorposta_{contract.CodProposta}_CPF:{cpfModelo}_{contract.TemplateFileName}.pdf";
 
            await _contractRepository.SaveContractAsync(contract);
         }
@@ -206,7 +140,6 @@ namespace Pregiato.API.Services
             {
                 throw new FileNotFoundException("Template do contrato não encontrado.", templatePath);
             }
-
 
             var model = await _modelRepository.GetByIdModelAsync(contract.ModelId);
             if (model == null)
@@ -302,21 +235,21 @@ namespace Pregiato.API.Services
             string populatedHtml = PopulateTemplate(htmlTemplate, parameters);
 
             byte[] pdfBytes = ConvertHtmlToPdf(populatedHtml);
+        
+            await SaveContractAsync(contract, new MemoryStream(pdfBytes), parameters["CPF-Modelo"]);
 
-            await SaveContractAsync(contract, new MemoryStream(pdfBytes));
-
-             var payment = new Payment
-             {
+            var payment = new Payment
+            {
                 Id = Guid.NewGuid(),
-                ContractId = contract.ContractId , 
+                ContractId = contract.ContractId,
                 Valor = contract.ValorContrato,
-                QuantidadeParcela = paymentRequest.QuantidadeParcela ,
+                QuantidadeParcela = paymentRequest.QuantidadeParcela,
                 FinalCartao = paymentRequest.FinalCartao,
-                DataPagamento = paymentRequest.DataPagamento,
-                MetodoPagamento = paymentRequest.MetodoPagamento,
+                DataPagamento = ConvertToUtcDateTime(paymentRequest.DataPagamento.Value),
+                 MetodoPagamento = paymentRequest.MetodoPagamento,
                 StatusPagamento = paymentRequest.StatusPagamento,
                 Comprovante = paymentRequest.Comprovante,
-                DataAcordoPagamento = paymentRequest.DataAcordoPagamento,
+                DataAcordoPagamento = ConvertToUtcDateTime(paymentRequest.DataAcordoPagamento.Value)
             };
 
             await _modelAgencyContext.AddAsync(payment);    
@@ -337,7 +270,6 @@ namespace Pregiato.API.Services
             {
                 throw new KeyNotFoundException("Modelo não encontrado.");
             }
-
 
             var parameters = new Dictionary<string, string>
             {       {"Local-Contrato", DefaultCidadeEmpresa},
@@ -454,12 +386,68 @@ namespace Pregiato.API.Services
 
             byte[] pdfBytes = ConvertHtmlToPdf(populatedHtml);
 
-            await SaveContractAsync(contract, new MemoryStream(pdfBytes));
+            await SaveContractAsync(contract, new MemoryStream(pdfBytes), model.CPF);
             
-
             return contract;
 
         }
-    }
+
+        public async Task<IActionResult> GetMyContracts(string type = "files")
+        {
+            var username = await _jwtService.GetAuthenticatedUsernameAsync();
+            if (string.IsNullOrEmpty(username))
+            {
+                return new UnauthorizedResult();
+            }
+
+            var modelId = await _modelRepository.GetModelByCriteriaAsync(username);
+            if (modelId == null)
+            {
+                return new NotFoundObjectResult($"Nenhum modelo encontrado para o usuário: {username}");
+            }
+
+            var contracts = await _contractRepository.GetContractsByModelId(modelId.IdModel);
+            if (contracts == null || !contracts.Any())
+            {
+                return new NotFoundObjectResult("Nenhum contrato encontrado para o usuário.");
+            }
+
+            return type == "names"
+                ? new OkObjectResult(contracts.Select(c => c.ContractFilePath).ToList())
+                : new OkObjectResult(contracts.Select(c => new
+                {
+                    c.ModelId,
+                    c.ContractFilePath,
+                    ContentBase64 = c.Content != null ? Convert.ToBase64String(c.Content) : null
+                }).ToList());
+        }
+
+
+        private DateTime ConvertToUtcDateTime(DateTime dateTime)
+        {
+            if (dateTime == DateTime.MinValue || dateTime == DateTime.MaxValue)
+            {
+                throw new ArgumentException("A data fornecida é inválida.");
+            }
+
+            return DateTime.SpecifyKind(dateTime, DateTimeKind.Utc);
+        }
+
+        public async Task<List<ContractsModels>> GetContractsByModelIdAsync(Guid modelId)
+        {
+            return await _modelAgencyContext.Contracts
+           .Where(c => c.ModelId == modelId)
+           .Select(c => new  ContractsModels
+           {
+               ModelId = modelId,   
+               ContractFilePath = c.ContractFilePath,   
+               Content = c.Content
+           })
+           .ToListAsync();
+        }
+    }  
+
+
+
 
 }

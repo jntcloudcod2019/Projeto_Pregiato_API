@@ -24,8 +24,6 @@ namespace Pregiato.API.Controllers
         private readonly IModelRepository _modelRepository;
         private readonly IPaymentService _paymentService;
         private readonly ModelAgencyContext _context;
-        private readonly ContractService contractService;
-        private readonly PaymentService paymentService; 
        
         public AgencyContractController(
             IContractService contractService,
@@ -39,32 +37,7 @@ namespace Pregiato.API.Controllers
             _paymentService = paymentService;
         }
 
-        [HttpGet("find-model")]
-        public async Task<IActionResult> FindModel([FromQuery] string query)
-        {
-            var model = await _modelRepository.GetModelByCriteriaAsync(query);
-
-            if (model == null)
-            {
-                return NotFound("Modelo não encontrado.");
-            }
-
-            return Ok(new
-            {
-                model.IdModel,
-                model.Name,
-                model.CPF,
-                model.RG,
-                model.Address,
-                model.NumberAddress,
-                model.BankAccount,
-                model.PostalCode,
-                model.Complement,
-                model.TelefonePrincipal,
-                model.TelefoneSecundario
-            });
-        }
-
+       
         [SwaggerOperation("Processo de gerar o contrato: TERMO DE COMPROMETIMENTO")]
         [HttpPost("generate/ContractCommitmentTerm")]
         public async Task<IActionResult> GenerateCommitmentTerm
@@ -77,7 +50,6 @@ namespace Pregiato.API.Controllers
             {
                 return NotFound("Modelo não encontrado.");
             }
-
 
             var parameters = new Dictionary<string, string>
             {
@@ -94,10 +66,11 @@ namespace Pregiato.API.Controllers
                     {"Telefone-Secundário", model.TelefoneSecundario},
             };
 
+            createRequestContractImageRights.cpfModelo = model.CPF;
 
             var contracts = await _contractService.GenerateContractCommitmentTerm(createRequestContractImageRights, queryModel);
 
-            _context.SaveChangesAsync();
+            await _context.SaveChangesAsync();
 
             return Ok(contracts);
         }
@@ -116,11 +89,13 @@ namespace Pregiato.API.Controllers
             {
                 return NotFound("Modelo não encontrado.");
             }
-              // Validação do pagamento
-            ////  var validationResult = await _paymentService.ValidatePayment(payment);
-            //  if (validationResult != "validação de pagamento ok")
-            //  {
-            //      return BadRequest($"Erro ao validar o pagamento: {validationResult}");
+      
+            var validationResult = await _paymentService.ValidatePayment(paymentRequest);
+            if (validationResult != "validação de pagamento ok")
+            {
+                return BadRequest($"Erro ao validar o pagamento: {validationResult}");
+            }
+
             var parameters = new Dictionary<string, string>
             {
                     {"Nome-Modelo", model.Name },

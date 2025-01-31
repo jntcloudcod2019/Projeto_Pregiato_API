@@ -4,12 +4,12 @@ namespace Pregiato.API.Interface
 {
     public interface IModelRepository
     {
-        Task<IEnumerable<Moddels>> GetAllModelAsync();
-        Task<Moddels> GetByIdModelAsync(Guid id);
-        Task AddModelAsync(Moddels model);
-        Task UpdateModelAsync(Moddels model);
+        Task<IEnumerable<Model>> GetAllModelAsync();
+        Task<Model> GetByIdModelAsync(Guid id);
+        Task AddModelAsync(Model model);
+        Task UpdateModelAsync(Model model);
         Task DeleteModelAsync(Guid id);
-        Task<Moddels?> GetModelByCriteriaAsync(string query);
-        Task<Moddels> GetModelAllAsync(string? idModel, string? cpf, string? rg);
+        Task<Model?> GetModelByCriteriaAsync(string query);
+        Task<Model> GetModelAllAsync(string? idModel, string? cpf, string? rg);
     }
 }

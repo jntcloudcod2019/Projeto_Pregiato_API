@@ -41,15 +41,21 @@ namespace Pregiato.API.Data
 
         public async Task SaveContractAsync(ContractBase contract)
         {
-          
-            _context.Add(contract); 
-            _context.SaveChangesAsync();
+
+            _context.Add(contract);
+          await  _context.SaveChangesAsync();
         }
 
-        public async Task<ContractBase?> GetContractByIdAsync(int? codProposta, Guid? contractId)
+        Task<ContractBase?> IContractRepository.GetContractByIdAsync(int? codProposta, Guid? contractId)
+        {
+            throw new NotImplementedException();
+        }
+
+        public async Task<List<ContractBase>> GetContractsByModelId(Guid modelId)
         {
             return await _context.Contracts
-                .FirstOrDefaultAsync(c => c.CodProposta == codProposta || c.ContractId == contractId);
+             .Where(c => c.ModelId == modelId)
+             .ToListAsync();
         }
     }
  }

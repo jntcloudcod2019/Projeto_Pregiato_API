@@ -1,14 +1,15 @@
 ﻿
 using Pregiato.API.Interface;
 using Pregiato.API.Models;
+using Pregiato.API.Requests;
 
 public class PaymentService : IPaymentService
 {
-    public async Task<string> ValidatePayment(Payment payment)
+    public async Task<string> ValidatePayment(PaymentRequest payment)
     {
         try
         {
-            if (!Enum.IsDefined(typeof(MetodoPagamento), payment.MetodoPagamento))
+            if (MetodoPagamento.IsValid == null)
                 throw new ArgumentException("Método de pagamento inválido.");
 
             if (payment.Valor <= 0)
@@ -21,7 +22,7 @@ public class PaymentService : IPaymentService
                 string.IsNullOrEmpty(payment.FinalCartao))
                 throw new ArgumentException("Os últimos 4 dígitos do cartão são obrigatórios para cartões.");
 
-            if (payment.MetodoPagamento == MetodoPagamento.Pix && payment.Comprovante == null)
+            if (payment.MetodoPagamento == MetodoPagamento.Pix /*Inserir validação de comprovante*/ )
                 throw new ArgumentException("O comprovante é obrigatório para pagamentos via Pix.");
 
             if (payment.StatusPagamento.ToString() == "Pending" && payment.DataAcordoPagamento == null)

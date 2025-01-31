@@ -3,6 +3,7 @@ using System;
 using System.Text.Json;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.EntityFrameworkCore.Infrastructure;
+using Microsoft.EntityFrameworkCore.Migrations;
 using Microsoft.EntityFrameworkCore.Storage.ValueConversion;
 using Npgsql.EntityFrameworkCore.PostgreSQL.Metadata;
 using Pregiato.API.Data;
@@ -12,9 +13,11 @@ using Pregiato.API.Data;
 namespace Pregiato.API.Migrations
 {
     [DbContext(typeof(ModelAgencyContext))]
-    partial class ModelAgencyContextModelSnapshot : ModelSnapshot
+    [Migration("20250129032805_AddStatusToModelJob")]
+    partial class AddStatusToModelJob
     {
-        protected override void BuildModel(ModelBuilder modelBuilder)
+        /// <inheritdoc />
+        protected override void BuildTargetModel(ModelBuilder modelBuilder)
         {
 #pragma warning disable 612, 618
             modelBuilder
@@ -197,11 +200,33 @@ namespace Pregiato.API.Migrations
 
                     b.HasKey("ContractId");
 
-                    b.HasIndex("ModelId");
-
                     b.ToTable("Contracts", (string)null);
 
                     b.UseTptMappingStrategy();
+                });
+
+            modelBuilder.Entity("Pregiato.API.Models.ContractsModels", b =>
+                {
+                    b.Property<Guid>("ContractId")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("uuid");
+
+                    b.Property<string>("ContractFile")
+                        .IsRequired()
+                        .HasColumnType("text");
+
+                    b.Property<DateTime>("CreatedAt")
+                        .HasColumnType("timestamp with time zone");
+
+                    b.Property<Guid>("ModelId")
+                        .HasColumnType("uuid");
+
+                    b.Property<DateTime?>("UpdatedAt")
+                        .HasColumnType("timestamp with time zone");
+
+                    b.HasKey("ContractId");
+
+                    b.ToTable("ContractsModels");
                 });
 
             modelBuilder.Entity("Pregiato.API.Models.Job", b =>
@@ -246,7 +271,7 @@ namespace Pregiato.API.Migrations
                     b.ToTable("Jobs");
                 });
 
-            modelBuilder.Entity("Pregiato.API.Models.Model", b =>
+            modelBuilder.Entity("Pregiato.API.Models.Moddels", b =>
                 {
                     b.Property<Guid>("IdModel")
                         .ValueGeneratedOnAdd()
@@ -340,7 +365,7 @@ namespace Pregiato.API.Migrations
 
                     b.HasKey("IdModel");
 
-                    b.ToTable("Model");
+                    b.ToTable("Models");
                 });
 
             modelBuilder.Entity("Pregiato.API.Models.ModelJob", b =>
@@ -526,17 +551,6 @@ namespace Pregiato.API.Migrations
                     b.ToTable("CommitmentTerms", (string)null);
                 });
 
-            modelBuilder.Entity("Pregiato.API.Models.ContractsModels", b =>
-                {
-                    b.HasBaseType("Pregiato.API.Models.ContractBase");
-
-                    b.Property<string>("ContractFile")
-                        .IsRequired()
-                        .HasColumnType("text");
-
-                    b.ToTable("ContractsModels");
-                });
-
             modelBuilder.Entity("Pregiato.API.Models.ImageRightsTerm", b =>
                 {
                     b.HasBaseType("Pregiato.API.Models.ContractBase");
@@ -551,17 +565,6 @@ namespace Pregiato.API.Migrations
                     b.ToTable("PhotographyProductionContracts", (string)null);
                 });
 
-            modelBuilder.Entity("Pregiato.API.Models.ContractBase", b =>
-                {
-                    b.HasOne("Pregiato.API.Models.Model", "Model")
-                        .WithMany("Contracts")
-                        .HasForeignKey("ModelId")
-                        .OnDelete(DeleteBehavior.Cascade)
-                        .IsRequired();
-
-                    b.Navigation("Model");
-                });
-
             modelBuilder.Entity("Pregiato.API.Models.ModelJob", b =>
                 {
                     b.HasOne("Pregiato.API.Models.Job", "Job")
@@ -570,7 +573,7 @@ namespace Pregiato.API.Migrations
                         .OnDelete(DeleteBehavior.Cascade)
                         .IsRequired();
 
-                    b.HasOne("Pregiato.API.Models.Model", "Model")
+                    b.HasOne("Pregiato.API.Models.Moddels", "Model")
                         .WithMany()
                         .HasForeignKey("ModelId")
                         .OnDelete(DeleteBehavior.Cascade)
@@ -608,15 +611,6 @@ namespace Pregiato.API.Migrations
                         .IsRequired();
                 });
 
-            modelBuilder.Entity("Pregiato.API.Models.ContractsModels", b =>
-                {
-                    b.HasOne("Pregiato.API.Models.ContractBase", null)
-                        .WithOne()
-                        .HasForeignKey("Pregiato.API.Models.ContractsModels", "ContractId")
-                        .OnDelete(DeleteBehavior.Cascade)
-                        .IsRequired();
-                });
-
             modelBuilder.Entity("Pregiato.API.Models.ImageRightsTerm", b =>
                 {
                     b.HasOne("Pregiato.API.Models.ContractBase", null)
@@ -633,11 +627,6 @@ namespace Pregiato.API.Migrations
                         .HasForeignKey("Pregiato.API.Models.PhotographyProductionContract", "ContractId")
                         .OnDelete(DeleteBehavior.Cascade)
                         .IsRequired();
-                });
-
-            modelBuilder.Entity("Pregiato.API.Models.Model", b =>
-                {
-                    b.Navigation("Contracts");
                 });
 #pragma warning restore 612, 618
         }

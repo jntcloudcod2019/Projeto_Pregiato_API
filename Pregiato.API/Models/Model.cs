@@ -3,18 +3,20 @@ using System.ComponentModel.DataAnnotations;
 using System.Security;
 using System.Text.Json.Nodes;
 using System.Text.Json;
+using System.Text.Json.Serialization;
 
 namespace Pregiato.API.Models
 {
-    public class Moddels
+    public class Model
     {
         [Key]
-        [DatabaseGenerated(DatabaseGeneratedOption.Identity)]
         public Guid IdModel { get; set; }
 
         [Required]
         [StringLength(255)]
         public string Name { get; set; }
+        [JsonIgnore]
+        public List<ContractBase> Contracts { get; set; } = new List<ContractBase>();
 
         [Required]
         [StringLength(14, ErrorMessage = "CPF deve ter no máximo 14 caracteres.")]
