@@ -12,12 +12,14 @@ namespace Pregiato.API.Services
     {
         private readonly IConfiguration _configuration;
         private readonly IModelRepository _modelRepository;
+        private readonly IHttpContextAccessor _httpContextAccessor;
 
-        public JwtService(IConfiguration configuration, IModelRepository modelRepository)
+        public JwtService(IConfiguration configuration, IModelRepository modelRepository, IHttpContextAccessor httpContextAccessor)
         {
             _configuration = configuration;
             _modelRepository = modelRepository;
-            _modelRepository = _modelRepository ?? throw new ArgumentNullException(nameof(modelRepository));    
+            _modelRepository = _modelRepository ?? throw new ArgumentNullException(nameof(modelRepository));
+            _httpContextAccessor = httpContextAccessor;
         }
 
         public string GenerateToken(LoginUserRequest loginUserRequest)
@@ -47,6 +49,39 @@ namespace Pregiato.API.Services
             var jwt = new JwtSecurityTokenHandler().WriteToken(token);
             return jwt;
         }
+
+        public Task<string> GetUsernameFromTokenAsync(string token)
+        {
+            var handler = new JwtSecurityTokenHandler();
+            try
+            {
+                var jwtToken = handler.ReadJwtToken(token);
+                var usernameClaim = jwtToken.Claims.FirstOrDefault(c => c.Type == "http://schemas.xmlsoap.org/ws/2005/05/identity/claims/name");
+                return Task.FromResult(usernameClaim?.Value);
+            }
+            catch
+            {
+                return Task.FromResult<string>(null);
+            }
+        }
+
+        public async Task<string> GetAuthenticatedUsernameAsync()
+        {
+            var httpContext = _httpContextAccessor.HttpContext;
+            if (httpContext == null)
+            {
+                return null;
+            }
+
+            var authorizationHeader = httpContext.Request.Headers["Authorization"].ToString();
+            if (string.IsNullOrEmpty(authorizationHeader) || !authorizationHeader.StartsWith("Bearer "))
+            {
+                return null;
+            }
+            var token = authorizationHeader.Substring("Bearer ".Length).Trim();
+            return await GetUsernameFromTokenAsync(token);
+        }
+
     }
 
 }

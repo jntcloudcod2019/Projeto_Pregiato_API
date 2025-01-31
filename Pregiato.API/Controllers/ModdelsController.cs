@@ -236,82 +236,9 @@ namespace Pregiato.API.Controllers
         }
 
         [HttpGet("my-contracts")]
-        public async Task<IActionResult> GetMyContracts()
+        public async Task<IActionResult> GetMyContracts(string type = "files")
         {
-            var authorizationHeader = HttpContext.Request.Headers["Authorization"].ToString();
-            if (string.IsNullOrEmpty(authorizationHeader) || !authorizationHeader.StartsWith("Bearer "))
-            {
-                return Unauthorized("Token de autenticação não fornecido ou inválido.");
-            }
-
-            var token = authorizationHeader.Substring("Bearer ".Length).Trim();
-
-            var handler = new JwtSecurityTokenHandler();
-            JwtSecurityToken jwtToken;
-            try
-            {
-                jwtToken = handler.ReadJwtToken(token);
-            }
-            catch (Exception)
-            {
-                return Unauthorized("Token inválido.");
-            }
-
-            var usernameClaim = jwtToken.Claims.FirstOrDefault(c => c.Type == "http://schemas.xmlsoap.org/ws/2005/05/identity/claims/name");
-            if (usernameClaim == null)
-            {
-                return Unauthorized("Usuário não autenticado.");
-            }
-
-            var username = usernameClaim.Value;
-
-            var model = await _agencyContext.Model
-                .FirstOrDefaultAsync(m => m.Name == username);
-
-            if (model == null)
-            {
-                return Unauthorized("Usuário não encontrado na base de dados.");
-            }
-
-            var roleClaim = jwtToken.Claims.FirstOrDefault(c => c.Type == "http://schemas.microsoft.com/ws/2008/06/identity/claims/role");
-            if (roleClaim == null || roleClaim.Value != "Model")
-            {
-                return Forbid("Permissão insuficiente.");
-            }
-
-            var modelSearch = await _agencyContext.Model
-                .Where(m => m.Name == username)
-                .Select(m => new { m.IdModel })
-                .FirstOrDefaultAsync();
-
-            if (model == null)
-            {
-                throw new Exception($"Nenhum modelo encontrado para o usuário: {username}");
-            }
-
-            var contracts = await _agencyContext.Contracts
-                 .Where(c => c.ModelId == modelSearch.IdModel) // Filtra pelos contratos do modelo
-                 .Select(c => new
-                 {
-                     c.ModelId,
-                     c.ContractFilePath,
-                     c.Content // Apenas os campos necessários
-                 })
-                 .ToListAsync();
-
-            var listContracts = contracts.Select(c =>
-            {
-                byte[] fileBytes = c.Content ?? Array.Empty<byte>(); 
-
-                return new
-                {
-                    ModelId = c.ModelId,
-                    ContractFilePath = c.ContractFilePath,
-                    ContentBase64 = fileBytes.Length > 0 ? Convert.ToBase64String(fileBytes) : null
-                };
-            }).ToList();
-
-            return Ok(listContracts);
+            return await _contractService.GetMyContracts(type);
         }
 
 

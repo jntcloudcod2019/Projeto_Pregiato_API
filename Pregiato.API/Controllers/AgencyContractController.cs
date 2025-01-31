@@ -70,7 +70,7 @@ namespace Pregiato.API.Controllers
 
             var contracts = await _contractService.GenerateContractCommitmentTerm(createRequestContractImageRights, queryModel);
 
-            _context.SaveChangesAsync();
+            await _context.SaveChangesAsync();
 
             return Ok(contracts);
         }

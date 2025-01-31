@@ -1,17 +1,13 @@
-﻿using iText.Commons.Actions.Contexts;
-using iText.Kernel.Pdf;
+﻿using iText.Kernel.Pdf;
 using iText.Layout;
 using iText.Layout.Element;
-using Microsoft.AspNetCore.Http.HttpResults;
 using Microsoft.EntityFrameworkCore;
 using Pregiato.API.Data;
 using Pregiato.API.Interface;
 using Pregiato.API.Models;
 using Pregiato.API.Requests;
 using Microsoft.AspNetCore.Mvc;
-using System.Diagnostics.Contracts;
 using System.Text.RegularExpressions;
-using System.Globalization;
 
 namespace Pregiato.API.Services
 {
@@ -22,16 +18,19 @@ namespace Pregiato.API.Services
         private readonly IModelRepository _modelRepository;
         private readonly DigitalSignatureService _digitalSignatureService;
         private readonly ModelAgencyContext _modelAgencyContext;
+        private readonly IJwtService _jwtService;   
 
         public ContractService(IContractRepository contractRepository,
                DigitalSignatureService digitalSignatureService,
                IModelRepository modelRepository,
-               ModelAgencyContext context)
+               ModelAgencyContext context,
+               IJwtService jwtService)
         {
             _contractRepository = contractRepository ?? throw new ArgumentNullException(nameof(context));
             _digitalSignatureService = digitalSignatureService;
             _modelRepository = modelRepository;
             _modelAgencyContext = context ?? throw new ArgumentNullException(nameof(context));
+            _jwtService = jwtService;   
         }
 
         private static readonly string DefaultNomeEmpresa = "Pregiato Management";
@@ -45,19 +44,6 @@ namespace Pregiato.API.Services
         private static readonly string DefaultDataContrato = DateTime.UtcNow.ToString("dd/MM/yyyy");
         private static readonly string DefaultVigenciaContrato = DateTime.UtcNow.ToString("dd/MM/yyyy");
         private static readonly string DefaultMesContrato = DateTime.UtcNow.ToString("MMMM");
-
-       
-        public async Task<ContractBase?> GetContractByIdAsync(Guid contractId)
-        {
-
-            var contract = await _contractRepository.GetByIdContractAsync(contractId);
-            if (contract == null)
-            {
-
-                return null;
-            }
-            throw new InvalidCastException(" Contrato não encontrado.");
-        }
 
         private string PopulateTemplate(string template, Dictionary<string, string> parameters)
         {
@@ -406,6 +392,37 @@ namespace Pregiato.API.Services
 
         }
 
+        public async Task<IActionResult> GetMyContracts(string type = "files")
+        {
+            var username = await _jwtService.GetAuthenticatedUsernameAsync();
+            if (string.IsNullOrEmpty(username))
+            {
+                return new UnauthorizedResult();
+            }
+
+            var modelId = await _modelRepository.GetModelByCriteriaAsync(username);
+            if (modelId == null)
+            {
+                return new NotFoundObjectResult($"Nenhum modelo encontrado para o usuário: {username}");
+            }
+
+            var contracts = await _contractRepository.GetContractsByModelId(modelId.IdModel);
+            if (contracts == null || !contracts.Any())
+            {
+                return new NotFoundObjectResult("Nenhum contrato encontrado para o usuário.");
+            }
+
+            return type == "names"
+                ? new OkObjectResult(contracts.Select(c => c.ContractFilePath).ToList())
+                : new OkObjectResult(contracts.Select(c => new
+                {
+                    c.ModelId,
+                    c.ContractFilePath,
+                    ContentBase64 = c.Content != null ? Convert.ToBase64String(c.Content) : null
+                }).ToList());
+        }
+
+
         private DateTime ConvertToUtcDateTime(DateTime dateTime)
         {
             if (dateTime == DateTime.MinValue || dateTime == DateTime.MaxValue)
@@ -415,6 +432,22 @@ namespace Pregiato.API.Services
 
             return DateTime.SpecifyKind(dateTime, DateTimeKind.Utc);
         }
+
+        public async Task<List<ContractsModels>> GetContractsByModelIdAsync(Guid modelId)
+        {
+            return await _modelAgencyContext.Contracts
+           .Where(c => c.ModelId == modelId)
+           .Select(c => new  ContractsModels
+           {
+               ModelId = modelId,   
+               ContractFilePath = c.ContractFilePath,   
+               Content = c.Content
+           })
+           .ToListAsync();
+        }
     }  
+
+
+
 
 }

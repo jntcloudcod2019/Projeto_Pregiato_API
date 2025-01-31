@@ -17,7 +17,6 @@ namespace Pregiato.API.Services
             _jwtService = jwtService;  
         }
 
-
         public async Task DeleteUserAsync(Guid id)
         {
             await _userRepository.DeleteUserAsync(id);

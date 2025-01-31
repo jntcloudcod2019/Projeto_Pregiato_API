@@ -48,6 +48,7 @@ builder.Services.AddScoped<DigitalSignatureService>();
 builder.Services.AddScoped<IPasswordHasherService, PasswordHasherService>();
 
 
+builder.Services.AddHttpContextAccessor();
 builder.Services.AddEndpointsApiExplorer();
 builder.Services.AddSwaggerGen(c =>
 {

@@ -14,7 +14,6 @@ namespace Pregiato.API.Models
         public Guid ModelId { get; set; }
         [JsonIgnore]
         public Model Model { get; set; }
-
         public Guid JobId { get; set; }
         public DateTime CreatedAt { get; set; } = DateTime.UtcNow;
         public DateTime UpdatedAt { get; set; } = DateTime.UtcNow;
@@ -33,8 +32,8 @@ namespace Pregiato.API.Models
         public string CEPEmpresa { get; set;}
         public string VigenciaContrato {get; set; } = DateTime.UtcNow.ToString("dd/MM/yyyy");
         public decimal ValorContrato { get; set; } 
-        public string FormaPagamento { get; set; } 
-        public string StatusPagamento { get; set; }
+        public string ? FormaPagamento { get; set; }
+        public string StatusPagamento { get; set; } = "N/A";
 
         [SwaggerSchema("Data do Pagamento")]
         [DisplayFormat(DataFormatString = "{dd-MM-yyyy}", ApplyFormatInEditMode = true)]
@@ -46,6 +45,7 @@ namespace Pregiato.API.Models
         public abstract string TemplateFileName { get; }
         public int CodProposta { get; set; }
     }
+ 
 
     public class AgencyContract : ContractBase
     {

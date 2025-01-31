@@ -24,9 +24,11 @@ namespace Pregiato.API.Data
         {
             base.OnModelCreating(modelBuilder);
 
-            // Configuração para a tabela ContractsModels
+            modelBuilder.Entity<ContractBase>()
+                  .ToTable("Contracts");  
+
             modelBuilder.Entity<ContractsModels>()
-                .HasKey(c => c.ContractId);
+                .HasBaseType<ContractBase>(); 
 
             // Configuração para a tabela Payment
             modelBuilder.Entity<Payment>(entity =>
