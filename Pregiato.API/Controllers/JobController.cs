@@ -64,7 +64,7 @@ namespace Pregiato.API.Controllers
                 return BadRequest("ModelId e JobId são obrigatórios.");
             }
 
-            var model = await _agencyContext.Models.FindAsync(request.ModelId);
+            var model = await _agencyContext.Model.FindAsync(request.ModelId);
             if (model == null)
             {
                 return NotFound($"Modelo com ID {request.ModelId} não encontrado.");

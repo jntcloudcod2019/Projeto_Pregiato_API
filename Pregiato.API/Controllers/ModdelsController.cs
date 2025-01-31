@@ -7,6 +7,7 @@ using Pregiato.API.Interface;
 using Pregiato.API.Models;
 using Pregiato.API.Requests;
 using Swashbuckle.AspNetCore.Annotations;
+using System.Diagnostics.Contracts;
 using System.IdentityModel.Tokens.Jwt;
 using System.Text.Json;
 
@@ -17,26 +18,28 @@ namespace Pregiato.API.Controllers
     public class ModdelsController : ControllerBase
     {
         private readonly IModelRepository _modelRepository;
+        private readonly IContractService _contractService;
 
         private readonly ModelAgencyContext _agencyContext;
 
-        public ModdelsController(IModelRepository modelRepository, ModelAgencyContext agencyContext)
+        public ModdelsController(IModelRepository modelRepository, ModelAgencyContext agencyContext, IContractService contractService)
         {
             _modelRepository = modelRepository ?? throw new ArgumentNullException(nameof(modelRepository));
             _agencyContext = agencyContext ?? throw new ArgumentNullException(nameof(agencyContext));
+            _contractService = contractService; 
         }
 
         [HttpGet("/GetAllModels")]
         [SwaggerOperation("Retorna todos os modelos cadastrados.")]
         public async Task<IActionResult> GetAllModels()
         {
-            var modelsExists = await _modelRepository.GetAllModelAsync();  
+            var modelsExists = await _modelRepository.GetAllModelAsync();
             return Ok(modelsExists);
         }
 
         [HttpPost("/AddModels")]
         [SwaggerOperation("Criar novo modelo.")]
-        public  async Task <IActionResult> AddNewModel([FromBody] CreateModelRequest createModelRequest)
+        public async Task<IActionResult> AddNewModel([FromBody] CreateModelRequest createModelRequest)
         {
             if (!ModelState.IsValid)
             {
@@ -50,7 +53,7 @@ namespace Pregiato.API.Controllers
                 additionalAttributes = createModelRequest.AdditionalAttributes
             }));
 
-            var model = new Moddels
+            var model = new Model
             {
                 Name = createModelRequest.Name,
                 CPF = createModelRequest.CPF,
@@ -58,15 +61,20 @@ namespace Pregiato.API.Controllers
                 Email = createModelRequest.Email,
                 PostalCode = createModelRequest.PostalCode,
                 Address = createModelRequest.Address,
+                NumberAddress = createModelRequest.NumberAddress,   
+                Complement = createModelRequest.Complement,
                 BankAccount = createModelRequest.BankAccount,
                 PasswordHash = createModelRequest.PasswordHash,
                 Neighborhood = createModelRequest.Neighborhood,
                 City = createModelRequest.City,
-                DNA = dnaJson,  
+                DNA = dnaJson,
+                TelefonePrincipal = createModelRequest.TelefonePrincipal,   
+                TelefoneSecundario = createModelRequest.TelefoneSecundario,
+
             };
 
             await _modelRepository.AddModelAsync(model);
-            return Ok("Modelo criado com sucesso!");
+            return Ok($"Modelo {model.Name}, criado com sucesso!");
         }
 
         [HttpPut("/UpdateModels{id}")]
@@ -78,15 +86,15 @@ namespace Pregiato.API.Controllers
                 return BadRequest(ModelState);
             }
             var modelExists = await _modelRepository.GetByIdModelAsync(id);
-            
-            if (modelExists== null)
+
+            if (modelExists == null)
             {
                 return NotFound();
             }
 
             switch (updateModelRequest)
             {
-                case { Name: not null  }:
+                case { Name: not null }:
                     modelExists.Name = updateModelRequest.Name;
                     break;
 
@@ -115,11 +123,11 @@ namespace Pregiato.API.Controllers
                     break;
 
                 default:
-                   
-                break;
 
-            }            
-            
+                    break;
+
+            }
+
             await _modelRepository.UpdateModelAsync(modelExists);
             return NoContent();
         }
@@ -134,7 +142,7 @@ namespace Pregiato.API.Controllers
                 return NotFound();
             }
             await _modelRepository.DeleteModelAsync(id);
-            return NoContent(); 
+            return NoContent();
         }
 
         [HttpGet("/model-feed")]
@@ -167,7 +175,7 @@ namespace Pregiato.API.Controllers
 
             var username = usernameClaim.Value;
 
-            var model = await _agencyContext.Models
+            var model = await _agencyContext.Model
                 .FirstOrDefaultAsync(m => m.Name == username);
 
             if (model == null)
@@ -227,8 +235,98 @@ namespace Pregiato.API.Controllers
             });
         }
 
+        [HttpGet("my-contracts")]
+        public async Task<IActionResult> GetMyContracts()
+        {
+            var authorizationHeader = HttpContext.Request.Headers["Authorization"].ToString();
+            if (string.IsNullOrEmpty(authorizationHeader) || !authorizationHeader.StartsWith("Bearer "))
+            {
+                return Unauthorized("Token de autenticação não fornecido ou inválido.");
+            }
+
+            var token = authorizationHeader.Substring("Bearer ".Length).Trim();
+
+            var handler = new JwtSecurityTokenHandler();
+            JwtSecurityToken jwtToken;
+            try
+            {
+                jwtToken = handler.ReadJwtToken(token);
+            }
+            catch (Exception)
+            {
+                return Unauthorized("Token inválido.");
+            }
+
+            var usernameClaim = jwtToken.Claims.FirstOrDefault(c => c.Type == "http://schemas.xmlsoap.org/ws/2005/05/identity/claims/name");
+            if (usernameClaim == null)
+            {
+                return Unauthorized("Usuário não autenticado.");
+            }
+
+            var username = usernameClaim.Value;
+
+            var model = await _agencyContext.Model
+                .FirstOrDefaultAsync(m => m.Name == username);
+
+            if (model == null)
+            {
+                return Unauthorized("Usuário não encontrado na base de dados.");
+            }
+
+            var roleClaim = jwtToken.Claims.FirstOrDefault(c => c.Type == "http://schemas.microsoft.com/ws/2008/06/identity/claims/role");
+            if (roleClaim == null || roleClaim.Value != "Model")
+            {
+                return Forbid("Permissão insuficiente.");
+            }
+
+            var modelSearch = await _agencyContext.Model
+                .Where(m => m.Name == username)
+                .Select(m => new { m.IdModel })
+                .FirstOrDefaultAsync();
+
+            if (model == null)
+            {
+                throw new Exception($"Nenhum modelo encontrado para o usuário: {username}");
+            }
+
+            var contracts = await _agencyContext.Contracts
+                 .Where(c => c.ModelId == modelSearch.IdModel) // Filtra pelos contratos do modelo
+                 .Select(c => new
+                 {
+                     c.ModelId,
+                     c.ContractFilePath,
+                     c.Content // Apenas os campos necessários
+                 })
+                 .ToListAsync();
+
+            var listContracts = contracts.Select(c =>
+            {
+                byte[] fileBytes = c.Content ?? Array.Empty<byte>(); 
+
+                return new
+                {
+                    ModelId = c.ModelId,
+                    ContractFilePath = c.ContractFilePath,
+                    ContentBase64 = fileBytes.Length > 0 ? Convert.ToBase64String(fileBytes) : null
+                };
+            }).ToList();
+
+            return Ok(listContracts);
+        }
+
+
+        [HttpGet("download-contract/{id}")]
+        public async Task<IActionResult> DownloadContract(int id)
+        {
+            var contract = await _agencyContext.Contracts.FindAsync(id);
+            if (contract == null)
+            {
+                return NotFound("Contrato não encontrado.");
+            }
+
+            return File(contract.ContractFilePath, "application/pdf", $"{contract.Content}.pdf");
+        }
+
     }
 }
 
-
-    

@@ -24,8 +24,6 @@ namespace Pregiato.API.Controllers
         private readonly IModelRepository _modelRepository;
         private readonly IPaymentService _paymentService;
         private readonly ModelAgencyContext _context;
-        private readonly ContractService contractService;
-        private readonly PaymentService paymentService; 
        
         public AgencyContractController(
             IContractService contractService,

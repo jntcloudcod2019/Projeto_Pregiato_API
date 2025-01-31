@@ -66,6 +66,7 @@ namespace Pregiato.API.Services
                     throw new Exception("Senha inválida. Verifique a senha digitada e tente novamente.");
                 }
 
+                loginUserRequest.UserType = user.UserType;
                 return _jwtService.GenerateToken(loginUserRequest);
             }
             catch (Exception ex)

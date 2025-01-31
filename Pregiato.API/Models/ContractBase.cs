@@ -1,14 +1,20 @@
-﻿
-
-using Swashbuckle.AspNetCore.Annotations;
+﻿using Swashbuckle.AspNetCore.Annotations;
 using System.ComponentModel.DataAnnotations;
+using System.ComponentModel.DataAnnotations.Schema;
+using System.Text.Json.Serialization;
 
 namespace Pregiato.API.Models
 {
     public abstract class ContractBase
     {
+        [Key]
         public Guid ContractId { get; set; }
+
+        [ForeignKey("Model")]
         public Guid ModelId { get; set; }
+        [JsonIgnore]
+        public Model Model { get; set; }
+
         public Guid JobId { get; set; }
         public DateTime CreatedAt { get; set; } = DateTime.UtcNow;
         public DateTime UpdatedAt { get; set; } = DateTime.UtcNow;
