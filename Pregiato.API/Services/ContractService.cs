@@ -8,6 +8,7 @@ using Pregiato.API.Models;
 using Pregiato.API.Requests;
 using Microsoft.AspNetCore.Mvc;
 using System.Text.RegularExpressions;
+using Microsoft.AspNetCore.Http.HttpResults;
 
 namespace Pregiato.API.Services
 {
@@ -103,7 +104,7 @@ namespace Pregiato.API.Services
             contract.Content = pdfBytes;
         
 
-            contract.ContractFilePath = $"CodigoPorposta_{contract.CodProposta}_CPF:{cpfModelo}_{contract.TemplateFileName}.pdf";
+            contract.ContractFilePath = $"CodigoPorposta_{contract.CodProposta}_CPF:{cpfModelo}_{DateTime.UtcNow.ToString("dd/MM/yyyy")}_{contract.TemplateFileName}.pdf";
 
            await _contractRepository.SaveContractAsync(contract);
         }
@@ -238,21 +239,24 @@ namespace Pregiato.API.Services
         
             await SaveContractAsync(contract, new MemoryStream(pdfBytes), parameters["CPF-Modelo"]);
 
-            var payment = new Payment
+            if (contract is PhotographyProductionContract)
             {
-                Id = Guid.NewGuid(),
-                ContractId = contract.ContractId,
-                Valor = contract.ValorContrato,
-                QuantidadeParcela = paymentRequest.QuantidadeParcela,
-                FinalCartao = paymentRequest.FinalCartao,
-                DataPagamento = ConvertToUtcDateTime(paymentRequest.DataPagamento.Value),
-                MetodoPagamento = paymentRequest.MetodoPagamento,
-                StatusPagamento = paymentRequest.StatusPagamento,
-                Comprovante = paymentRequest.Comprovante,
-                DataAcordoPagamento = ConvertToUtcDateTime(paymentRequest.DataAcordoPagamento.Value)
-            };
+                var payment = new Payment
+                {
+                    Id = Guid.NewGuid(),
+                    ContractId = contract.ContractId,
+                    Valor = contract.ValorContrato,
+                    QuantidadeParcela = paymentRequest.QuantidadeParcela,
+                    FinalCartao = paymentRequest.FinalCartao,
+                    DataPagamento = ConvertToUtcDateTime(paymentRequest.DataPagamento.Value),
+                    MetodoPagamento = paymentRequest.MetodoPagamento,
+                    StatusPagamento = paymentRequest.StatusPagamento,
+                    Comprovante = paymentRequest.Comprovante,
+                    DataAcordoPagamento = ConvertToUtcDateTime(paymentRequest.DataAcordoPagamento.Value)
+                };
 
-            await _modelAgencyContext.AddAsync(payment);    
+                await _modelAgencyContext.AddAsync(payment);
+            }  
 
             return contract;
         }
@@ -309,13 +313,13 @@ namespace Pregiato.API.Services
             return contracts;
         }
 
-       public async Task<ContractBase>GenerateContractCommitmentTerm(CreateRequestContractImageRights createRequestContractImageRights, string querymodel)
+        public async Task<ContractBase>GenerateContractCommitmentTerm(CreateRequestContractImageRights createRequestContractImageRights, string querymodel)
         {
             var model = await _modelRepository.GetModelByCriteriaAsync(querymodel);
 
             if (model == null)
             {
-                //Inseri retorno
+                throw new FileNotFoundException($"Modelo não encontrado:{querymodel}");
             }
 
             var parameters = new Dictionary<string, string>
@@ -389,7 +393,6 @@ namespace Pregiato.API.Services
             await SaveContractAsync(contract, new MemoryStream(pdfBytes), model.CPF);
             
             return contract;
-
         }
 
         public async Task<IActionResult> GetMyContracts(string type = "files")
@@ -422,7 +425,6 @@ namespace Pregiato.API.Services
                 }).ToList());
         }
 
-
         private DateTime ConvertToUtcDateTime(DateTime dateTime)
         {
             if (dateTime == DateTime.MinValue || dateTime == DateTime.MaxValue)
@@ -444,6 +446,86 @@ namespace Pregiato.API.Services
                Content = c.Content
            })
            .ToListAsync();
+        }
+
+        public async Task<ContractBase> GenerateContractPhotographyProductionContract(CreateRequestPhotographyProductionContract createRequestPhotographyProductionContract, string querymodel)
+        {
+            var model = await _modelRepository.GetModelByCriteriaAsync(querymodel);
+
+            if (model == null)
+            {
+                throw new FileNotFoundException($"Modelo não encontrado:{querymodel}");
+            }
+
+            var parameters = new Dictionary<string, string>
+            {    
+                 {"Local-Contrato", DefaultCidadeEmpresa},
+                 {"Data-Contrato", DefaultDataContrato},
+                 {"Mês-Contrato", DefaultMesContrato},
+                 {"Nome-Empresa", DefaultNomeEmpresa},
+                 {"CNPJ-Empresa", DefaultCNPJEmpresa},
+                 {"Endereço-Empresa", DefaultEnderecoEmpresa},
+                 {"Numero-Empresa",DefaultNumeroEmpresa},
+                 {"Complemento-Empresa", DefaultComplementoEmpresa},
+                 {"Cidade-Empresa", DefaultCidadeEmpresa},
+                 {"Bairro-Empresa", DefaultBairroEmpresa},
+                 {"CEP-Empresa",DefaultCEPEmpresa},
+                 {"Nome-Modelo", model.Name },
+                 {"CPF-Modelo", model.CPF },
+                 {"RG-Modelo", model.RG },
+                 {"Endereço-Modelo", model.Address},
+                 {"Numero-Modelo",model.NumberAddress},
+                 {"Bairro-Modelo", model.Neighborhood},
+                 {"Cidade-Modelo", model.City},
+                 {"CEP-Modelo", model.PostalCode},
+                 {"Complemento-Modelo", model.Complement},
+                 {"Telefone-Principal", model.TelefonePrincipal},
+                 {"Telefone-Secundário", model.TelefoneSecundario},
+                 { "Valor-Contrato", createRequestPhotographyProductionContract.AmoutContract.ToString("C")},
+                 {"Forma-Pagamento", createRequestPhotographyProductionContract.MetodoPagamento.Value}
+            };
+
+            string contractType = "Photography";
+            ContractBase contract = contractType switch
+            {
+                "Photography" => new PhotographyProductionContract(),
+                _ => throw new ArgumentException("Invalid contract type.")
+            };
+
+            contract.ModelId = model.IdModel;
+            contract.CodProposta = await GetNextCodPropostaAsync();
+            contract.LocalContrato = parameters.ContainsKey("Local-Contrato") ? parameters["Local-Contrato"] : DefaultCidadeEmpresa;
+            contract.DataContrato = parameters.ContainsKey("Data-Contrato") ? parameters["Data-Contrato"] : DefaultDataContrato;
+            contract.MesContrato = parameters.ContainsKey("Mês-Contrato") ? parameters["Mês-Contrato"] : DefaultMesContrato;
+            contract.NomeEmpresa = parameters.ContainsKey("Nome-Empresa}") ? parameters["Nome-Empresa}"] : DefaultNomeEmpresa;
+            contract.CNPJEmpresa = parameters.ContainsKey("CNPJ-Empresa") ? parameters["CNPJ-Empresa"] : DefaultCNPJEmpresa;
+            contract.EnderecoEmpresa = parameters.ContainsKey("Endereço-Empresa") ? parameters["Endereço-Empresa"] : DefaultEnderecoEmpresa;
+            contract.NumeroEmpresa = parameters.ContainsKey("Numero-Empresa") ? parameters["Numero-Empresa"] : DefaultNumeroEmpresa;
+            contract.ComplementoEmpresa = parameters.ContainsKey("Complemento-Empresa") ? parameters["Complemento-Empresa"] : DefaultComplementoEmpresa;
+            contract.BairroEmpresa = parameters.ContainsKey("Bairro-Empresa") ? parameters["Bairro-Empresa"] : DefaultBairroEmpresa;
+            contract.CidadeEmpresa = parameters.ContainsKey("Cidade-Empresa") ? parameters["Cidade-Empresa"] : DefaultCidadeEmpresa;
+            contract.CEPEmpresa = parameters.ContainsKey("CEP-Empresa") ? parameters["CEP-Empresa"] : DefaultCEPEmpresa;
+            contract.VigenciaContrato = parameters.ContainsKey("Vigência-Contrato") ? parameters["Vigência-Contrato"] : DefaultVigenciaContrato;
+            contract.NomeEmpresa = parameters.ContainsValue("Nome-Empresa") ? parameters["Nome-Empresa"] : "Pregiato management";
+            contract.ValorContrato = parameters.ContainsKey("Valor-Contrato") ? decimal.Parse(parameters["Valor-Contrato"].Replace("R$", "")
+            .Replace(".", "").Replace(",", ".").Trim()) : throw new ArgumentException("A chave 'Valor-Contrato' é obrigatória.");
+            contract.FormaPagamento = parameters.ContainsKey("Forma-Pagamento") ? parameters["Forma-Pagamento"] : createRequestPhotographyProductionContract.MetodoPagamento;
+
+            string htmlTemplatePath = $"TemplatesContratos/{contract.TemplateFileName}";
+            if (!File.Exists(htmlTemplatePath))
+            {
+                throw new FileNotFoundException($"Template não encontrado: {htmlTemplatePath}");
+            }
+
+            string htmlTemplate = await File.ReadAllTextAsync(htmlTemplatePath);
+
+            string populatedHtml = PopulateTemplate(htmlTemplate, parameters);
+
+            byte[] pdfBytes = ConvertHtmlToPdf(populatedHtml);
+
+            await SaveContractAsync(contract, new MemoryStream(pdfBytes), model.CPF);
+
+            return contract;
         }
     }  
 }

@@ -32,7 +32,7 @@ namespace Pregiato.API.Controllers
             _jwtService = jwtService;
         }
 
-        [HttpGet("/GetAllModels")]
+        [HttpGet("GetAllModels")]
         [SwaggerOperation("Retorna todos os modelos cadastrados.")]
         public async Task<IActionResult> GetAllModels()
         {
@@ -40,7 +40,7 @@ namespace Pregiato.API.Controllers
             return Ok(modelsExists);
         }
 
-        [HttpPost("/AddModels")]
+        [HttpPost("AddModels")]
         [SwaggerOperation("Criar novo modelo.")]
         public async Task<IActionResult> AddNewModel([FromBody] CreateModelRequest createModelRequest)
         {
@@ -80,62 +80,7 @@ namespace Pregiato.API.Controllers
             return Ok($"Modelo {model.Name}, criado com sucesso!");
         }
 
-        [HttpPut("/UpdateModels{id}")]
-        [SwaggerOperation("Atualização de cadastro de modelos.")]
-        public async Task<IActionResult> UpdateClient(Guid id, [FromBody] UpdateModelRequest updateModelRequest)
-        {
-            if (!ModelState.IsValid)
-            {
-                return BadRequest(ModelState);
-            }
-            var modelExists = await _modelRepository.GetByIdModelAsync(id);
-
-            if (modelExists == null)
-            {
-                return NotFound();
-            }
-
-            switch (updateModelRequest)
-            {
-                case { Name: not null }:
-                    modelExists.Name = updateModelRequest.Name;
-                    break;
-
-                case { CPF: not null }:
-                    modelExists.CPF = updateModelRequest.CPF;
-                    break;
-
-                case { RG: not null }:
-                    modelExists.RG = updateModelRequest.RG;
-                    break;
-
-                case { Email: not null }:
-                    modelExists.Email = updateModelRequest.Email;
-                    break;
-
-                case { PostalCode: not null }:
-                    modelExists.PostalCode = updateModelRequest.PostalCode;
-                    break;
-
-                case { Address: not null }:
-                    modelExists.Address = updateModelRequest.Address;
-                    break;
-
-                case { BankAccount: not null }:
-                    modelExists.BankAccount = updateModelRequest.BankAccount;
-                    break;
-
-                default:
-
-                    break;
-
-            }
-
-            await _modelRepository.UpdateModelAsync(modelExists);
-            return NoContent();
-        }
-
-        [HttpDelete("/DeleteModel{id}")]
+        [HttpDelete("DeleteModel{id}")]
         [SwaggerOperation("Deletar cadastro de modelos.")]
         public async Task<IActionResult> DeleteModel(Guid id)
         {
@@ -148,7 +93,7 @@ namespace Pregiato.API.Controllers
             return NoContent();
         }
 
-        [HttpGet("/model-feed")]
+        [HttpGet("modelFeedJobs")]
         public async Task<IActionResult> GetModelFeed()
         {
             var username = await _jwtService.GetAuthenticatedUsernameAsync();
@@ -185,7 +130,7 @@ namespace Pregiato.API.Controllers
             });
         }
 
-        [HttpGet("find-model")]
+        [HttpGet("findModel")]
         public async Task<IActionResult> FindModel([FromQuery] string query)
         {
             var model = await _modelRepository.GetModelByCriteriaAsync(query);
@@ -211,14 +156,7 @@ namespace Pregiato.API.Controllers
             });
         }
 
-        [HttpGet("my-contracts")]
-        public async Task<IActionResult> GetMyContracts(string type = "files")
-        {
-            return await _contractService.GetMyContracts(type);
-        }
-
-
-        [HttpGet("download-contract/{id}")]
+        [HttpGet("downloadContract/{id}")]
         public async Task<IActionResult> DownloadContract(int id)
         {
             var contract = await _agencyContext.Contracts.FindAsync(id);

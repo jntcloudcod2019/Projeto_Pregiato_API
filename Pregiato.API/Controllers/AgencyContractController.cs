@@ -4,14 +4,7 @@ using Pregiato.API.Requests;
 using Microsoft.EntityFrameworkCore;
 using Swashbuckle.AspNetCore.Annotations;
 using Pregiato.API.Data;
-using Pregiato.API.Models;
-using iText.Kernel.Pdf;
-using iText.Layout.Element;
-using iText.Layout;
-using Pregiato.API.Services;
-using static System.Runtime.InteropServices.JavaScript.JSType;
-using Org.BouncyCastle.Asn1.Ocsp;
-using static Microsoft.EntityFrameworkCore.DbLoggerCategory;
+using System.Diagnostics.Contracts;
 
 
 namespace Pregiato.API.Controllers
@@ -35,10 +28,9 @@ namespace Pregiato.API.Controllers
             _context = context ?? throw new ArgumentNullException(nameof(context));
             _paymentService = paymentService;
         }
-
-       
+   
         [SwaggerOperation("Processo de gerar o contrato: TERMO DE COMPROMETIMENTO")]
-        [HttpPost("generate/ContractCommitmentTerm")]
+        [HttpPost("generate/commitmentTerm")]
         public async Task<IActionResult> GenerateCommitmentTerm
         ([FromBody] CreateRequestContractImageRights createRequestContractImageRights,
         [FromQuery] string queryModel)
@@ -67,13 +59,12 @@ namespace Pregiato.API.Controllers
 
             createRequestContractImageRights.cpfModelo = model.CPF;
 
-            var contracts = await _contractService.GenerateContractCommitmentTerm(createRequestContractImageRights, queryModel);
+            var contract = await _contractService.GenerateContractCommitmentTerm(createRequestContractImageRights, queryModel);
 
             await _context.SaveChangesAsync();
 
-            return Ok(contracts);
+            return Ok($"Termo de comprometimento para: {model.Name}, gerado com sucesso. Código da Proposta: {contract.CodProposta}.");
         }
-
 
         [SwaggerOperation("Processo de gerar todos os contratos.")]
         [HttpPost("generate/allContracts")]
@@ -146,5 +137,42 @@ namespace Pregiato.API.Controllers
                                                                     
             return File(pdfBytes, "application/pdf", contract.ContractFilePath);
         }
+
+        [SwaggerOperation("Processo de gerar o contrato: CONTRATO DE PRODUÇÃO FOTOGRÁFICA E ACESSO A PLATAFORMA MY PREGIATO")]
+        [HttpPost("generate/photographyProductionContract")]
+        public async Task<IActionResult> GeneratePhotographyProductionContract
+        ([FromBody] CreateRequestPhotographyProductionContract createRequestPhotographyProductionContract,
+        [FromQuery] string queryModel)
+        {
+            var model = await _modelRepository.GetModelByCriteriaAsync(queryModel);
+
+            if (model == null)
+            {
+                return NotFound("Modelo não encontrado.");
+            }
+
+            var parameters = new Dictionary<string, string>
+            {
+                    {"Nome-Modelo", model.Name },
+                    {"CPF-Modelo", model.CPF },
+                    {"RG-Modelo", model.RG },
+                    {"Endereço-Modelo", model.Address},
+                    {"Numero-Modelo",model.NumberAddress},
+                    {"Bairro-Modelo", model.Neighborhood},
+                    {"Cidade-Modelo", model.City},
+                    {"CEP-Modelo", model.PostalCode},
+                    {"Complemento-Modelo", model.Complement},
+                    {"Telefone-Principal", model.TelefonePrincipal},
+                    {"Telefone-Secundário", model.TelefoneSecundario},
+            };
+
+            var contract = await _contractService.GenerateContractPhotographyProductionContract(createRequestPhotographyProductionContract, queryModel);
+
+            await _context.SaveChangesAsync();
+
+            return Ok($"Contrato de PFPMP para {model.Name}, gerado com sucesso. Código da Proposta: {contract.CodProposta}.");
+        }
+
+
     }
 }
