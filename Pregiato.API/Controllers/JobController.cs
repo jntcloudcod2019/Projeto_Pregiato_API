@@ -10,7 +10,7 @@ namespace Pregiato.API.Controllers
 {
     [Authorize]
     [ApiController]
-    [Route("api/Jobs")]
+    [Route("api/[controller]")]
     public class JobController : ControllerBase
     {
         private readonly IJobRepository _jobRepository;

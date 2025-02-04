@@ -7,7 +7,7 @@ using Microsoft.AspNetCore.Authorization;
 namespace Pregiato.API.Controllers
 {
     [ApiController]
-    [Route("api/User")]
+    [Route("api/[controller]")]
     public class UserController : ControllerBase
     {
         private readonly IUserService _userService;
@@ -104,7 +104,5 @@ namespace Pregiato.API.Controllers
             }
         }
 
-
     }
-
 }

@@ -11,7 +11,7 @@ namespace Pregiato.API.Controllers
 {
     //[Authorize(Roles = "AdministratorPolicy,ManagerPolicy")]
     [ApiController]
-    [Route("api/Client")]
+    [Route("api/[controller]")]
     public class ClientController : ControllerBase
     {
         private readonly IClientRepository _clientRepository;

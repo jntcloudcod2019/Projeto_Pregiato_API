@@ -23,8 +23,7 @@ namespace Pregiato.API.Controllers
         private readonly IContractService _contractService;
         private readonly IModelRepository _modelRepository;
         private readonly IPaymentService _paymentService;
-        private readonly ModelAgencyContext _context;
-       
+        private readonly ModelAgencyContext _context;     
         public AgencyContractController(
             IContractService contractService,
             IModelRepository modelRepository,
@@ -147,7 +146,7 @@ namespace Pregiato.API.Controllers
             {
                 return StatusCode(500, $"Erro ao gerar o contrato: {ex.Message}");
             }
-
+           
         }
     }
 }

@@ -1,6 +1,7 @@
 ﻿using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
 using Pregiato.API.Interface;
+using Pregiato.API.Models;
 using Pregiato.API.Requests;
 
 namespace Pregiato.API.Controllers
@@ -20,8 +21,27 @@ namespace Pregiato.API.Controllers
             _passwordHasherService = passwordHasherService;
             _userService = userService; 
         }
-        
-       // [Authorize(Roles = "AdministratorPolicy, ManagerPolicy, ModelPolicy")]
+
+
+        [HttpPost("jwthook/custom-claims")]
+        public IActionResult GetCustomClaims([FromBody] JwtHookRequest request)
+        {
+
+            if (!Request.Headers.TryGetValue("X-Supabase-Hook-Secret", out var secretHeader) ||
+                   secretHeader != "v1,whsec_GmZLIdFOVOufdXBvh7oppUsUgdzEAG2dHqEeSCMIPR+QK9c0FvFxlfa/FCOV32YBazOLJG6NVw2/7dEW")
+            {
+                return Unauthorized("Segredo inválido.");
+            }
+            var customClaims = new Dictionary<string, object>
+            {
+                { "username", request.Email },
+                { "user_type", request.UserType }, 
+                { "custom_claim", "custom_value" } 
+            };
+
+            return Ok(customClaims);
+        }
+
         [HttpPost("login")]
         public async Task<IActionResult> Login([FromBody] LoginUserRequest loginRequest)
         {
