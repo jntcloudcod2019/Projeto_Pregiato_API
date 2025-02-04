@@ -1,24 +1,23 @@
-# Etapa 1: Build da aplicação
+# Usando a imagem base do .NET SDK para compilar e publicar
 FROM mcr.microsoft.com/dotnet/sdk:8.0 AS build
-WORKDIR /src
-
-# Copiar os arquivos do projeto e restaurar dependências
-COPY ["Pregiato.API.csproj", "./"]
-RUN dotnet restore
-
-# Copiar todo o restante do código e compilar a aplicação
-COPY . .
-RUN dotnet publish -c Release -o /app/publish
-
-# Etapa 2: Runtime para executar a aplicação
-FROM mcr.microsoft.com/dotnet/aspnet:8.0 AS runtime
 WORKDIR /app
 
-# Copiar os arquivos publicados na etapa anterior
-COPY --from=build /app/publish .
+# Copiando os arquivos do projeto e restaurando depend�ncias
+COPY . .
+RUN dotnet restore
+RUN dotnet publish -c Release -o /out
 
-# Definir a porta corretamente para evitar erro de bind
-ENV ASPNETCORE_URLS=http://+:80
+# Criando a imagem final baseada no ASP.NET Core Runtime
+FROM mcr.microsoft.com/dotnet/aspnet:8.0
+WORKDIR /app
+COPY --from=build /out .
 
-# Comando para iniciar a aplicação
+# Definir vari�veis de ambiente para o runtime
+ENV ASPNETCORE_URLS=http://+:5000
+ENV ASPNETCORE_ENVIRONMENT=Development
+
+# Expor a porta 5000
+EXPOSE 5000
+
+# Comando para iniciar a API
 ENTRYPOINT ["dotnet", "Pregiato.API.dll"]

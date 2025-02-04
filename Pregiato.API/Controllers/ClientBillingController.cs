@@ -8,7 +8,7 @@ using Swashbuckle.AspNetCore.Annotations;
 namespace Pregiato.API.Controllers
 {
     [Authorize(Policy = "AdministratorPolicy, ManagerPolicy")]
-    [ApiController]
+    [Route("api/[controller]")]
     public class ClientBillingController : ControllerBase
     {
         private readonly IClientBillingRepository _clientBillingRepository;

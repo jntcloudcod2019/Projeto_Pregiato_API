@@ -246,7 +246,7 @@ namespace Pregiato.API.Services
                 QuantidadeParcela = paymentRequest.QuantidadeParcela,
                 FinalCartao = paymentRequest.FinalCartao,
                 DataPagamento = ConvertToUtcDateTime(paymentRequest.DataPagamento.Value),
-                 MetodoPagamento = paymentRequest.MetodoPagamento,
+                MetodoPagamento = paymentRequest.MetodoPagamento,
                 StatusPagamento = paymentRequest.StatusPagamento,
                 Comprovante = paymentRequest.Comprovante,
                 DataAcordoPagamento = ConvertToUtcDateTime(paymentRequest.DataAcordoPagamento.Value)

@@ -7,7 +7,6 @@ namespace Pregiato.API.Data
     public class ModelsRepository : IModelRepository
     {
         private readonly ModelAgencyContext _context;
-
         public ModelsRepository(ModelAgencyContext context) 
         {
            _context = context;
@@ -60,9 +59,7 @@ namespace Pregiato.API.Data
             return await _context.Model.FirstOrDefaultAsync(m =>
                 (idModel != null && m.IdModel.ToString() == idModel) ||
                 (cpf != null && m.CPF == cpf) ||
-                (rg != null && m.RG == rg));
-
-           
+                (rg != null && m.RG == rg));       
         }
     }
 

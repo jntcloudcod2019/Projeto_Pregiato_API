@@ -10,11 +10,11 @@ using System.Text.Json.Serialization;
 
 var builder = WebApplication.CreateBuilder(args);
 
-
+// Definir o ambiente
 var environment = Environment.GetEnvironmentVariable("ASPNETCORE_ENVIRONMENT") ?? "Production";
 Console.WriteLine($" Ambiente Atual: {environment}");
 
-
+// Configuração do `appsettings.json`
 var config = new ConfigurationBuilder()
     .SetBasePath(Directory.GetCurrentDirectory())
     .AddJsonFile("appsettings.json", optional: false, reloadOnChange: true)
@@ -22,17 +22,15 @@ var config = new ConfigurationBuilder()
     .AddEnvironmentVariables()
     .Build();
 
-Console.WriteLine($" String de Conexão Usada: {config.GetConnectionString("DefaultConnection")}");
-
 builder.Configuration.AddConfiguration(config);
 
-
+// Configurar o DbContext
 builder.Services.AddDbContext<ModelAgencyContext>(options =>
     options.UseNpgsql(config.GetConnectionString("DefaultConnection"))
            .EnableSensitiveDataLogging(environment == "Development")
            .LogTo(Console.WriteLine, LogLevel.Information));
 
-
+// Configuração de Repositórios e Serviços
 builder.Services.AddAutoMapper(AppDomain.CurrentDomain.GetAssemblies());
 builder.Services.AddScoped<IClientRepository, ClientRepository>();
 builder.Services.AddScoped<IModelRepository, ModelsRepository>();
@@ -46,7 +44,6 @@ builder.Services.AddScoped<IContractService, ContractService>();
 builder.Services.AddScoped<IContractRepository, ContractRepository>();
 builder.Services.AddScoped<DigitalSignatureService>();
 builder.Services.AddScoped<IPasswordHasherService, PasswordHasherService>();
-
 
 builder.Services.AddHttpContextAccessor();
 builder.Services.AddEndpointsApiExplorer();
@@ -77,7 +74,7 @@ builder.Services.AddSwaggerGen(c =>
     });
 });
 
-
+// Configuração de JWT
 var jwtSettings = builder.Configuration.GetSection("JwtSettings");
 var secretKey = jwtSettings["SecretKey"];
 
@@ -101,7 +98,6 @@ builder.Services.AddAuthentication(JwtBearerDefaults.AuthenticationScheme)
         };
     });
 
-
 builder.Services.AddControllers()
     .AddJsonOptions(options =>
     {
@@ -115,8 +111,10 @@ builder.Services.AddControllers()
 
 builder.Services.AddAuthorization();
 
+
 var app = builder.Build();
 
+// Configurar Middleware
 if (app.Environment.IsDevelopment())
 {
     app.UseSwagger();
@@ -127,17 +125,7 @@ if (app.Environment.IsDevelopment())
     });
 }
 
-
-
 app.UseAuthentication();
 app.UseAuthorization();
 app.MapControllers();
 app.Run();
-
-using (var scope = app.Services.CreateScope())
-{
-    var dbContext = scope.ServiceProvider.GetRequiredService<ModelAgencyContext>();
-    dbContext.Database.EnsureCreated();
-}
-
-

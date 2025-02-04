@@ -6,6 +6,7 @@ using Pregiato.API.Data;
 using Pregiato.API.Interface;
 using Pregiato.API.Models;
 using Pregiato.API.Requests;
+using Pregiato.API.Services;
 using Swashbuckle.AspNetCore.Annotations;
 using System.Diagnostics.Contracts;
 using System.IdentityModel.Tokens.Jwt;
@@ -14,19 +15,22 @@ using System.Text.Json;
 namespace Pregiato.API.Controllers
 {
     [ApiController]
-    [Route("api/Models")]
+    [Route("api/[controller]")]
     public class ModdelsController : ControllerBase
     {
         private readonly IModelRepository _modelRepository;
         private readonly IContractService _contractService;
+        private readonly IJwtService _jwtService;
+
 
         private readonly ModelAgencyContext _agencyContext;
 
-        public ModdelsController(IModelRepository modelRepository, ModelAgencyContext agencyContext, IContractService contractService)
+        public ModdelsController(IModelRepository modelRepository, ModelAgencyContext agencyContext, IContractService contractService, IJwtService jwtService)
         {
             _modelRepository = modelRepository ?? throw new ArgumentNullException(nameof(modelRepository));
             _agencyContext = agencyContext ?? throw new ArgumentNullException(nameof(agencyContext));
             _contractService = contractService; 
+            _jwtService = jwtService;
         }
 
         [HttpGet("/GetAllModels")]
@@ -148,45 +152,18 @@ namespace Pregiato.API.Controllers
         [HttpGet("/model-feed")]
         public async Task<IActionResult> GetModelFeed()
         {
-            var authorizationHeader = HttpContext.Request.Headers["Authorization"].ToString();
-            if (string.IsNullOrEmpty(authorizationHeader) || !authorizationHeader.StartsWith("Bearer "))
+            var username = await _jwtService.GetAuthenticatedUsernameAsync();
+            if (string.IsNullOrEmpty(username))
             {
-                return Unauthorized("Token de autenticação não fornecido ou inválido.");
+                return new UnauthorizedResult();
             }
-
-            var token = authorizationHeader.Substring("Bearer ".Length).Trim();
-
-            var handler = new JwtSecurityTokenHandler();
-            JwtSecurityToken jwtToken;
-            try
-            {
-                jwtToken = handler.ReadJwtToken(token);
-            }
-            catch (Exception)
-            {
-                return Unauthorized("Token inválido.");
-            }
-
-            var usernameClaim = jwtToken.Claims.FirstOrDefault(c => c.Type == "http://schemas.xmlsoap.org/ws/2005/05/identity/claims/name");
-            if (usernameClaim == null)
-            {
-                return Unauthorized("Usuário não autenticado.");
-            }
-
-            var username = usernameClaim.Value;
-
+        
             var model = await _agencyContext.Model
                 .FirstOrDefaultAsync(m => m.Name == username);
 
             if (model == null)
             {
                 return Unauthorized("Usuário não encontrado na base de dados.");
-            }
-
-            var roleClaim = jwtToken.Claims.FirstOrDefault(c => c.Type == "http://schemas.microsoft.com/ws/2008/06/identity/claims/role");
-            if (roleClaim == null || roleClaim.Value != "Model")
-            {
-                return Forbid("Permissão insuficiente.");
             }
 
             var feed = await _agencyContext.ModelJob
@@ -253,7 +230,6 @@ namespace Pregiato.API.Controllers
 
             return File(contract.ContractFilePath, "application/pdf", $"{contract.Content}.pdf");
         }
-
     }
 }
 
