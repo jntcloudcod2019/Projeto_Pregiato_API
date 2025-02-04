@@ -110,6 +110,7 @@ builder.Services.AddControllers()
     });
 
 builder.Services.AddAuthorization();
+builder.WebHost.UseUrls("http://+:" + (Environment.GetEnvironmentVariable("PORT") ?? "8080"));
 
 
 var app = builder.Build();
