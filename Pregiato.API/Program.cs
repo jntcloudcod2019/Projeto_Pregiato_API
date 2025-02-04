@@ -110,6 +110,9 @@ builder.Services.AddControllers()
     });
 
 builder.Services.AddAuthorization();
+var port = Environment.GetEnvironmentVariable("PORT") ?? "8080";
+builder.WebHost.UseUrls($"http://+:{port}");
+
 
 
 var app = builder.Build();
@@ -121,7 +124,7 @@ if (app.Environment.IsDevelopment())
     app.UseSwaggerUI(c =>
     {
         c.SwaggerEndpoint("/swagger/v1/swagger.json", "Model Agency API v1");
-        c.RoutePrefix = string.Empty; // Swagger  (http://localhost:5000)
+        c.RoutePrefix = string.Empty;
     });
 }
 
