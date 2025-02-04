@@ -30,10 +30,10 @@ namespace Pregiato.API.Requests
         public string PasswordHash { get; set; }
 
         [Required]
-        public string? Neighborhood { get; set; } // Bairro
+        public string? Neighborhood { get; set; } 
 
         [Required]
-        public string? City { get; set; } // Cidade
+        public string? City { get; set; }
 
         public PhysicalCharacteristics PhysicalCharacteristics { get; set; }
         public Appearance Appearance { get; set; }

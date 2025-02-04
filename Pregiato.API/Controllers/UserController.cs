@@ -3,6 +3,7 @@ using Pregiato.API.Requests;
 using Pregiato.API.Interface;
 using Pregiato.API.Models;
 using Microsoft.AspNetCore.Authorization;
+using Swashbuckle.AspNetCore.Annotations;
 
 namespace Pregiato.API.Controllers
 {
@@ -34,6 +35,12 @@ namespace Pregiato.API.Controllers
         }
 
         [HttpPost("/login")]
+        [Authorize(Policy = "Administrator")]
+        [Authorize(Policy = "ManagerPolicy")]
+        [Authorize(Policy = "ModelPolicy")]
+        [SwaggerOperation(Summary = "Autentica um usuário e retorna um token JWT")]
+        [SwaggerResponse(200, "Retorna o token JWT", typeof(string))]
+        [SwaggerResponse(401, "Não autorizado")]
         public async Task<IActionResult> Login([FromBody]LoginUserRequest loginUserRequest)
         {
             try

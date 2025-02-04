@@ -1,7 +1,9 @@
-﻿
+﻿using iText.Commons.Actions.Contexts;
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.EntityFrameworkCore;
+using Newtonsoft.Json;
+using Newtonsoft.Json.Linq;
 using Pregiato.API.Data;
 using Pregiato.API.Interface;
 using Pregiato.API.Models;
@@ -11,7 +13,6 @@ using Swashbuckle.AspNetCore.Annotations;
 using System.Diagnostics.Contracts;
 using System.IdentityModel.Tokens.Jwt;
 using System.Text.Json;
-
 namespace Pregiato.API.Controllers
 {
     [ApiController]
@@ -20,9 +21,7 @@ namespace Pregiato.API.Controllers
     {
         private readonly IModelRepository _modelRepository;
         private readonly IContractService _contractService;
-        private readonly IJwtService _jwtService;
-
-
+        private readonly IJwtService _jwtService;   
         private readonly ModelAgencyContext _agencyContext;
 
         public ModdelsController(IModelRepository modelRepository, ModelAgencyContext agencyContext, IContractService contractService, IJwtService jwtService)
@@ -50,7 +49,7 @@ namespace Pregiato.API.Controllers
                 return BadRequest(ModelState);
             }
 
-            var dnaJson = JsonDocument.Parse(JsonSerializer.Serialize(new
+            var dnaJson = JsonDocument.Parse(System.Text.Json.JsonSerializer.Serialize(new
             {
                 physicalCharacteristics = createModelRequest.PhysicalCharacteristics,
                 appearance = createModelRequest.Appearance,
@@ -229,6 +228,47 @@ namespace Pregiato.API.Controllers
             }
 
             return File(contract.ContractFilePath, "application/pdf", $"{contract.Content}.pdf");
+        }
+
+        [HttpPut("updateModelDNA/{query}")]
+        public async Task<IActionResult> UpdateRegisterModel(string query , [FromBody] CreateModelRequest createModelRequest)
+        {
+            var model = await _modelRepository.GetModelByCriteriaAsync(query);
+            if (model == null)
+            {
+                return NotFound("Modelo não encontrado.");
+            }
+
+            var dnaJson = JsonDocument.Parse(System.Text.Json.JsonSerializer.Serialize(new
+            {
+                physicalCharacteristics = createModelRequest.PhysicalCharacteristics,
+                appearance = createModelRequest.Appearance,
+                additionalAttributes = createModelRequest.AdditionalAttributes
+            }));
+
+             model = new Model
+            {
+                Name = createModelRequest.Name,
+                CPF = createModelRequest.CPF,
+                RG = createModelRequest.RG,
+                Email = createModelRequest.Email,
+                PostalCode = createModelRequest.PostalCode,
+                Address = createModelRequest.Address,
+                NumberAddress = createModelRequest.NumberAddress,
+                Complement = createModelRequest.Complement,
+                BankAccount = createModelRequest.BankAccount,
+                PasswordHash = createModelRequest.PasswordHash,
+                Neighborhood = createModelRequest.Neighborhood,
+                City = createModelRequest.City,
+                DNA = dnaJson,
+                TelefonePrincipal = createModelRequest.TelefonePrincipal,
+                TelefoneSecundario = createModelRequest.TelefoneSecundario,
+
+            };
+                               
+           _modelRepository.UpdateModelAsync(model);    
+
+            return NoContent();
         }
     }
 }

@@ -98,6 +98,13 @@ builder.Services.AddAuthentication(JwtBearerDefaults.AuthenticationScheme)
         };
     });
 
+builder.Services.AddAuthorization(options =>
+{
+    options.AddPolicy("AdministratorPolicy", policy => policy.RequireRole("Administrator"));
+    options.AddPolicy("ManagerPolicy", policy => policy.RequireRole("Manager"));
+    options.AddPolicy("ModelPolicy", policy => policy.RequireRole("Model"));
+});
+
 builder.Services.AddControllers()
     .AddJsonOptions(options =>
     {
@@ -110,9 +117,7 @@ builder.Services.AddControllers()
     });
 
 builder.Services.AddAuthorization();
-var port = Environment.GetEnvironmentVariable("PORT") ?? "8080";
-builder.WebHost.UseUrls($"http://+:{port}");
-
+builder.WebHost.UseUrls("http://+:" + (Environment.GetEnvironmentVariable("PORT") ?? "8080"));
 
 
 var app = builder.Build();
@@ -124,7 +129,7 @@ if (app.Environment.IsDevelopment())
     app.UseSwaggerUI(c =>
     {
         c.SwaggerEndpoint("/swagger/v1/swagger.json", "Model Agency API v1");
-        c.RoutePrefix = string.Empty;
+        c.RoutePrefix = string.Empty; // Swagger  (http://localhost:5000)
     });
 }
 
