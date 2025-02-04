@@ -446,8 +446,4 @@ namespace Pregiato.API.Services
            .ToListAsync();
         }
     }  
-
-
-
-
 }

@@ -126,27 +126,25 @@ namespace Pregiato.API.Controllers
 
 
         [HttpGet("download-contract")]
-        public async Task<IActionResult> DownloadContract(int codProposta, Guid idContract, Guid idModel)
+        public async Task<IActionResult> DownloadContract(
+        [FromQuery] Guid? modelId,
+        [FromQuery] Guid? contractId,
+        [FromQuery] int codProposta)
         {
-            try
+            var contract = await _context.Contracts
+                .FirstOrDefaultAsync(c =>
+                    (modelId != null && c.ModelId == modelId) ||
+                    (contractId != null && c.ContractId == contractId) ||
+                    (codProposta != null && c.CodProposta == codProposta));
+
+            if (contract == null)
             {
-                string filePath = await _contractService.GenerateContractPdf(codProposta, idContract);
-
-                if (string.IsNullOrEmpty(filePath) || !System.IO.File.Exists(filePath))
-                {
-                    return NotFound("O contrato não foi encontrado ou não foi gerado corretamente.");
-                }
-
-                byte[] fileBytes = await System.IO.File.ReadAllBytesAsync(filePath);
-                string fileName = Path.GetFileName(filePath);
-
-                return File(fileBytes, "application/pdf", fileName);
+                return NotFound("Contrato não encontrado.");
             }
-            catch (Exception ex)
-            {
-                return StatusCode(500, $"Erro ao gerar o contrato: {ex.Message}");
-            }
-           
+
+            var pdfBytes = contract.Content; 
+                                                                    
+            return File(pdfBytes, "application/pdf", contract.ContractFilePath);
         }
     }
 }

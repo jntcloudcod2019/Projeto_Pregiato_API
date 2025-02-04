@@ -230,7 +230,7 @@ namespace Pregiato.API.Controllers
             return File(contract.ContractFilePath, "application/pdf", $"{contract.Content}.pdf");
         }
 
-        [HttpPut("updateModelDNA/{query}")]
+        [HttpPut("updateResgiterModel/{query}")]
         public async Task<IActionResult> UpdateRegisterModel(string query , [FromBody] CreateModelRequest createModelRequest)
         {
             var model = await _modelRepository.GetModelByCriteriaAsync(query);
