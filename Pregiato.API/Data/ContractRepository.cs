@@ -57,5 +57,14 @@ namespace Pregiato.API.Data
              .Where(c => c.ModelId == modelId)
              .ToListAsync();
         }
+
+        public  async Task<ContractBase> GetContractByCriteriaAsync(string ? contractId, string? modelId, int? codProposta)
+        {
+           return await _context.Contracts.FirstOrDefaultAsync( m => 
+           ( modelId != null && m.ModelId.ToString() == modelId) ||
+           ( contractId != null && m.ContractId.ToString() == contractId) ||
+           (codProposta != null && m.CodProposta == codProposta));
+
+        }
     }
  }

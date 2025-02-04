@@ -1,7 +1,9 @@
-﻿
+﻿using iText.Commons.Actions.Contexts;
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.EntityFrameworkCore;
+using Newtonsoft.Json;
+using Newtonsoft.Json.Linq;
 using Pregiato.API.Data;
 using Pregiato.API.Interface;
 using Pregiato.API.Models;
@@ -11,7 +13,6 @@ using Swashbuckle.AspNetCore.Annotations;
 using System.Diagnostics.Contracts;
 using System.IdentityModel.Tokens.Jwt;
 using System.Text.Json;
-
 namespace Pregiato.API.Controllers
 {
     [ApiController]
@@ -20,9 +21,7 @@ namespace Pregiato.API.Controllers
     {
         private readonly IModelRepository _modelRepository;
         private readonly IContractService _contractService;
-        private readonly IJwtService _jwtService;
-
-
+        private readonly IJwtService _jwtService;   
         private readonly ModelAgencyContext _agencyContext;
 
         public ModdelsController(IModelRepository modelRepository, ModelAgencyContext agencyContext, IContractService contractService, IJwtService jwtService)
@@ -33,7 +32,7 @@ namespace Pregiato.API.Controllers
             _jwtService = jwtService;
         }
 
-        [HttpGet("/GetAllModels")]
+        [HttpGet("GetAllModels")]
         [SwaggerOperation("Retorna todos os modelos cadastrados.")]
         public async Task<IActionResult> GetAllModels()
         {
@@ -41,7 +40,7 @@ namespace Pregiato.API.Controllers
             return Ok(modelsExists);
         }
 
-        [HttpPost("/AddModels")]
+        [HttpPost("AddModels")]
         [SwaggerOperation("Criar novo modelo.")]
         public async Task<IActionResult> AddNewModel([FromBody] CreateModelRequest createModelRequest)
         {
@@ -50,7 +49,7 @@ namespace Pregiato.API.Controllers
                 return BadRequest(ModelState);
             }
 
-            var dnaJson = JsonDocument.Parse(JsonSerializer.Serialize(new
+            var dnaJson = JsonDocument.Parse(System.Text.Json.JsonSerializer.Serialize(new
             {
                 physicalCharacteristics = createModelRequest.PhysicalCharacteristics,
                 appearance = createModelRequest.Appearance,
@@ -81,62 +80,7 @@ namespace Pregiato.API.Controllers
             return Ok($"Modelo {model.Name}, criado com sucesso!");
         }
 
-        [HttpPut("/UpdateModels{id}")]
-        [SwaggerOperation("Atualização de cadastro de modelos.")]
-        public async Task<IActionResult> UpdateClient(Guid id, [FromBody] UpdateModelRequest updateModelRequest)
-        {
-            if (!ModelState.IsValid)
-            {
-                return BadRequest(ModelState);
-            }
-            var modelExists = await _modelRepository.GetByIdModelAsync(id);
-
-            if (modelExists == null)
-            {
-                return NotFound();
-            }
-
-            switch (updateModelRequest)
-            {
-                case { Name: not null }:
-                    modelExists.Name = updateModelRequest.Name;
-                    break;
-
-                case { CPF: not null }:
-                    modelExists.CPF = updateModelRequest.CPF;
-                    break;
-
-                case { RG: not null }:
-                    modelExists.RG = updateModelRequest.RG;
-                    break;
-
-                case { Email: not null }:
-                    modelExists.Email = updateModelRequest.Email;
-                    break;
-
-                case { PostalCode: not null }:
-                    modelExists.PostalCode = updateModelRequest.PostalCode;
-                    break;
-
-                case { Address: not null }:
-                    modelExists.Address = updateModelRequest.Address;
-                    break;
-
-                case { BankAccount: not null }:
-                    modelExists.BankAccount = updateModelRequest.BankAccount;
-                    break;
-
-                default:
-
-                    break;
-
-            }
-
-            await _modelRepository.UpdateModelAsync(modelExists);
-            return NoContent();
-        }
-
-        [HttpDelete("/DeleteModel{id}")]
+        [HttpDelete("DeleteModel{id}")]
         [SwaggerOperation("Deletar cadastro de modelos.")]
         public async Task<IActionResult> DeleteModel(Guid id)
         {
@@ -149,7 +93,7 @@ namespace Pregiato.API.Controllers
             return NoContent();
         }
 
-        [HttpGet("/model-feed")]
+        [HttpGet("modelFeedJobs")]
         public async Task<IActionResult> GetModelFeed()
         {
             var username = await _jwtService.GetAuthenticatedUsernameAsync();
@@ -186,7 +130,7 @@ namespace Pregiato.API.Controllers
             });
         }
 
-        [HttpGet("find-model")]
+        [HttpGet("findModel")]
         public async Task<IActionResult> FindModel([FromQuery] string query)
         {
             var model = await _modelRepository.GetModelByCriteriaAsync(query);
@@ -212,14 +156,7 @@ namespace Pregiato.API.Controllers
             });
         }
 
-        [HttpGet("my-contracts")]
-        public async Task<IActionResult> GetMyContracts(string type = "files")
-        {
-            return await _contractService.GetMyContracts(type);
-        }
-
-
-        [HttpGet("download-contract/{id}")]
+        [HttpGet("downloadContract/{id}")]
         public async Task<IActionResult> DownloadContract(int id)
         {
             var contract = await _agencyContext.Contracts.FindAsync(id);
@@ -229,6 +166,47 @@ namespace Pregiato.API.Controllers
             }
 
             return File(contract.ContractFilePath, "application/pdf", $"{contract.Content}.pdf");
+        }
+
+        [HttpPut("updateResgiterModel/{query}")]
+        public async Task<IActionResult> UpdateRegisterModel(string query , [FromBody] CreateModelRequest createModelRequest)
+        {
+            var model = await _modelRepository.GetModelByCriteriaAsync(query);
+            if (model == null)
+            {
+                return NotFound("Modelo não encontrado.");
+            }
+
+            var dnaJson = JsonDocument.Parse(System.Text.Json.JsonSerializer.Serialize(new
+            {
+                physicalCharacteristics = createModelRequest.PhysicalCharacteristics,
+                appearance = createModelRequest.Appearance,
+                additionalAttributes = createModelRequest.AdditionalAttributes
+            }));
+
+             model = new Model
+            {
+                Name = createModelRequest.Name,
+                CPF = createModelRequest.CPF,
+                RG = createModelRequest.RG,
+                Email = createModelRequest.Email,
+                PostalCode = createModelRequest.PostalCode,
+                Address = createModelRequest.Address,
+                NumberAddress = createModelRequest.NumberAddress,
+                Complement = createModelRequest.Complement,
+                BankAccount = createModelRequest.BankAccount,
+                PasswordHash = createModelRequest.PasswordHash,
+                Neighborhood = createModelRequest.Neighborhood,
+                City = createModelRequest.City,
+                DNA = dnaJson,
+                TelefonePrincipal = createModelRequest.TelefonePrincipal,
+                TelefoneSecundario = createModelRequest.TelefoneSecundario,
+
+            };
+                               
+           _modelRepository.UpdateModelAsync(model);    
+
+            return NoContent();
         }
     }
 }

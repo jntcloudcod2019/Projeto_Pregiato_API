@@ -15,7 +15,7 @@
 
     public string Value { get; private set; }
 
-    // Construtor privado para garantir controle centralizado
+
     private StatusPagamento(string value)
     {
         if (!IsValid(value))
@@ -65,6 +65,7 @@
     {
         return Value;
     }
-}
+    
+   }
 
 }

@@ -5,10 +5,10 @@ using Pregiato.API.Interface;
 using Pregiato.API.Models;
 using Pregiato.API.Requests;
 using Swashbuckle.AspNetCore.Annotations;
+using System.ComponentModel.DataAnnotations;
 
 namespace Pregiato.API.Controllers
 {
-    [Authorize]
     [ApiController]
     [Route("api/[controller]")]
     public class JobController : ControllerBase
@@ -24,21 +24,20 @@ namespace Pregiato.API.Controllers
             _agencyContext = agencyContext ?? throw new ArgumentNullException(nameof(agencyContext));
         }
 
-
-
-        [Authorize(Roles = "AdministratorPolicy,ManagerPolicy")]
-        [HttpPost]
+        [Authorize(Roles = "AdministratorPolicy")]
+        [Authorize(Roles = "ManagerPolicy")]
+        [HttpPost("creatJob")]
         [SwaggerOperation("Criação de Job")]
         public async Task <IActionResult> AddJobModel( [FromBody] JobRequest jobRequest)
         {
             if (!ModelState.IsValid)
             {
-                return BadRequest(ModelState);
+                return BadRequest($"Erro ao criar Job, favor reviar os campos de preenchimento.");
             }
 
             var jobModel = new Job
             {
-              Status = "Confirmed",
+              Status = "Pending",
               IdJob = new Guid(),
               JobDate = jobRequest.JobDate,
               Location = jobRequest.Location,
@@ -61,7 +60,7 @@ namespace Pregiato.API.Controllers
 
             if (request.ModelId == Guid.Empty || request.JobId == Guid.Empty)
             {
-                return BadRequest("ModelId e JobId são obrigatórios.");
+                return BadRequest("ModelId ou JobId são obrigatórios.");
             }
 
             var model = await _agencyContext.Model.FindAsync(request.ModelId);
@@ -70,13 +69,11 @@ namespace Pregiato.API.Controllers
                 return NotFound($"Modelo com ID {request.ModelId} não encontrado.");
             }
 
-
             var job = await _agencyContext.Jobs.FindAsync(request.JobId);
             if (job == null)
             {
                 return NotFound($"Job com ID {request.JobId} não encontrado.");
             }
-
 
             var modelJob = new ModelJob
             {
@@ -90,7 +87,6 @@ namespace Pregiato.API.Controllers
                 Status = "Pending"
             };
 
-            // Adiciona ao contexto
             await _agencyContext.ModelJob.AddAsync(modelJob);
             await _agencyContext.SaveChangesAsync();
 

@@ -7,6 +7,8 @@ using Microsoft.AspNetCore.Authentication.JwtBearer;
 using System.Text;
 using Pregiato.API.Services;
 using System.Text.Json.Serialization;
+using Microsoft.OpenApi.Any;
+using Pregiato.API.Models;
 
 var builder = WebApplication.CreateBuilder(args);
 
@@ -47,31 +49,42 @@ builder.Services.AddScoped<IPasswordHasherService, PasswordHasherService>();
 
 builder.Services.AddHttpContextAccessor();
 builder.Services.AddEndpointsApiExplorer();
+
+// Configuração do Swagger com suporte a JWT
 builder.Services.AddSwaggerGen(c =>
 {
-    c.AddSecurityDefinition("Bearer", new OpenApiSecurityScheme
+    c.SwaggerDoc("v1", new OpenApiInfo { Title = "Model Agency API", Version = "v1" });
+
+    c.MapType<MetodoPagamento>(() => new OpenApiSchema
+    {
+        Type = "string",
+        Example = new OpenApiString("CartaoCredito"), // Exemplo padrão
+        Description = "Método de pagamento. Valores permitidos: " +
+                     "CartaoCredito, CartaoDebito, Pix, Dinheiro, LinkPagamento"
+    });
+
+    // Adicionar suporte a autenticação JWT no Swagger
+    var securityScheme = new OpenApiSecurityScheme
     {
         Name = "Authorization",
-        Type = SecuritySchemeType.Http,
-        Scheme = "Bearer",
-        BearerFormat = "JWT",
+        Description = "Enter JWT Bearer token",
         In = ParameterLocation.Header,
-        Description = "Enter 'Bearer' [space] and then your token."
-    });
-    c.AddSecurityRequirement(new OpenApiSecurityRequirement
-    {
+        Type = SecuritySchemeType.Http,
+        Scheme = "bearer",
+        BearerFormat = "JWT",
+        Reference = new OpenApiReference
         {
-            new OpenApiSecurityScheme
-            {
-                Reference = new OpenApiReference
-                {
-                    Type = ReferenceType.SecurityScheme,
-                    Id = "Bearer"
-                }
-            },
-            new string[] { }
+            Type = ReferenceType.SecurityScheme,
+            Id = "Bearer"
         }
-    });
+    };
+    c.AddSecurityDefinition("Bearer", securityScheme);
+
+    var securityRequirement = new OpenApiSecurityRequirement
+    {
+        { securityScheme, new[] { "Bearer" } }
+    };
+    c.AddSecurityRequirement(securityRequirement);
 });
 
 // Configuração de JWT
@@ -98,6 +111,13 @@ builder.Services.AddAuthentication(JwtBearerDefaults.AuthenticationScheme)
         };
     });
 
+builder.Services.AddAuthorization(options =>
+{
+    options.AddPolicy("AdministratorPolicy", policy => policy.RequireRole("Administrator"));
+    options.AddPolicy("ManagerPolicy", policy => policy.RequireRole("Manager"));
+    options.AddPolicy("ModelPolicy", policy => policy.RequireRole("Model"));
+});
+
 builder.Services.AddControllers()
     .AddJsonOptions(options =>
     {
@@ -105,16 +125,13 @@ builder.Services.AddControllers()
         options.JsonSerializerOptions.DefaultIgnoreCondition = System.Text.Json.Serialization.JsonIgnoreCondition.WhenWritingNull;
         options.JsonSerializerOptions.Converters.Add(new System.Text.Json.Serialization.JsonStringEnumConverter());
         options.JsonSerializerOptions.Converters.Add(new JsonDateTimeConverter("dd-MM-yyyy", "yyyy-MM-dd", "MM/dd/yyyy", "dd/MM/yyyy"));
+        options.JsonSerializerOptions.Converters.Add(new MetodoPagamentoConverter());
         options.JsonSerializerOptions.IgnoreReadOnlyProperties = true;
         options.JsonSerializerOptions.WriteIndented = true;
     });
 
 builder.Services.AddAuthorization();
-var port = Environment.GetEnvironmentVariable("PORT") ?? "8080";
-builder.WebHost.UseUrls($"http://+:{port}");
-
-
-
+builder.WebHost.UseUrls("http://+:" + (Environment.GetEnvironmentVariable("PORT") ?? "8080"));
 var app = builder.Build();
 
 // Configurar Middleware
@@ -123,8 +140,17 @@ if (app.Environment.IsDevelopment())
     app.UseSwagger();
     app.UseSwaggerUI(c =>
     {
+
+
         c.SwaggerEndpoint("/swagger/v1/swagger.json", "Model Agency API v1");
-        c.RoutePrefix = string.Empty;
+        c.RoutePrefix = string.Empty; // Swagger na raiz (http://localhost:5000)
+        c.ConfigObject.AdditionalItems["syntaxHighlight"] = new Dictionary<string, object>
+        {
+            ["activated"] = false // Desativa o syntax highlighting para melhorar o desempenho
+        };
+
+
+       
     });
 }
 

@@ -12,6 +12,6 @@ namespace Pregiato.API.Interface
         Task SaveContractAsync(ContractBase contract);
         Task<ContractBase?> GetContractByIdAsync( int? codProposta, Guid? contractId);
         Task<List<ContractBase?>> GetContractsByModelId(Guid modelId);
-
+        Task<ContractBase> GetContractByCriteriaAsync(string ? contractId, string? modelId, int ? codProposta);
     }
 }
