@@ -11,22 +11,23 @@ using Microsoft.OpenApi.Any;
 using Pregiato.API.Models;
 
 var builder = WebApplication.CreateBuilder(args);
-var environment = Environment.GetEnvironmentVariable("ASPNETCORE_ENVIRONMENT") ?? "Production";
-Console.WriteLine($" Ambiente Atual: {environment}");
+
+// Forçar o ambiente de produção
+builder.Environment.EnvironmentName = Environments.Production;
+Console.WriteLine($" Ambiente Atual: {builder.Environment.EnvironmentName}");
 
 var config = new ConfigurationBuilder()
     .SetBasePath(Directory.GetCurrentDirectory())
     .AddJsonFile("appsettings.json", optional: false, reloadOnChange: true)
-    .AddJsonFile($"appsettings.{environment}.json", optional: true, reloadOnChange: true)
+    .AddJsonFile($"appsettings.{builder.Environment.EnvironmentName}.json", optional: true, reloadOnChange: true)
     .AddEnvironmentVariables()
     .Build();
 
 builder.Configuration.AddConfiguration(config);
 builder.Services.AddDbContext<ModelAgencyContext>(options =>
     options.UseNpgsql(config.GetConnectionString("DefaultConnection"))
-           .EnableSensitiveDataLogging(environment == "Development")
+           .EnableSensitiveDataLogging(builder.Environment.IsDevelopment())
            .LogTo(Console.WriteLine, LogLevel.Information));
-
 
 builder.Services.AddAutoMapper(AppDomain.CurrentDomain.GetAssemblies());
 builder.Services.AddScoped<IClientRepository, ClientRepository>();
@@ -51,7 +52,7 @@ builder.Services.AddSwaggerGen(c =>
     c.MapType<MetodoPagamento>(() => new OpenApiSchema
     {
         Type = "string",
-        Example = new OpenApiString("CartaoCredito"), 
+        Example = new OpenApiString("CartaoCredito"),
         Description = "Método de pagamento. Valores permitidos: " +
                      "CartaoCredito, CartaoDebito, Pix, Dinheiro, LinkPagamento"
     });
@@ -125,6 +126,7 @@ builder.Services.AddAuthorization();
 builder.WebHost.UseUrls("http://+:" + (Environment.GetEnvironmentVariable("PORT") ?? "8080"));
 var app = builder.Build();
 
+// Habilitar Swagger apenas em desenvolvimento (opcional)
 if (app.Environment.IsDevelopment())
 {
     app.UseSwagger();
@@ -134,10 +136,11 @@ if (app.Environment.IsDevelopment())
         c.RoutePrefix = string.Empty; // Swagger na raiz (http://localhost:5000)
         c.ConfigObject.AdditionalItems["syntaxHighlight"] = new Dictionary<string, object>
         {
-            ["activated"] = false 
-        };       
+            ["activated"] = false
+        };
     });
 }
+
 app.UseAuthentication();
 app.UseAuthorization();
 app.MapControllers();
