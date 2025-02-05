@@ -22,6 +22,7 @@ namespace Pregiato.API.Controllers
         [Authorize(Policy = "AdministratorPolicy")]
         [Authorize(Policy = "Manager")]
         [SwaggerOperation("Adiciona o faturamento por cliente.")]
+        [HttpPost]
         public async Task<IActionResult> AddClientBilling(Guid id, [FromBody] ClientBillingRequest createClientBillingRequest)
         {
             if (id == Guid.Empty)
@@ -52,6 +53,7 @@ namespace Pregiato.API.Controllers
         [Authorize(Policy = "AdministratorPolicy")]
         [Authorize(Policy = "Manager")]
         [SwaggerOperation("Atualiza o faturamento por cliente.")]
+        [HttpPost]  
         public async Task<IActionResult> UpdateClientBilling(Guid id, [FromBody] ClientBillingRequest updateclientBillingRequest)
         {
             if (id == Guid.Empty)
@@ -85,6 +87,7 @@ namespace Pregiato.API.Controllers
         [Authorize(Policy = "Manager")]
         [HttpGet("/GetClientBillingID{id}")]
         [SwaggerOperation("Retorna faturamento do cliente por id")]
+        [HttpPost]
         public async Task <IActionResult> GetClientBillingForId (Guid id)
         {
             if (id == Guid.Empty)
