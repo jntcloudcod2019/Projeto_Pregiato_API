@@ -11,12 +11,9 @@ using Microsoft.OpenApi.Any;
 using Pregiato.API.Models;
 
 var builder = WebApplication.CreateBuilder(args);
-
-// Definir o ambiente
 var environment = Environment.GetEnvironmentVariable("ASPNETCORE_ENVIRONMENT") ?? "Production";
 Console.WriteLine($" Ambiente Atual: {environment}");
 
-// Configuração do `appsettings.json`
 var config = new ConfigurationBuilder()
     .SetBasePath(Directory.GetCurrentDirectory())
     .AddJsonFile("appsettings.json", optional: false, reloadOnChange: true)
@@ -25,14 +22,12 @@ var config = new ConfigurationBuilder()
     .Build();
 
 builder.Configuration.AddConfiguration(config);
-
-// Configurar o DbContext
 builder.Services.AddDbContext<ModelAgencyContext>(options =>
     options.UseNpgsql(config.GetConnectionString("DefaultConnection"))
            .EnableSensitiveDataLogging(environment == "Development")
            .LogTo(Console.WriteLine, LogLevel.Information));
 
-// Configuração de Repositórios e Serviços
+
 builder.Services.AddAutoMapper(AppDomain.CurrentDomain.GetAssemblies());
 builder.Services.AddScoped<IClientRepository, ClientRepository>();
 builder.Services.AddScoped<IModelRepository, ModelsRepository>();
@@ -46,11 +41,9 @@ builder.Services.AddScoped<IContractService, ContractService>();
 builder.Services.AddScoped<IContractRepository, ContractRepository>();
 builder.Services.AddScoped<DigitalSignatureService>();
 builder.Services.AddScoped<IPasswordHasherService, PasswordHasherService>();
-
 builder.Services.AddHttpContextAccessor();
 builder.Services.AddEndpointsApiExplorer();
 
-// Configuração do Swagger com suporte a JWT
 builder.Services.AddSwaggerGen(c =>
 {
     c.SwaggerDoc("v1", new OpenApiInfo { Title = "Model Agency API", Version = "v1" });
@@ -58,12 +51,11 @@ builder.Services.AddSwaggerGen(c =>
     c.MapType<MetodoPagamento>(() => new OpenApiSchema
     {
         Type = "string",
-        Example = new OpenApiString("CartaoCredito"), // Exemplo padrão
+        Example = new OpenApiString("CartaoCredito"), 
         Description = "Método de pagamento. Valores permitidos: " +
                      "CartaoCredito, CartaoDebito, Pix, Dinheiro, LinkPagamento"
     });
 
-    // Adicionar suporte a autenticação JWT no Swagger
     var securityScheme = new OpenApiSecurityScheme
     {
         Name = "Authorization",
@@ -87,7 +79,6 @@ builder.Services.AddSwaggerGen(c =>
     c.AddSecurityRequirement(securityRequirement);
 });
 
-// Configuração de JWT
 var jwtSettings = builder.Configuration.GetSection("JwtSettings");
 var secretKey = jwtSettings["SecretKey"];
 
@@ -134,26 +125,19 @@ builder.Services.AddAuthorization();
 builder.WebHost.UseUrls("http://+:" + (Environment.GetEnvironmentVariable("PORT") ?? "8080"));
 var app = builder.Build();
 
-// Configurar Middleware
 if (app.Environment.IsDevelopment())
 {
     app.UseSwagger();
     app.UseSwaggerUI(c =>
     {
-
-
         c.SwaggerEndpoint("/swagger/v1/swagger.json", "Model Agency API v1");
         c.RoutePrefix = string.Empty; // Swagger na raiz (http://localhost:5000)
         c.ConfigObject.AdditionalItems["syntaxHighlight"] = new Dictionary<string, object>
         {
-            ["activated"] = false // Desativa o syntax highlighting para melhorar o desempenho
-        };
-
-
-       
+            ["activated"] = false 
+        };       
     });
 }
-
 app.UseAuthentication();
 app.UseAuthorization();
 app.MapControllers();

@@ -11,8 +11,10 @@ namespace Pregiato.API.Interface
      Task<List<ContractBase>> GenerateAllContractsAsync(PaymentRequest paymentRequest, string? idModel = null, string? cpf = null, string? rg = null);
      Task SaveContractAsync(ContractBase contract, Stream pdfStream, string cpfModelo);
      Task<string> GenerateContractPdf(int? codProposta, Guid? contractId);
-     Task<ContractBase> GenerateContractCommitmentTerm(CreateRequestContractImageRights createRequestContractImageRights, string querymodel);
-     Task<ContractBase> GenerateContractPhotographyProductionContract(CreateRequestPhotographyProductionContract createRequestPhotographyProductionContract, string querymodel);
+     Task<ContractBase> GenerateContractCommitmentTerm(CreateRequestCommitmentTerm createRequestContractImageRights, string querymodel);
+     Task<ContractBase> GenerateContractPhotographyProduction(PaymentRequest paymentRequest, string querymodel);
+     Task<ContractBase> GenetayeContractImageRightsTerm(string querymodel);
+     Task<ContractBase> GenerateContractAgency(string querymodel);
      Task<IActionResult> GetMyContracts(string type = "files");
      Task<List<ContractsModels>> GetContractsByModelIdAsync(Guid modelId);
     }
