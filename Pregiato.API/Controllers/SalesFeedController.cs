@@ -1,6 +1,7 @@
 ﻿using Microsoft.AspNetCore.Mvc;
 using Pregiato.API.Data;
 using Microsoft.EntityFrameworkCore;
+using Microsoft.AspNetCore.Authorization;
 
 [ApiController]
 [Route("api/[controller]")]
@@ -13,7 +14,8 @@ public class SalesFeedController : ControllerBase
         _context = context;
     }
 
-    // Endpoint para feed de vendas diárias
+    [Authorize(Policy = "AdministratorPolicy")]
+    [Authorize(Policy = "Manager")]
     [HttpGet("daily")]
     public async Task<IActionResult> GetDailySales()
     {
@@ -33,7 +35,8 @@ public class SalesFeedController : ControllerBase
         return Ok(new { TotalSales = sales });
     }
 
-    // Endpoint para feed de vendas semanais
+    [Authorize(Policy = "AdministratorPolicy")]
+    [Authorize(Policy = "Manager")]
     [HttpGet("weekly")]
     public async Task<IActionResult> GetWeeklySales()
     {
@@ -46,7 +49,8 @@ public class SalesFeedController : ControllerBase
         return Ok(new { TotalSales = sales });
     }
 
-    // Endpoint para feed de vendas mensais
+    [Authorize(Policy = "AdministratorPolicy")]
+    [Authorize(Policy = "Manager")]
     [HttpGet("monthly")]
     public async Task<IActionResult> GetMonthlySales()
     {

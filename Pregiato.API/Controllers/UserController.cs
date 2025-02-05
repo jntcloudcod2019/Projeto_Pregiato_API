@@ -20,6 +20,7 @@ namespace Pregiato.API.Controllers
             _userRepository = userRepository;   
         }
 
+        [AllowAnonymous]
         [HttpPost("register/login")]
         [SwaggerOperation(Summary = "Autentica um usuário e retorna um token JWT")]
         [SwaggerResponse(200, "Retorna o token JWT", typeof(string))]
@@ -37,6 +38,8 @@ namespace Pregiato.API.Controllers
             }
         }
 
+        [Authorize(Policy = "AdministratorPolicy")]
+        [Authorize(Policy = "Manager")]
         [HttpDelete("deleteUser{id}")]
         public async Task<IActionResult> Delete(Guid id)
         {
@@ -51,6 +54,8 @@ namespace Pregiato.API.Controllers
             }
         }
 
+        [Authorize(Policy = "AdministratorPolicy")]
+        [Authorize(Policy = "Manager")]
         [HttpPost("register/administrator")]
         public async Task<IActionResult> RegisterAdministrator([FromBody] UserRegisterDto dto)
         {
@@ -64,6 +69,9 @@ namespace Pregiato.API.Controllers
                 return BadRequest(new { error = ex.Message });
             }
         }
+
+        [Authorize(Policy = "AdministratorPolicy")]
+        [Authorize(Policy = "Manager")]
         [HttpPost("register/model")]
         public async Task<IActionResult> RegisterModel([FromBody] UserRegisterDto dto)
         {
@@ -78,7 +86,9 @@ namespace Pregiato.API.Controllers
                 return BadRequest(new { error = ex.Message });
             }
         }
-        
+
+        [Authorize(Policy = "AdministratorPolicy")]
+        [Authorize(Policy = "Manager")]
         [HttpPost("register/manager")]
         public async Task<IActionResult> RegisterManager([FromBody] UserRegisterDto dto)
         {

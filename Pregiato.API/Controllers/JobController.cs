@@ -47,7 +47,8 @@ namespace Pregiato.API.Controllers
             return Ok(jobModel);                         
         }
 
-        [Authorize(Roles = "AdministratorPolicy,ManagerPolicy")]
+        [Authorize(Policy = "AdministratorPolicy")]
+        [Authorize(Policy = "Manager")]
         [HttpPost("assign-job-to-model")]
         public async Task<IActionResult> AssignJobToModel([FromBody] AssignJobToModelRequest request)
         {
