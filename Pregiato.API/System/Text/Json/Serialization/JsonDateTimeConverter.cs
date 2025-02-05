@@ -9,6 +9,7 @@ namespace System.Text.Json.Serialization
     {
         private readonly string[] _formats;
 
+        public JsonDateTimeConverter() : this("dd-MM-yyyy") { }
         public JsonDateTimeConverter(params string[] formats)
         {
             _formats = formats ?? new[] { "dd-MM-yyyy" };

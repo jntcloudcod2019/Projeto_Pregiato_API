@@ -19,7 +19,6 @@
 
         public string Value { get; private set; }
 
-        // Construtor privado para controle centralizado
         private MetodoPagamento(string value)
         {
             if (!IsValid(value))
@@ -29,32 +28,25 @@
 
             Value = value;
         }
-
-        // Método para criar um MetodoPagamento
         public static MetodoPagamento Create(string value)
         {
             return new MetodoPagamento(value);
         }
-
-        // Verifica se o valor é válido
         public static bool IsValid(string value)
         {
             return ValidValues.Contains(value);
         }
 
-        // Converte implicitamente MetodoPagamento para string
         public static implicit operator string(MetodoPagamento metodoPagamento)
         {
             return metodoPagamento.Value;
         }
 
-        // Permite criar MetodoPagamento a partir de string
         public static explicit operator MetodoPagamento(string value)
         {
             return new MetodoPagamento(value);
         }
 
-        // Override de Equals e GetHashCode para comparação
         public override bool Equals(object obj)
         {
             return obj is MetodoPagamento other && Value == other.Value;
@@ -64,7 +56,6 @@
         {
             return Value.GetHashCode();
         }
-
         public override string ToString()
         {
             return Value;

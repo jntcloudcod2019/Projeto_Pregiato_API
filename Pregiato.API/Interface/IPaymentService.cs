@@ -5,6 +5,6 @@ namespace Pregiato.API.Interface
 {
     public interface IPaymentService
     {
-       Task <string> ValidatePayment(PaymentRequest payment);
+       Task <string> ValidatePayment(PaymentRequest payment, ContractBase contractBase);
     }
 }

@@ -35,6 +35,7 @@ namespace Pregiato.API.Models
         public string ? FormaPagamento { get; set; }
         public string StatusPagamento { get; set; } = "N/A";
 
+        [Column("DataAgendamento")]
         [SwaggerSchema("Data do Pagamento")]
         [DisplayFormat(DataFormatString = "{dd-MM-yyyy}", ApplyFormatInEditMode = true)]
         public string DataAgendamento { get; set; } = "N/A"; 

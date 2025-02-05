@@ -21,9 +21,6 @@ namespace Pregiato.API.Controllers
         }
 
         [HttpPost("register/login")]
-        [Authorize(Policy = "Administrator")]
-        [Authorize(Policy = "ManagerPolicy")]
-        [Authorize(Policy = "ModelPolicy")]
         [SwaggerOperation(Summary = "Autentica um usuário e retorna um token JWT")]
         [SwaggerResponse(200, "Retorna o token JWT", typeof(string))]
         [SwaggerResponse(401, "Não autorizado")]
@@ -95,6 +92,8 @@ namespace Pregiato.API.Controllers
                 return BadRequest(new { error = ex.Message });
             }
         }
+
+
 
     }
 }
