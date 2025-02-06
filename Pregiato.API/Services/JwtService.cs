@@ -30,8 +30,7 @@ namespace Pregiato.API.Services
               new Claim(ClaimTypes.Name, loginUserRequest.Username),      
               new Claim(ClaimTypes.Role, loginUserRequest.UserType.ToString())
             };
-
-        
+       
             var secretKey = Encoding.ASCII.GetBytes(_configuration["JwtSettings:SecretKey"]);
             var key = new SymmetricSecurityKey(secretKey);
             var credentials = new SigningCredentials(key, SecurityAlgorithms.HmacSha256); 
@@ -41,15 +40,13 @@ namespace Pregiato.API.Services
                 issuer: "PregiatoAPI",
                 audience: "PregiatoAPIToken", 
                 claims: claims,
-                expires: DateTime.Now.AddMinutes(2), 
+                expires: DateTime.Now.AddHours(2), 
                 signingCredentials: credentials
             );
-
-            
+           
             var jwt = new JwtSecurityTokenHandler().WriteToken(token);
             return jwt;
         }
-
 
 
         public Task<string> GetUsernameFromTokenAsync(string token)
