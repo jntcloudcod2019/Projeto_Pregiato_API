@@ -40,7 +40,7 @@ namespace Pregiato.API.Services
                 issuer: "PregiatoAPI",
                 audience: "PregiatoAPIToken", 
                 claims: claims,
-                expires: DateTime.Now.AddHours(2), 
+                expires: DateTime.Now.AddHours(4), 
                 signingCredentials: credentials
             );
            
