@@ -31,7 +31,17 @@ namespace Pregiato.API.Controllers
             try
             {
                 var token = await _userService.AuthenticateUserAsync(loginUserRequest);
-                return Ok(new LoginResponse { Token = token });
+                return Ok(new LoginResponse
+                {
+                    Token = token,
+                    User = new UserInfo
+                    {
+                        UserId = loginUserRequest.IdUser.ToString(),
+                        Username = loginUserRequest.Username,
+                        Email = loginUserRequest.Email,
+                        UserType = loginUserRequest.UserType
+                    }
+                });
             }
             catch (Exception ex)
             {

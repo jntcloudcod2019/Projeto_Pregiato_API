@@ -1,5 +1,6 @@
 ﻿using Pregiato.API.Models;
 using System.ComponentModel.DataAnnotations;
+using System.Text.Json.Serialization;
 
 namespace Pregiato.API.Requests
 {
@@ -9,7 +10,15 @@ namespace Pregiato.API.Requests
         public string Username { get; set; }
         [Required]
         public string Password { get; set; }
+        [JsonIgnore]
         public string ?UserType { get; set; }
+
+        [JsonIgnore]
+        [EmailAddress]
+        public string ?Email { get; set; }   
+
+        [JsonIgnore]
+        public Guid ?IdUser { get; set; }
 
     }
 }
