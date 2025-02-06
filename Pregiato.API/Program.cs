@@ -117,13 +117,6 @@ builder.Services.AddAuthentication(JwtBearerDefaults.AuthenticationScheme)
 
 builder.Services.AddAuthorization(options =>
 {
-    options.AddPolicy("Administrator", policy => policy.RequireRole("Administrator"));
-    options.AddPolicy("Manager", policy => policy.RequireRole("Manager"));
-    options.AddPolicy("Model", policy => policy.RequireRole("Model"));
-});
-
-builder.Services.AddAuthorization(options =>
-{
     options.AddPolicy("AdminOrManager", policy => 
         policy.RequireRole("Administrator", "Manager"));
 });

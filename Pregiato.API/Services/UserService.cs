@@ -66,6 +66,8 @@ namespace Pregiato.API.Services
                 }
 
                 loginUserRequest.UserType = user.UserType;
+                loginUserRequest.IdUser = user.UserId;
+                loginUserRequest.Email = user.Email;
                 return _jwtService.GenerateToken(loginUserRequest);
             }
             catch (Exception ex)
