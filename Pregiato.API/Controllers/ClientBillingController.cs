@@ -19,8 +19,7 @@ namespace Pregiato.API.Controllers
             _clientRepository = clientRepository;
         }
 
-        [Authorize(Policy = "AdministratorPolicy")]
-        [Authorize(Policy = "Manager")]
+        [Authorize(Policy = "AdminOrManager")]
         [SwaggerOperation("Adiciona o faturamento por cliente.")]
         [HttpPost]
         public async Task<IActionResult> AddClientBilling(Guid id, [FromBody] ClientBillingRequest createClientBillingRequest)
@@ -50,8 +49,7 @@ namespace Pregiato.API.Controllers
 
         }
 
-        [Authorize(Policy = "AdministratorPolicy")]
-        [Authorize(Policy = "Manager")]
+        [Authorize(Policy = "AdminOrManager")]
         [SwaggerOperation("Atualiza o faturamento por cliente.")]
         [HttpPost]  
         public async Task<IActionResult> UpdateClientBilling(Guid id, [FromBody] ClientBillingRequest updateclientBillingRequest)
@@ -83,8 +81,7 @@ namespace Pregiato.API.Controllers
             return Ok(new { message = "Faturamento atualizado com sucesso!" });
         }
 
-        [Authorize(Policy = "AdministratorPolicy")]
-        [Authorize(Policy = "Manager")]
+        [Authorize(Policy = "AdminOrManager")]
         [HttpGet("/GetClientBillingID{id}")]
         [SwaggerOperation("Retorna faturamento do cliente por id")]
         [HttpPost]
@@ -103,8 +100,7 @@ namespace Pregiato.API.Controllers
 
         }
 
-        [Authorize(Policy = "AdministratorPolicy")]
-        [Authorize(Policy = "Manager")]
+        [Authorize(Policy = "AdminOrManager")]
         [HttpGet("/GetClientBillingAll")]
         [SwaggerOperation("Retorna faturamento do cliente por id")]
         public async Task<IActionResult> GetClientBillingAll()

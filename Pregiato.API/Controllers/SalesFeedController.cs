@@ -14,8 +14,7 @@ public class SalesFeedController : ControllerBase
         _context = context;
     }
 
-    [Authorize(Policy = "AdministratorPolicy")]
-    [Authorize(Policy = "Manager")]
+    [Authorize(Policy = "AdminOrManager")]
     [HttpGet("daily")]
     public async Task<IActionResult> GetDailySales()
     {
@@ -35,8 +34,7 @@ public class SalesFeedController : ControllerBase
         return Ok(new { TotalSales = sales });
     }
 
-    [Authorize(Policy = "AdministratorPolicy")]
-    [Authorize(Policy = "Manager")]
+    [Authorize(Policy = "AdminOrManager")]
     [HttpGet("weekly")]
     public async Task<IActionResult> GetWeeklySales()
     {
@@ -49,8 +47,7 @@ public class SalesFeedController : ControllerBase
         return Ok(new { TotalSales = sales });
     }
 
-    [Authorize(Policy = "AdministratorPolicy")]
-    [Authorize(Policy = "Manager")]
+    [Authorize(Policy = "AdminOrManager")]
     [HttpGet("monthly")]
     public async Task<IActionResult> GetMonthlySales()
     {

@@ -28,8 +28,7 @@ namespace Pregiato.API.Controllers
             _paymentService = paymentService;
         }
 
-        [Authorize(Policy = "AdministratorPolicy")]
-        [Authorize(Policy = "Manager")]
+        [Authorize(Policy = "AdminOrManager")]
         [SwaggerOperation( Summary = "Gera um contrato Termo de comprometimento", Description = "Este endpoint gera o Termo de comprometimento.")]
         [SwaggerResponse(200, "Contrato gerado com sucesso", typeof(string))]
         [SwaggerResponse(400, "Requisição inválida")]
@@ -69,8 +68,7 @@ namespace Pregiato.API.Controllers
             return Ok($"Termo de comprometimento para: {model.Name}, gerado com sucesso. Código da Proposta: {contract.CodProposta}.");
         }
 
-        [Authorize(Policy = "AdministratorPolicy")]
-        [Authorize(Policy = "Manager")]
+        [Authorize(Policy = "AdminOrManager")]
         [SwaggerResponse(200, "Contrato gerado com sucesso", typeof(string))]
         [SwaggerResponse(400, "Requisição inválida")]
         [SwaggerResponse(404, "Modelo não encontrado")]
@@ -109,8 +107,7 @@ namespace Pregiato.API.Controllers
             return Ok($"Contrato de PFPMP para {model.Name}, gerado com sucesso. Código da Proposta: {contract.CodProposta}.");
         }
 
-        [Authorize(Policy = "AdministratorPolicy")]
-        [Authorize(Policy = "Manager")]
+        [Authorize(Policy = "AdminOrManager")]
         [SwaggerResponse(200, "Contrato gerado com sucesso", typeof(string))]
         [SwaggerResponse(400, "Requisição inválida")]
         [SwaggerResponse(404, "Modelo não encontrado")]
@@ -150,8 +147,7 @@ namespace Pregiato.API.Controllers
         }
 
 
-        [Authorize(Policy = "AdministratorPolicy")]
-        [Authorize(Policy = "Manager")]
+        [Authorize(Policy = "AdminOrManager")]
         [SwaggerResponse(200, "Contrato gerado com sucesso", typeof(string))]
         [SwaggerResponse(400, "Requisição inválida")]
         [SwaggerResponse(404, "Modelo não encontrado")]
@@ -226,9 +222,7 @@ namespace Pregiato.API.Controllers
         //    return Ok(contracts);
         //}
 
-        [Authorize(Policy = "AdministratorPolicy")]
-        [Authorize(Policy = "Manager")]
-        [Authorize(Policy = "Model")]
+        [Authorize(Policy = "AdminOrManagerOrModel")]
         [HttpGet("download-contract")]
         public async Task<IActionResult> DownloadContract([FromQuery] Guid? modelId,[FromQuery] Guid? contractId,[FromQuery] int codProposta)
         {
@@ -248,8 +242,7 @@ namespace Pregiato.API.Controllers
             return File(pdfBytes, "application/pdf", contract.ContractFilePath);
         }
 
-        [Authorize(Policy = "AdministratorPolicy")]
-        [Authorize(Policy = "Manager")]
+        [Authorize(Policy = "AdminOrManager")]
         [HttpPost("upload/payment-receipt")]
         public async Task<IActionResult> UploadPaymentReceipt([FromForm] UploadPaymentReceiptRequest request)
         {
@@ -273,8 +266,7 @@ namespace Pregiato.API.Controllers
             return Ok("Receipt uploaded successfully.");
         }
 
-        [Authorize(Policy = "AdministratorPolicy")]
-        [Authorize(Policy = "Manager")]
+        [Authorize(Policy = "AdminOrManager")]
         [HttpGet("payment-receipt/{paymentId}")]
         public async Task<IActionResult> GetPaymentReceipt(Guid paymentId)
         {

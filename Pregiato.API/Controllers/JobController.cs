@@ -24,8 +24,7 @@ namespace Pregiato.API.Controllers
             _agencyContext = agencyContext ?? throw new ArgumentNullException(nameof(agencyContext));
         }
 
-        [Authorize(Roles = "AdministratorPolicy")]
-        [Authorize(Roles = "ManagerPolicy")]
+        [Authorize(Policy = "AdminOrManager")]
         [HttpPost("creatJob")]
         [SwaggerOperation("Criação de Job")]
         public async Task <IActionResult> AddJobModel( [FromBody] JobRequest jobRequest)
@@ -47,8 +46,7 @@ namespace Pregiato.API.Controllers
             return Ok(jobModel);                         
         }
 
-        [Authorize(Policy = "AdministratorPolicy")]
-        [Authorize(Policy = "Manager")]
+        [Authorize(Policy = "AdminOrManager")]
         [HttpPost("assign-job-to-model")]
         public async Task<IActionResult> AssignJobToModel([FromBody] AssignJobToModelRequest request)
         {
