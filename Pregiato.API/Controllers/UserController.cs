@@ -4,6 +4,7 @@ using Pregiato.API.Interface;
 using Pregiato.API.Models;
 using Microsoft.AspNetCore.Authorization;
 using Swashbuckle.AspNetCore.Annotations;
+using Pregiato.API.Response;
 
 namespace Pregiato.API.Controllers
 {
@@ -30,7 +31,7 @@ namespace Pregiato.API.Controllers
             try
             {
                 var token = await _userService.AuthenticateUserAsync(loginUserRequest);
-                return Ok(new { token });
+                return Ok(new LoginResponse { Token = token });
             }
             catch (Exception ex)
             {
@@ -38,8 +39,7 @@ namespace Pregiato.API.Controllers
             }
         }
 
-        [Authorize(Policy = "AdministratorPolicy")]
-        [Authorize(Policy = "Manager")]
+        [Authorize(Policy = "AdminOrManager")]
         [HttpDelete("deleteUser{id}")]
         public async Task<IActionResult> Delete(Guid id)
         {
@@ -54,8 +54,7 @@ namespace Pregiato.API.Controllers
             }
         }
 
-        [Authorize(Policy = "AdministratorPolicy")]
-        [Authorize(Policy = "Manager")]
+        [Authorize(Policy = "AdminOrManager")]
         [HttpPost("register/administrator")]
         public async Task<IActionResult> RegisterAdministrator([FromBody] UserRegisterDto dto)
         {
@@ -70,8 +69,7 @@ namespace Pregiato.API.Controllers
             }
         }
 
-        [Authorize(Policy = "AdministratorPolicy")]
-        [Authorize(Policy = "Manager")]
+        [Authorize(Policy = "AdminOrManager")]
         [HttpPost("register/model")]
         public async Task<IActionResult> RegisterModel([FromBody] UserRegisterDto dto)
         {
@@ -87,8 +85,7 @@ namespace Pregiato.API.Controllers
             }
         }
 
-        [Authorize(Policy = "AdministratorPolicy")]
-        [Authorize(Policy = "Manager")]
+        [Authorize(Policy = "AdminOrManager")]
         [HttpPost("register/manager")]
         public async Task<IActionResult> RegisterManager([FromBody] UserRegisterDto dto)
         {
@@ -102,8 +99,6 @@ namespace Pregiato.API.Controllers
                 return BadRequest(new { error = ex.Message });
             }
         }
-
-
 
     }
 }

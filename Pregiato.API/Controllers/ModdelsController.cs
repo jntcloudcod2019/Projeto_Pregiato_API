@@ -31,8 +31,7 @@ namespace Pregiato.API.Controllers
             _contractService = contractService; 
             _jwtService = jwtService;
         }
-        [Authorize(Policy = "AdministratorPolicy")]
-        [Authorize(Policy = "Manager")]
+        [Authorize(Policy = "AdminOrManager")]
         [HttpGet("GetAllModels")]
         [SwaggerOperation("Retorna todos os modelos cadastrados.")]
         public async Task<IActionResult> GetAllModels()
@@ -42,8 +41,7 @@ namespace Pregiato.API.Controllers
         }
 
 
-        [Authorize(Policy = "AdministratorPolicy")]
-        [Authorize(Policy = "Manager")]
+        [Authorize(Policy = "AdminOrManager")]
         [HttpPost("AddModels")]
         [SwaggerOperation("Criar novo modelo.")]
         public async Task<IActionResult> AddNewModel([FromBody] CreateModelRequest createModelRequest)
@@ -84,8 +82,7 @@ namespace Pregiato.API.Controllers
             return Ok($"Modelo {model.Name}, criado com sucesso!");
         }
 
-        [Authorize(Policy = "AdministratorPolicy")]
-        [Authorize(Policy = "Manager")]
+        [Authorize(Policy = "AdminOrManager")]
         [HttpDelete("DeleteModel{id}")]
         [SwaggerOperation("Deletar cadastro de modelos.")]
         public async Task<IActionResult> DeleteModel(Guid id)
@@ -99,9 +96,7 @@ namespace Pregiato.API.Controllers
             return NoContent();
         }
 
-        [Authorize(Policy = "AdministratorPolicy")]
-        [Authorize(Policy = "Manager")]
-        [Authorize(Policy = "Model")]
+        [Authorize(Policy = "AdminOrManagerOrModel")]
         [HttpGet("modelFeedJobs")]
         public async Task<IActionResult> GetModelFeed()
         {
@@ -139,8 +134,7 @@ namespace Pregiato.API.Controllers
             });
         }
 
-        [Authorize(Policy = "AdministratorPolicy")]
-        [Authorize(Policy = "Manager")]
+        [Authorize(Policy = "AdminOrManagerOrModel")]
         [HttpGet("findModel")]
         public async Task<IActionResult> FindModel([FromQuery] string query)
         {
@@ -167,9 +161,7 @@ namespace Pregiato.API.Controllers
             });
         }
 
-        [Authorize(Policy = "AdministratorPolicy")]
-        [Authorize(Policy = "Manager")]
-        [Authorize(Policy = "Model")]
+        [Authorize(Policy = "AdminOrManagerOrModel")]
         [HttpGet("downloadContract/{id}")]
         public async Task<IActionResult> DownloadContract(int id)
         {
@@ -182,9 +174,7 @@ namespace Pregiato.API.Controllers
             return File(contract.ContractFilePath, "application/pdf", $"{contract.Content}.pdf");
         }
 
-        [Authorize(Policy = "AdministratorPolicy")]
-        [Authorize(Policy = "Manager")]
-        [Authorize(Policy = "Model")]
+        [Authorize(Policy = "AdminOrManagerOrModel")]
         [HttpPut("updateResgiterModel/{query}")]
         public async Task<IActionResult> UpdateRegisterModel(string query , [FromBody] CreateModelRequest createModelRequest)
         {
@@ -226,9 +216,7 @@ namespace Pregiato.API.Controllers
             return NoContent();
         }
 
-        [Authorize(Policy = "AdministratorPolicy")]
-        [Authorize(Policy = "Manager")]
-        [Authorize(Policy = "Model")]
+        [Authorize(Policy = "AdminOrManagerOrModel")]
         [HttpGet("my-contracts")]
         public async Task<IActionResult> GetMyContracts()
         {

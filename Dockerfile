@@ -2,7 +2,7 @@
 FROM mcr.microsoft.com/dotnet/sdk:8.0 AS build
 WORKDIR /app
 
-# Copiando os arquivos do projeto e restaurando dependências
+# Copiando os arquivos do projeto e restaurando dependï¿½ncias
 COPY . .
 RUN dotnet restore
 RUN dotnet publish -c Release -o /out
@@ -12,9 +12,9 @@ FROM mcr.microsoft.com/dotnet/aspnet:8.0
 WORKDIR /app
 COPY --from=build /out .
 
-# Definir variáveis de ambiente para o runtime
+# Definir variï¿½veis de ambiente para o runtime
 ENV ASPNETCORE_URLS=http://+:5000
-ENV ASPNETCORE_ENVIRONMENT=Development
+ENV ASPNETCORE_ENVIRONMENT=Prodution
 
 # Expor a porta 5000
 EXPOSE 5000

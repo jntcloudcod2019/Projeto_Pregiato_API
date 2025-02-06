@@ -12,9 +12,10 @@ using Pregiato.API.Models;
 
 var builder = WebApplication.CreateBuilder(args);
 
-// Forçar o ambiente de produção
+
 builder.Environment.EnvironmentName = Environments.Production;
 Console.WriteLine($" Ambiente Atual: {builder.Environment.EnvironmentName}");
+
 
 var config = new ConfigurationBuilder()
     .SetBasePath(Directory.GetCurrentDirectory())
@@ -24,10 +25,19 @@ var config = new ConfigurationBuilder()
     .Build();
 
 builder.Configuration.AddConfiguration(config);
+
+
+var connectionString = config.GetConnectionString("DefaultConnection");
+if (string.IsNullOrEmpty(connectionString))
+{
+    throw new Exception("ERRO: A string de conexão com o banco de dados não foi encontrada no appsettings.json!");
+}
+
 builder.Services.AddDbContext<ModelAgencyContext>(options =>
-    options.UseNpgsql(config.GetConnectionString("DefaultConnection"))
+    options.UseNpgsql(connectionString)
            .EnableSensitiveDataLogging(builder.Environment.IsDevelopment())
            .LogTo(Console.WriteLine, LogLevel.Information));
+
 
 builder.Services.AddAutoMapper(AppDomain.CurrentDomain.GetAssemblies());
 builder.Services.AddScoped<IClientRepository, ClientRepository>();
@@ -45,6 +55,7 @@ builder.Services.AddScoped<IPasswordHasherService, PasswordHasherService>();
 builder.Services.AddHttpContextAccessor();
 builder.Services.AddEndpointsApiExplorer();
 
+
 builder.Services.AddSwaggerGen(c =>
 {
     c.SwaggerDoc("v1", new OpenApiInfo { Title = "Model Agency API", Version = "v1" });
@@ -53,9 +64,10 @@ builder.Services.AddSwaggerGen(c =>
     {
         Type = "string",
         Example = new OpenApiString("CartaoCredito"),
-        Description = "Método de pagamento. Valores permitidos: " +
-                     "CartaoCredito, CartaoDebito, Pix, Dinheiro, LinkPagamento"
+        Description = "Método de pagamento. Valores permitidos: CartaoCredito, CartaoDebito, Pix, Dinheiro, LinkPagamento"
     });
+
+    c.ResolveConflictingActions(apiDescriptions => apiDescriptions.First()); 
 
     var securityScheme = new OpenApiSecurityScheme
     {
@@ -80,12 +92,12 @@ builder.Services.AddSwaggerGen(c =>
     c.AddSecurityRequirement(securityRequirement);
 });
 
+
 var jwtSettings = builder.Configuration.GetSection("JwtSettings");
 var secretKey = jwtSettings["SecretKey"];
-
 if (string.IsNullOrEmpty(secretKey))
 {
-    throw new ArgumentNullException("SecretKey", " ERRO: A chave secreta do JWT não foi encontrada no appsettings.json!");
+    throw new Exception("ERRO: A chave secreta do JWT não foi encontrada no appsettings.json!");
 }
 
 builder.Services.AddAuthentication(JwtBearerDefaults.AuthenticationScheme)
@@ -105,17 +117,41 @@ builder.Services.AddAuthentication(JwtBearerDefaults.AuthenticationScheme)
 
 builder.Services.AddAuthorization(options =>
 {
-    options.AddPolicy("AdministratorPolicy", policy => policy.RequireRole("Administrator"));
-    options.AddPolicy("ManagerPolicy", policy => policy.RequireRole("Manager"));
-    options.AddPolicy("ModelPolicy", policy => policy.RequireRole("Model"));
+    options.AddPolicy("Administrator", policy => policy.RequireRole("Administrator"));
+    options.AddPolicy("Manager", policy => policy.RequireRole("Manager"));
+    options.AddPolicy("Model", policy => policy.RequireRole("Model"));
 });
+
+builder.Services.AddAuthorization(options =>
+{
+    options.AddPolicy("AdminOrManager", policy => 
+        policy.RequireRole("Administrator", "Manager"));
+});
+
+builder.Services.AddAuthorization(options =>
+{
+    options.AddPolicy("AdminOrManagerOrModel", policy =>
+        policy.RequireRole("Administrator", "Manager", "Model"));
+});
+
+builder.Services.AddCors(options =>
+{
+    options.AddPolicy("AllowAllOrigins",
+        builder =>
+        {
+            builder.AllowAnyOrigin()
+                   .AllowAnyMethod()
+                   .AllowAnyHeader();
+        });
+});
+
 
 builder.Services.AddControllers()
     .AddJsonOptions(options =>
     {
         options.JsonSerializerOptions.PropertyNamingPolicy = null;
-        options.JsonSerializerOptions.DefaultIgnoreCondition = System.Text.Json.Serialization.JsonIgnoreCondition.WhenWritingNull;
-        options.JsonSerializerOptions.Converters.Add(new System.Text.Json.Serialization.JsonStringEnumConverter());
+        options.JsonSerializerOptions.DefaultIgnoreCondition = JsonIgnoreCondition.WhenWritingNull;
+        options.JsonSerializerOptions.Converters.Add(new JsonStringEnumConverter());
         options.JsonSerializerOptions.Converters.Add(new JsonDateTimeConverter("dd-MM-yyyy", "yyyy-MM-dd", "MM/dd/yyyy", "dd/MM/yyyy"));
         options.JsonSerializerOptions.Converters.Add(new MetodoPagamentoConverter());
         options.JsonSerializerOptions.IgnoreReadOnlyProperties = true;
@@ -123,25 +159,23 @@ builder.Services.AddControllers()
     });
 
 builder.Services.AddAuthorization();
-builder.WebHost.UseUrls("http://+:" + (Environment.GetEnvironmentVariable("PORT") ?? "8080"));
+
+
+builder.WebHost.UseUrls("http://+:8080");
+
 var app = builder.Build();
 
-// Habilitar Swagger apenas em desenvolvimento (opcional)
-if (app.Environment.IsDevelopment())
-{
-    app.UseSwagger();
-    app.UseSwaggerUI(c =>
-    {
-        c.SwaggerEndpoint("/swagger/v1/swagger.json", "Model Agency API v1");
-        c.RoutePrefix = string.Empty; // Swagger na raiz (http://localhost:5000)
-        c.ConfigObject.AdditionalItems["syntaxHighlight"] = new Dictionary<string, object>
-        {
-            ["activated"] = false
-        };
-    });
-}
 
+app.UseSwagger();
+app.UseSwaggerUI(c =>
+{
+    c.SwaggerEndpoint("/swagger/v1/swagger.json", "Model Agency API v1");
+    c.RoutePrefix = string.Empty; // Deixa o Swagger disponível em http://localhost:8080
+});
+app.UseCors("AllowAllOrigins");
+app.UseRouting(); 
 app.UseAuthentication();
 app.UseAuthorization();
+
 app.MapControllers();
 app.Run();

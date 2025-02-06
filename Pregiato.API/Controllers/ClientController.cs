@@ -20,8 +20,7 @@ namespace Pregiato.API.Controllers
         {
             _clientRepository = clientRepository ?? throw new ArgumentNullException(nameof(clientRepository));
         }
-        [Authorize(Policy = "AdministratorPolicy")]
-        [Authorize(Policy = "Manager")]
+        [Authorize(Policy = "AdminOrManager")]
         [HttpGet("/GetAllClients")]
         [SwaggerOperation("Retorna todos os clientes cadastrados.")]
         public async Task<IActionResult> GetAllClients()
@@ -42,8 +41,7 @@ namespace Pregiato.API.Controllers
             return Ok(activeClients);
         }
 
-        [Authorize(Policy = "AdministratorPolicy")]
-        [Authorize(Policy = "Manager")]
+        [Authorize(Policy = "AdminOrManager")]
         [SwaggerOperation("Criação de clientes.")]
         [SwaggerResponse(201, "Cliente criado com sucesso.", typeof(ClientResponse))]
         [SwaggerResponse(400, "Erro de validação.")]
@@ -85,8 +83,7 @@ namespace Pregiato.API.Controllers
         }
 
 
-        [Authorize(Policy = "AdministratorPolicy")]
-        [Authorize(Policy = "Manager")]
+        [Authorize(Policy = "AdminOrManager")]
         [HttpPut("/UpdateClients/{id}")]
         [SwaggerOperation("Atualizar cadastro de clientes.")]
         public async Task<IActionResult> UpdateClient(Guid id, [FromBody] UpdateClientRequest request)
@@ -114,8 +111,7 @@ namespace Pregiato.API.Controllers
             return NoContent();
         }
 
-        [Authorize(Policy = "AdministratorPolicy")]
-        [Authorize(Policy = "Manager")]
+        [Authorize(Policy = "AdminOrManager")]
         [HttpDelete("/DeleteClients/{id}")]
         [SwaggerOperation("Deletar cadastro de clientes.")]
         public async Task<IActionResult> DeleteClient(Guid id)
