@@ -10,11 +10,13 @@ namespace Pregiato.API.Services
     {
         private readonly IUserRepository _userRepository;
         private readonly IJwtService _jwtService; 
+        private readonly IPasswordHasherService _passwordHasherService;
 
-        public UserService(IUserRepository userRepository, IJwtService jwtService)
+        public UserService(IUserRepository userRepository, IJwtService jwtService, IPasswordHasherService passwordHasherService)
         {
             _userRepository = userRepository;
             _jwtService = jwtService;  
+            _passwordHasherService = passwordHasherService; 
         }
 
         public async Task DeleteUserAsync(Guid id)
@@ -76,5 +78,33 @@ namespace Pregiato.API.Services
                 throw new Exception("Erro durante o processo de autenticação. Por favor, contate o time de I.T.");
             }
         }
+
+        public async Task<string> RegisterUserModel(string username, string email)
+        {
+
+            if (await _userRepository.GetByUsernameAsync(username) != null)
+            {
+                throw new Exception("Username already exists.");
+            }
+
+            var password = _passwordHasherService.GenerateRandomPassword(8) ;
+
+            var passwordHash = BCrypt.Net.BCrypt.HashPassword(password);
+            Console.WriteLine($"Hash Gerado: {passwordHash}");
+
+            var user = new User
+            {
+                UserId = new Guid(),
+                Name = username.Split(" ")[0],
+                Email = email,
+                PasswordHash = passwordHash,
+                UserType = UserType.Model.ToString(),
+            };
+
+            await _userRepository.AddUserAsync(user);
+            await _userRepository.SaveChangesAsync();
+
+            return "Usuário cadastrado comsucesso.";
+        }  
     }
 }

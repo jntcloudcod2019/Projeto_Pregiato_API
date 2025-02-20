@@ -4,6 +4,8 @@ using System.Security;
 using System.Text.Json.Nodes;
 using System.Text.Json;
 using System.Text.Json.Serialization;
+using Swashbuckle.AspNetCore.Annotations;
+using System.ComponentModel;
 
 namespace Pregiato.API.Models
 {
@@ -25,6 +27,13 @@ namespace Pregiato.API.Models
         [Required]
         [StringLength(20, ErrorMessage = "RG deve ter no máximo 20 caracteres.")]
         public string RG { get; set; }
+
+        [Required]
+        [DefaultValue("05-02-2025")]
+        [SwaggerSchema("Data de Nascimento")]
+        [JsonConverter(typeof(JsonDateTimeConverter))]
+        [DisplayFormat(DataFormatString = "{dd-MM-yyyy}", ApplyFormatInEditMode = true)]
+        public DateTime? DateOfBirth { get; set; } = DateTime.UtcNow;
 
         [Required]
         [EmailAddress(ErrorMessage = "Email inválido.")]
@@ -50,18 +59,6 @@ namespace Pregiato.API.Models
         public bool Status { get; set; } = true;
 
         [Required]
-        [StringLength(255, ErrorMessage = "Senha criptografada deve ter no máximo 255 caracteres.")]
-        public string PasswordHash { get; set; }
-
-        [Required]
-        public DateTime CreatedAt { get; set; } = DateTime.UtcNow;
-
-        [Required]
-        public DateTime UpdatedAt { get; set; } = DateTime.UtcNow;
-
-        [Required]
-        public JsonDocument DNA { get; set; }
-        [Required]
         public string? Neighborhood { get; set; } 
         [Required]
         public string ? City { get; set; } 
@@ -70,5 +67,14 @@ namespace Pregiato.API.Models
         public string TelefonePrincipal { get; set; }
         [Required]
         public string TelefoneSecundario { get; set; }
+
+        [JsonIgnore]
+        public JsonDocument? DNA { get; set; }
+
+        [Required]
+        public DateTime CreatedAt { get; set; } = DateTime.UtcNow;
+
+        [Required]
+        public DateTime UpdatedAt { get; set; } = DateTime.UtcNow;
     }
 }

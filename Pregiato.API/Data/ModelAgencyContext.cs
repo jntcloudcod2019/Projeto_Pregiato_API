@@ -164,7 +164,7 @@ namespace Pregiato.API.Data
 
                 modelBuilder.Entity<LoginUserRequest>(entity =>
                 {
-                    entity.HasNoKey();
+                    modelBuilder.Ignore<LoginUserRequest>();
                 });
             });
         }
