@@ -1,7 +1,9 @@
-﻿using Microsoft.AspNetCore.Identity.Data;
+﻿using Microsoft.AspNetCore.Http.HttpResults;
+using Microsoft.AspNetCore.Identity.Data;
 using Pregiato.API.Interface;
 using Pregiato.API.Models;
 using Pregiato.API.Requests;
+using Pregiato.API.Response;
 
 
 namespace Pregiato.API.Services
@@ -10,13 +12,17 @@ namespace Pregiato.API.Services
     {
         private readonly IUserRepository _userRepository;
         private readonly IJwtService _jwtService; 
+        private readonly IEmailService _emailService;   
         private readonly IPasswordHasherService _passwordHasherService;
 
-        public UserService(IUserRepository userRepository, IJwtService jwtService, IPasswordHasherService passwordHasherService)
+        public UserService(IUserRepository userRepository, IJwtService jwtService, 
+                           IPasswordHasherService passwordHasherService,
+                           IEmailService emailService)
         {
             _userRepository = userRepository;
             _jwtService = jwtService;  
             _passwordHasherService = passwordHasherService; 
+            _emailService = emailService;
         }
 
         public async Task DeleteUserAsync(Guid id)
@@ -33,7 +39,6 @@ namespace Pregiato.API.Services
             }
 
             var passwordHash = BCrypt.Net.BCrypt.HashPassword(password);
-            Console.WriteLine($"Hash Gerado: {passwordHash}");
 
             var user = new User
 
@@ -65,6 +70,7 @@ namespace Pregiato.API.Services
                 if (!BCrypt.Net.BCrypt.Verify(loginUserRequest.Password, user.PasswordHash))
                 {
                     throw new Exception("Senha inválida. Verifique a senha digitada e tente novamente.");
+                  
                 }
 
                 loginUserRequest.UserType = user.UserType;
@@ -84,13 +90,25 @@ namespace Pregiato.API.Services
 
             if (await _userRepository.GetByUsernameAsync(username) != null)
             {
-                throw new Exception("Username already exists.");
+                throw new Exception("Usuário já cadastrado.");
             }
 
             var password = _passwordHasherService.GenerateRandomPassword(8) ;
 
+            var templatePath = Path.Combine(Directory.GetCurrentDirectory(), "Templates", "WelcomeEmailTemplate.html");
+
+            var replacements = new Dictionary<string, string>
+            {
+                {"Nome",  username.Split(" ") [0]},
+                {"User", username },
+                {"Password", password }
+            };
+
+            var emailBody = await _emailService.LoadTemplate(templatePath, replacements);
+
+            await _emailService.SendEmailAsync(email, "Bem-vindo à Plataforma My Pregiato", emailBody);
+
             var passwordHash = BCrypt.Net.BCrypt.HashPassword(password);
-            Console.WriteLine($"Hash Gerado: {passwordHash}");
 
             var user = new User
             {

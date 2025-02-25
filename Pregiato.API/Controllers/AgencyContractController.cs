@@ -185,38 +185,16 @@ namespace Pregiato.API.Controllers
 
         [SwaggerOperation("Processo de gerar todos os contratos.")]
         [HttpPost("generate/allContracts")]
-        public async Task<IActionResult> GenerateAllContractsAsync([FromBody] PaymentRequest paymentRequest, [FromQuery] string query)
+        public async Task<IActionResult> GenerateAllContractsAsync(CreateContractModelRequest createContractModelRequest)
         {
-            var model = await _modelRepository.GetModelByCriteriaAsync(query);
+            var model = await _modelRepository.GetModelByCriteriaAsync(createContractModelRequest.ModelIdentification);
 
             if (model == null)
             {
                 return NotFound("Modelo não encontrado.");
             }
 
-            var parameters = new Dictionary<string, string>
-            {
-                    {"Nome-Modelo", model.Name },
-                    {"CPF-Modelo", model.CPF },
-                    {"RG-Modelo", model.RG },
-                    {"Endereço-Modelo", model.Address},
-                    {"Numero-Modelo",model.NumberAddress},
-                    {"Bairro-Modelo", model.Neighborhood},
-                    {"Cidade-Modelo", model.City},
-                    {"CEP-Modelo", model.PostalCode},
-                    {"Complemento-Modelo", model.Complement},
-                    {"Telefone-Principal", model.TelefonePrincipal},
-                    {"Telefone-Secundário", model.TelefoneSecundario},
-                    {"Valor-Contrato",paymentRequest.Valor.ToString("C")},
-                    {"Forma-Pagamento", paymentRequest.MetodoPagamento}
-            };
-
-            var contracts = await _contractService.GenerateAllContractsAsync(
-             paymentRequest,
-             idModel: model.IdModel.ToString(),
-             cpf: model.CPF,
-             rg: model.RG
-           );
+            var contracts = await _contractService.GenerateAllContractsAsync(createContractModelRequest);
 
             await _context.SaveChangesAsync();
             return Ok(contracts);

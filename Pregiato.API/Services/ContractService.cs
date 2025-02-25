@@ -68,13 +68,15 @@ namespace Pregiato.API.Services
                 template = template.Replace($"{{{param.Key}}}", param.Value);
             }
 
+            // Verifica se ainda há placeholders não substituídos
             var unfilledPlaceholders = Regex.Matches(template, @"\{.*?\}");
             if (unfilledPlaceholders.Count > 0)
             {
                 throw new InvalidOperationException("O template ainda contém placeholders não preenchidos: " +
-                                                    string.Join(", ", unfilledPlaceholders.Select(p => p.Value)));
+                                                  string.Join(", ", unfilledPlaceholders.Select(p => p.Value)));
             }
-            return template; 
+
+            return template;
         }
 
         public byte[] ConvertHtmlToPdf(string html)
@@ -85,6 +87,11 @@ namespace Pregiato.API.Services
                 using var pdfDocument = new PdfDocument(pdfWriter);
                 using var document = new Document(pdfDocument);
 
+                // Configurações do PDF
+                document.SetMargins(20, 20, 40, 20); // Margens: topo, direita, baixo, esquerda
+                document.SetFontSize(12); // Tamanho da fonte
+
+                // Extrai o texto do HTML e adiciona ao documento
                 string plainText = ExtractPlainTextFromHtml(html);
                 document.Add(new Paragraph(plainText));
 
@@ -105,13 +112,11 @@ namespace Pregiato.API.Services
             await pdfStream.CopyToAsync(memoryStream);
             var pdfBytes = memoryStream.ToArray();
 
- 
             var jsonObject = new
             {
                 type = "Buffer",
-                data = pdfBytes.Select(b => (int)b).ToArray() 
+                data = pdfBytes.Select(b => (int)b).ToArray()
             };
-
 
             var jsonBytes = JsonSerializer.SerializeToUtf8Bytes(jsonObject);
 
@@ -146,8 +151,8 @@ namespace Pregiato.API.Services
                 throw new InvalidOperationException("O caminho do arquivo do contrato está vazio.");
             }
 
-            string templateType = contractFilePath.Split('_')[2]; 
-            string templatePath = Path.Combine("TemplatesContratos", $"{templateType}.html");
+            string templateType = contractFilePath.Split('_')[2];
+            string templatePath = Path.Combine("Templates", $"{templateType}.html");
 
             if (!File.Exists(templatePath))
             {
@@ -163,35 +168,34 @@ namespace Pregiato.API.Services
             string htmlTemplate = File.ReadAllText(templatePath);
 
             var parameters = new Dictionary<string, string>
-            {       {"Local-Contrato", DefaultCidadeEmpresa},
-                    {"Data-Contrato", DefaultDataContrato},
-                    {"Mês-Contrato", DefaultMesContrato},
-                    {"Nome-Modelo", model.Name },
-                    {"CPF-Modelo", model.CPF },
-                    {"RG-Modelo", model.RG },
-                    {"Endereço-Modelo", model.Address},
-                    {"Numero-Modelo",model.NumberAddress},
-                    {"Bairro-Modelo", model.Neighborhood},
-                    {"Cidade-Modelo", model.City},
-                    {"CEP-Modelo", model.PostalCode},
-                    {"Complemento-Modelo", model.Complement},
-                    {"Telefone-Principal", model.TelefonePrincipal},
-                    {"Telefone-Secundário", model.TelefoneSecundario},
-                    {"Nome-Empresa", DefaultNomeEmpresa},
-                    {"CNPJ-Empresa", DefaultCNPJEmpresa},
-                    {"Endereço-Empresa", DefaultEnderecoEmpresa},
-                    {"Numero-Empresa",DefaultNumeroEmpresa},
-                    {"Complemento-Empresa", DefaultComplementoEmpresa},
-                    {"Bairro-Empresa", DefaultBairroEmpresa},
-                    {"CEP-Empresa",DefaultCEPEmpresa},
-                    {"Vigência-Contrato", DefaultVigenciaContrato}
-
+            {
+                {"Local-Contrato", DefaultCidadeEmpresa},
+                {"Data-Contrato", DefaultDataContrato},
+                {"Mês-Contrato", DefaultMesContrato},
+                {"Nome-Modelo", model.Name },
+                {"CPF-Modelo", model.CPF },
+                {"RG-Modelo", model.RG },
+                {"Endereço-Modelo", model.Address},
+                {"Numero-Modelo",model.NumberAddress},
+                {"Bairro-Modelo", model.Neighborhood},
+                {"Cidade-Modelo", model.City},
+                {"CEP-Modelo", model.PostalCode},
+                {"Complemento-Modelo", model.Complement},
+                {"Telefone-Principal", model.TelefonePrincipal},
+                {"Telefone-Secundário", model.TelefoneSecundario},
+                {"Nome-Empresa", DefaultNomeEmpresa},
+                {"CNPJ-Empresa", DefaultCNPJEmpresa},
+                {"Endereço-Empresa", DefaultEnderecoEmpresa},
+                {"Numero-Empresa",DefaultNumeroEmpresa},
+                {"Complemento-Empresa", DefaultComplementoEmpresa},
+                {"Bairro-Empresa", DefaultBairroEmpresa},
+                {"CEP-Empresa",DefaultCEPEmpresa},
+                {"Vigência-Contrato", DefaultVigenciaContrato}
             };
 
             string populatedHtml = PopulateTemplate(htmlTemplate, parameters);
-       
             byte[] pdfBytes = ConvertHtmlToPdf(populatedHtml);
-        
+
             string desktopPath = Environment.GetFolderPath(Environment.SpecialFolder.Desktop);
             string outputPath = Path.Combine(desktopPath, contractFilePath);
 
@@ -202,10 +206,10 @@ namespace Pregiato.API.Services
                 throw new IOException("Falha ao salvar o PDF do contrato.");
             }
 
-            return outputPath; 
+            return outputPath;
         }
 
-        public async Task<ContractBase> GenerateContractAsync(PaymentRequest paymentRequest, Guid modelId, string contractType, Dictionary<string, string> parameters)
+        public async Task<ContractBase> GenerateContractAsync(CreateContractModelRequest createContractModelRequest, Guid modelId, string contractType, Dictionary<string, string> parameters)
         {
             parameters ??= new Dictionary<string, string>();
 
@@ -213,30 +217,17 @@ namespace Pregiato.API.Services
             {
                 "Agency" => new AgencyContract(),
                 "Photography" => new PhotographyProductionContract(),
-                "Commitment" => new CommitmentTerm(),
-                "ImageRights" => new ImageRightsTerm(),
                 _ => throw new ArgumentException("Invalid contract type.")
             };
 
             contract.ModelId = modelId;
             contract.CodProposta = await GetNextCodPropostaAsync();
-            contract.LocalContrato = parameters.ContainsKey("Local-Contrato") ? parameters["Local-Contrato"] : DefaultCidadeEmpresa;
-            contract.DataContrato = parameters.ContainsKey("Data-Contrato") ? parameters["Data-Contrato"] : DefaultDataContrato;
-            contract.MesContrato = parameters.ContainsKey("Mês-Contrato") ? parameters["Mês-Contrato"] : DefaultMesContrato;   
-            contract.NomeEmpresa = parameters.ContainsKey("Nome-Empresa}") ? parameters["Nome-Empresa}"] : DefaultNomeEmpresa;
-            contract.CNPJEmpresa = parameters.ContainsKey("CNPJ-Empresa") ? parameters["CNPJ-Empresa"] : DefaultCNPJEmpresa;
-            contract.EnderecoEmpresa = parameters.ContainsKey("Endereço-Empresa") ? parameters["Endereço-Empresa"] : DefaultEnderecoEmpresa;    
-            contract.NumeroEmpresa = parameters.ContainsKey("Numero-Empresa") ? parameters["Numero-Empresa"] : DefaultNumeroEmpresa;
-            contract.ComplementoEmpresa = parameters.ContainsKey("Complemento-Empresa") ? parameters["Complemento-Empresa"] : DefaultComplementoEmpresa;
-            contract.BairroEmpresa = parameters.ContainsKey("Bairro-Empresa") ? parameters["Bairro-Empresa"] : DefaultBairroEmpresa;
-            contract.CidadeEmpresa = parameters.ContainsKey("Cidade-Empresa") ? parameters["Cidade-Empresa"] : DefaultCidadeEmpresa;
-            contract.CEPEmpresa = parameters.ContainsKey("CEP-Empresa") ? parameters["CEP-Empresa"] : DefaultCEPEmpresa;
-            contract.VigenciaContrato = parameters.ContainsKey("Vigência-Contrato")  ? parameters["Vigência-Contrato"] : DefaultVigenciaContrato;            
-            contract.NomeEmpresa = parameters.ContainsValue("Nome-Empresa") ? parameters["Nome-Empresa"] : "Pregiato Management";
-            contract.ValorContrato = parameters.ContainsKey("Valor-Contrato")
-            ?decimal.Parse(parameters["Valor-Contrato"] .Replace("R$", "").Replace(".", "").Replace(",", ".").Trim()): throw new ArgumentException("A chave 'Valor-Contrato' é obrigatória.");
-            
-            string htmlTemplatePath = $"TemplatesContratos/{contract.TemplateFileName}";
+            contract.LocalContrato = parameters.ContainsKey("Cidade Modelo - UF") ? parameters["Cidade Modelo - UF"] : createContractModelRequest.City;
+            contract.DataContrato = parameters.ContainsKey("Dia") ? parameters["Dia"] : createContractModelRequest.Day.ToString();
+            contract.MesContrato = parameters.ContainsKey("Mês-Contrato") ? parameters["Mês-Contrato"] : createContractModelRequest.MonthContract.ToString();
+            contract.ValorContrato = parameters.ContainsKey("Valor-Contrato") ? decimal.Parse(parameters["Valor-Contrato"].Replace("R$", "").Replace(".", "").Replace(",", ".").Trim()) : throw new ArgumentException("A chave 'Valor-Contrato' é obrigatória.");
+           
+            string htmlTemplatePath = $"Templates/{contract.TemplateFileName}";
             if (!File.Exists(htmlTemplatePath))
             {
                 throw new FileNotFoundException($"Template não encontrado: {htmlTemplatePath}");
@@ -247,20 +238,22 @@ namespace Pregiato.API.Services
             string populatedHtml = PopulateTemplate(htmlTemplate, parameters);
 
             byte[] pdfBytes = ConvertHtmlToPdf(populatedHtml);
-        
-            await SaveContractAsync(contract, new MemoryStream(pdfBytes), parameters["CPF-Modelo"]);
+
+            await SaveContractAsync(contract, new MemoryStream(pdfBytes), parameters["CPF Modelo"]);
+
+            var validationResult = await _paymentService.ValidatePayment(createContractModelRequest.Payment, contract);
 
             return contract;
         }
 
-        public async Task<List<ContractBase>> GenerateAllContractsAsync(PaymentRequest paymentRequest, string? idModel = null, string? cpf = null, string? rg = null)
+        public async Task<List<ContractBase>> GenerateAllContractsAsync(CreateContractModelRequest createContractModelRequest)
         {
-            if (string.IsNullOrEmpty(idModel) && string.IsNullOrEmpty(cpf) && string.IsNullOrEmpty(rg))
+            if (string.IsNullOrEmpty(createContractModelRequest.ModelIdentification))
             {
-                throw new ArgumentException("Pelo menos um dos parâmetros 'idModel', 'cpf' ou 'rg' deve ser fornecido.");
+                throw new ArgumentException("Os parâmetros para cadastro são obrigtórios.");
             }
 
-            var model = await _modelRepository.GetModelAllAsync(idModel, cpf, rg);
+            var model = await _modelRepository.GetModelByCriteriaAsync(createContractModelRequest.ModelIdentification);
 
             if (model == null)
             {
@@ -268,43 +261,37 @@ namespace Pregiato.API.Services
             }
 
             var parameters = new Dictionary<string, string>
-            {       {"Local-Contrato", DefaultCidadeEmpresa},
-                    {"Data-Contrato", DefaultDataContrato},
-                    {"Mês-Contrato", DefaultMesContrato},
-                    {"Nome-Modelo", model.Name },
-                    {"CPF-Modelo", model.CPF },
-                    {"RG-Modelo", model.RG },
-                    {"Endereço-Modelo", model.Address},
-                    {"Numero-Modelo",model.NumberAddress},
-                    {"Bairro-Modelo", model.Neighborhood},
-                    {"Cidade-Modelo", model.City},
-                    {"CEP-Modelo", model.PostalCode},
-                    {"Complemento-Modelo", model.Complement},
-                    {"Telefone-Principal", model.TelefonePrincipal},
-                    {"Telefone-Secundário", model.TelefoneSecundario},
-                    {"Nome-Empresa", DefaultNomeEmpresa},
-                    {"CNPJ-Empresa", DefaultCNPJEmpresa},
-                    {"Endereço-Empresa", DefaultEnderecoEmpresa},
-                    {"Numero-Empresa",DefaultNumeroEmpresa},
-                    {"Complemento-Empresa", DefaultComplementoEmpresa},
-                    {"Cidade-Empresa", DefaultCidadeEmpresa},
-                    {"Bairro-Empresa", DefaultBairroEmpresa},
-                    {"CEP-Empresa",DefaultCEPEmpresa},
-                    {"Vigência-Contrato",DefaultVigenciaContrato},
-                    {"Valor-Contrato",paymentRequest.Valor.ToString("C")},
-                    {"Forma-Pagamento", paymentRequest.MetodoPagamento}
+            {
+                {"Cidade", createContractModelRequest.City},
+                {"Dia", createContractModelRequest.Day.ToString()},
+                {"Mês-Extenso", createContractModelRequest.Month },
+                {"Ano", DateTime.Now.Year.ToString()},
+                {"Nome Completo", model.Name},
+                {"CPF Modelo,", model.CPF},
+                {"RG Modelo", model.RG},
+                {"Endereço Modelo", model.Address},
+                {"Número da Residência",model.NumberAddress},
+                {"Complemento Modelo,", model.Complement},
+                {"Bairro Modelo", model.Neighborhood},
+                {"Cidade Modelo - UF", model.City},
+                {"CEP Modelo", model.PostalCode},
+                {"Telefone Principal", model.TelefonePrincipal},
+                {"Telefone Secundário", model.TelefoneSecundario},
+                {"Valor-Contrato",createContractModelRequest.Payment.Valor.ToString("C")},
+                {"Meses de Contrato", createContractModelRequest.MonthContract.ToString()},
+                {"Nome Completo", model.Name},
             };
 
             var contracts = new List<ContractBase>
             {
-                await GenerateContractAsync(paymentRequest, model.IdModel, "Agency", parameters),
-                await GenerateContractAsync( paymentRequest, model.IdModel,  "ImageRights", parameters)
+                await GenerateContractAsync(createContractModelRequest, model.IdModel, "Photography", parameters)
+                //Acrescenat a geração do outro contrato 
             };
 
             return contracts;
         }
 
-        public async Task<ContractBase>GenerateContractCommitmentTerm(CreateRequestCommitmentTerm createRequestContractImageRights, string querymodel)
+        public async Task<ContractBase> GenerateContractCommitmentTerm(CreateRequestCommitmentTerm createRequestContractImageRights, string querymodel)
         {
             var model = await _modelRepository.GetModelByCriteriaAsync(querymodel);
 
@@ -315,31 +302,31 @@ namespace Pregiato.API.Services
 
             var parameters = new Dictionary<string, string>
             {
-                    {"Local-Contrato", DefaultCidadeEmpresa},
-                    {"Data-Contrato", DefaultDataContrato},
-                    {"Mês-Contrato", DefaultMesContrato},
-                    {"Nome-Empresa", DefaultNomeEmpresa},
-                    {"CNPJ-Empresa", DefaultCNPJEmpresa},
-                    {"Endereço-Empresa", DefaultEnderecoEmpresa},
-                    {"Numero-Empresa",DefaultNumeroEmpresa},
-                    {"Complemento-Empresa", DefaultComplementoEmpresa},
-                    {"Cidade-Empresa", DefaultCidadeEmpresa},
-                    {"Bairro-Empresa", DefaultBairroEmpresa},
-                    {"CEP-Empresa",DefaultCEPEmpresa},
-                    {"Nome-Modelo", model.Name },
-                    {"CPF-Modelo", model.CPF },
-                    {"RG-Modelo", model.RG },
-                    {"Endereço-Modelo", model.Address},
-                    {"Numero-Modelo",model.NumberAddress},
-                    {"Bairro-Modelo", model.Neighborhood},
-                    {"Cidade-Modelo", model.City},
-                    {"CEP-Modelo", model.PostalCode},
-                    {"Complemento-Modelo", model.Complement},
-                    {"Telefone-Principal", model.TelefonePrincipal},
-                    {"Telefone-Secundário", model.TelefoneSecundario},
-                    {"Data-Agendamento",createRequestContractImageRights.DataAgendamento.ToString()},
-                    {"Horário-Agendamento", createRequestContractImageRights.horaAgendamento},
-                    { "Valor-Cache", createRequestContractImageRights.ValorCache.ToString("C")}
+                {"Local-Contrato", DefaultCidadeEmpresa},
+                {"Data-Contrato", DefaultDataContrato},
+                {"Mês-Contrato", DefaultMesContrato},
+                {"Nome-Empresa", DefaultNomeEmpresa},
+                {"CNPJ-Empresa", DefaultCNPJEmpresa},
+                {"Endereço-Empresa", DefaultEnderecoEmpresa},
+                {"Numero-Empresa",DefaultNumeroEmpresa},
+                {"Complemento-Empresa", DefaultComplementoEmpresa},
+                {"Cidade-Empresa", DefaultCidadeEmpresa},
+                {"Bairro-Empresa", DefaultBairroEmpresa},
+                {"CEP-Empresa",DefaultCEPEmpresa},
+                {"Nome-Modelo", model.Name },
+                {"CPF-Modelo", model.CPF },
+                {"RG-Modelo", model.RG },
+                {"Endereço-Modelo", model.Address},
+                {"Numero-Modelo",model.NumberAddress},
+                {"Bairro-Modelo", model.Neighborhood},
+                {"Cidade-Modelo", model.City},
+                {"CEP-Modelo", model.PostalCode},
+                {"Complemento-Modelo", model.Complement},
+                {"Telefone-Principal", model.TelefonePrincipal},
+                {"Telefone-Secundário", model.TelefoneSecundario},
+                {"Data-Agendamento",createRequestContractImageRights.DataAgendamento.ToString()},
+                {"Horário-Agendamento", createRequestContractImageRights.horaAgendamento},
+                { "Valor-Cache", createRequestContractImageRights.ValorCache.ToString("C")}
             };
 
             string contractType = "Commitment";
@@ -369,7 +356,7 @@ namespace Pregiato.API.Services
             contract.ValorCache = parameters.ContainsKey("Valor-Cache") ? decimal.Parse(parameters["Valor-Cache"].Replace("R$", "")
             .Replace(".", "").Replace(",", ".").Trim()) : throw new ArgumentException("A chave 'Valor-Contrato' é obrigatória.");
 
-            string htmlTemplatePath = $"TemplatesContratos/{contract.TemplateFileName}";
+            string htmlTemplatePath = $"Templates/{contract.TemplateFileName}";
             if (!File.Exists(htmlTemplatePath))
             {
                 throw new FileNotFoundException($"Template não encontrado: {htmlTemplatePath}");
@@ -382,7 +369,7 @@ namespace Pregiato.API.Services
             byte[] pdfBytes = ConvertHtmlToPdf(populatedHtml);
 
             await SaveContractAsync(contract, new MemoryStream(pdfBytes), model.CPF);
-            
+
             return contract;
         }
 
@@ -397,30 +384,30 @@ namespace Pregiato.API.Services
 
             var parameters = new Dictionary<string, string>
             {
-                 {"Local-Contrato", DefaultCidadeEmpresa},
-                 {"Data-Contrato", DefaultDataContrato},
-                 {"Mês-Contrato", DefaultMesContrato},
-                 {"Nome-Empresa", DefaultNomeEmpresa},
-                 {"CNPJ-Empresa", DefaultCNPJEmpresa},
-                 {"Endereço-Empresa", DefaultEnderecoEmpresa},
-                 {"Numero-Empresa",DefaultNumeroEmpresa},
-                 {"Complemento-Empresa", DefaultComplementoEmpresa},
-                 {"Cidade-Empresa", DefaultCidadeEmpresa},
-                 {"Bairro-Empresa", DefaultBairroEmpresa},
-                 {"CEP-Empresa",DefaultCEPEmpresa},
-                 {"Nome-Modelo", model.Name },
-                 {"CPF-Modelo", model.CPF },
-                 {"RG-Modelo", model.RG },
-                 {"Endereço-Modelo", model.Address},
-                 {"Numero-Modelo",model.NumberAddress},
-                 {"Bairro-Modelo", model.Neighborhood},
-                 {"Cidade-Modelo", model.City},
-                 {"CEP-Modelo", model.PostalCode},
-                 {"Complemento-Modelo", model.Complement},
-                 {"Telefone-Principal", model.TelefonePrincipal},
-                 {"Telefone-Secundário", model.TelefoneSecundario},
-                 { "Valor-Contrato",paymentRequest.Valor.ToString("N2", new CultureInfo("pt-BR"))},
-                 {"Forma-Pagamento", paymentRequest.MetodoPagamento}
+                {"Local-Contrato", DefaultCidadeEmpresa},
+                {"Data-Contrato", DefaultDataContrato},
+                {"Mês-Contrato", DefaultMesContrato},
+                {"Nome-Empresa", DefaultNomeEmpresa},
+                {"CNPJ-Empresa", DefaultCNPJEmpresa},
+                {"Endereço-Empresa", DefaultEnderecoEmpresa},
+                {"Numero-Empresa",DefaultNumeroEmpresa},
+                {"Complemento-Empresa", DefaultComplementoEmpresa},
+                {"Cidade-Empresa", DefaultCidadeEmpresa},
+                {"Bairro-Empresa", DefaultBairroEmpresa},
+                {"CEP-Empresa",DefaultCEPEmpresa},
+                {"Nome-Modelo", model.Name },
+                {"CPF-Modelo", model.CPF },
+                {"RG-Modelo", model.RG },
+                {"Endereço-Modelo", model.Address},
+                {"Numero-Modelo",model.NumberAddress},
+                {"Bairro-Modelo", model.Neighborhood},
+                {"Cidade-Modelo", model.City},
+                {"CEP-Modelo", model.PostalCode},
+                {"Complemento-Modelo", model.Complement},
+                {"Telefone-Principal", model.TelefonePrincipal},
+                {"Telefone-Secundário", model.TelefoneSecundario},
+                { "Valor-Contrato",paymentRequest.Valor.ToString("N2", new CultureInfo("pt-BR"))},
+                {"Forma-Pagamento", paymentRequest.MetodoPagamento}
             };
 
             string contractType = "Photography";
@@ -447,9 +434,9 @@ namespace Pregiato.API.Services
             contract.NomeEmpresa = parameters.ContainsValue("Nome-Empresa") ? parameters["Nome-Empresa"] : "Pregiato management";
             contract.ValorContrato = parameters.ContainsKey("Valor-Contrato") ? decimal.Parse(parameters["Valor-Contrato"].Replace("R$", "")
             .Replace(".", "").Replace(",", ".").Trim()) : throw new ArgumentException("A chave 'Valor-Contrato' é obrigatória.");
-            contract.FormaPagamento = parameters.ContainsKey("Forma-Pagamento") ? parameters["Forma-Pagamento"] :paymentRequest.MetodoPagamento;
+            contract.FormaPagamento = parameters.ContainsKey("Forma-Pagamento") ? parameters["Forma-Pagamento"] : paymentRequest.MetodoPagamento;
 
-            string htmlTemplatePath = $"TemplatesContratos/{contract.TemplateFileName}";
+            string htmlTemplatePath = $"Templates/{contract.TemplateFileName}";
             if (!File.Exists(htmlTemplatePath))
             {
                 throw new FileNotFoundException($"Template não encontrado: {htmlTemplatePath}");
@@ -479,28 +466,28 @@ namespace Pregiato.API.Services
 
             var parameters = new Dictionary<string, string>
             {
-                    {"Local-Contrato", DefaultCidadeEmpresa},
-                    {"Data-Contrato", DefaultDataContrato},
-                    {"Mês-Contrato", DefaultMesContrato},
-                    {"Nome-Empresa", DefaultNomeEmpresa},
-                    {"CNPJ-Empresa", DefaultCNPJEmpresa},
-                    {"Endereço-Empresa", DefaultEnderecoEmpresa},
-                    {"Numero-Empresa",DefaultNumeroEmpresa},
-                    {"Complemento-Empresa", DefaultComplementoEmpresa},
-                    {"Cidade-Empresa", DefaultCidadeEmpresa},
-                    {"Bairro-Empresa", DefaultBairroEmpresa},
-                    {"CEP-Empresa",DefaultCEPEmpresa},
-                    {"Nome-Modelo", model.Name },
-                    {"CPF-Modelo", model.CPF },
-                    {"RG-Modelo", model.RG },
-                    {"Endereço-Modelo", model.Address},
-                    {"Numero-Modelo",model.NumberAddress},
-                    {"Bairro-Modelo", model.Neighborhood},
-                    {"Cidade-Modelo", model.City},
-                    {"CEP-Modelo", model.PostalCode},
-                    {"Complemento-Modelo", model.Complement},
-                    {"Telefone-Principal", model.TelefonePrincipal},
-                    {"Telefone-Secundário", model.TelefoneSecundario}
+                {"Local-Contrato", DefaultCidadeEmpresa},
+                {"Data-Contrato", DefaultDataContrato},
+                {"Mês-Contrato", DefaultMesContrato},
+                {"Nome-Empresa", DefaultNomeEmpresa},
+                {"CNPJ-Empresa", DefaultCNPJEmpresa},
+                {"Endereço-Empresa", DefaultEnderecoEmpresa},
+                {"Numero-Empresa",DefaultNumeroEmpresa},
+                {"Complemento-Empresa", DefaultComplementoEmpresa},
+                {"Cidade-Empresa", DefaultCidadeEmpresa},
+                {"Bairro-Empresa", DefaultBairroEmpresa},
+                {"CEP-Empresa",DefaultCEPEmpresa},
+                {"Nome-Modelo", model.Name },
+                {"CPF-Modelo", model.CPF },
+                {"RG-Modelo", model.RG },
+                {"Endereço-Modelo", model.Address},
+                {"Numero-Modelo",model.NumberAddress},
+                {"Bairro-Modelo", model.Neighborhood},
+                {"Cidade-Modelo", model.City},
+                {"CEP-Modelo", model.PostalCode},
+                {"Complemento-Modelo", model.Complement},
+                {"Telefone-Principal", model.TelefonePrincipal},
+                {"Telefone-Secundário", model.TelefoneSecundario}
             };
 
             string contractType = "Agency";
@@ -515,8 +502,8 @@ namespace Pregiato.API.Services
             contract.LocalContrato = parameters.ContainsKey("Local-Contrato") ? parameters["Local-Contrato"] : DefaultCidadeEmpresa;
             contract.DataContrato = parameters.ContainsKey("Data-Contrato") ? parameters["Data-Contrato"] : DefaultDataContrato;
             contract.MesContrato = parameters.ContainsKey("Mês-Contrato") ? parameters["Mês-Contrato"] : DefaultMesContrato;
-            
-            string htmlTemplatePath = $"TemplatesContratos/{contract.TemplateFileName}";
+
+            string htmlTemplatePath = $"Templates/{contract.TemplateFileName}";
             if (!File.Exists(htmlTemplatePath))
             {
                 throw new FileNotFoundException($"Template não encontrado: {htmlTemplatePath}");
@@ -544,31 +531,31 @@ namespace Pregiato.API.Services
 
             var parameters = new Dictionary<string, string>
             {
-                    {"Local-Contrato", DefaultCidadeEmpresa},
-                    {"Data-Contrato", DefaultDataContrato},
-                    {"Mês-Contrato", DefaultMesContrato},
-                    {"Nome-Empresa", DefaultNomeEmpresa},
-                    {"CNPJ-Empresa", DefaultCNPJEmpresa},
-                    {"Endereço-Empresa", DefaultEnderecoEmpresa},
-                    {"Numero-Empresa",DefaultNumeroEmpresa},
-                    {"Complemento-Empresa", DefaultComplementoEmpresa},
-                    {"Cidade-Empresa", DefaultCidadeEmpresa},
-                    {"Bairro-Empresa", DefaultBairroEmpresa},
-                    {"CEP-Empresa",DefaultCEPEmpresa},
-                    {"Nome-Modelo", model.Name },
-                    {"CPF-Modelo", model.CPF },
-                    {"RG-Modelo", model.RG },
-                    {"Endereço-Modelo", model.Address},
-                    {"Numero-Modelo",model.NumberAddress},
-                    {"Bairro-Modelo", model.Neighborhood},
-                    {"Cidade-Modelo", model.City},
-                    {"CEP-Modelo", model.PostalCode},
-                    {"Complemento-Modelo", model.Complement},
-                    {"Telefone-Principal", model.TelefonePrincipal},
-                    {"Telefone-Secundário", model.TelefoneSecundario},
-                    {"Vigência-Contrato", DefaultVigenciaContrato}
-
+                {"Local-Contrato", DefaultCidadeEmpresa},
+                {"Data-Contrato", DefaultDataContrato},
+                {"Mês-Contrato", DefaultMesContrato},
+                {"Nome-Empresa", DefaultNomeEmpresa},
+                {"CNPJ-Empresa", DefaultCNPJEmpresa},
+                {"Endereço-Empresa", DefaultEnderecoEmpresa},
+                {"Numero-Empresa",DefaultNumeroEmpresa},
+                {"Complemento-Empresa", DefaultComplementoEmpresa},
+                {"Cidade-Empresa", DefaultCidadeEmpresa},
+                {"Bairro-Empresa", DefaultBairroEmpresa},
+                {"CEP-Empresa",DefaultCEPEmpresa},
+                {"Nome-Modelo", model.Name },
+                {"CPF-Modelo", model.CPF },
+                {"RG-Modelo", model.RG },
+                {"Endereço-Modelo", model.Address},
+                {"Numero-Modelo",model.NumberAddress},
+                {"Bairro-Modelo", model.Neighborhood},
+                {"Cidade-Modelo", model.City},
+                {"CEP-Modelo", model.PostalCode},
+                {"Complemento-Modelo", model.Complement},
+                {"Telefone-Principal", model.TelefonePrincipal},
+                {"Telefone-Secundário", model.TelefoneSecundario},
+                {"Vigência-Contrato", DefaultVigenciaContrato}
             };
+
             string contractType = "ImageRights";
             ContractBase contract = contractType switch
             {
@@ -591,7 +578,7 @@ namespace Pregiato.API.Services
             contract.CEPEmpresa = parameters.ContainsKey("CEP-Empresa") ? parameters["CEP-Empresa"] : DefaultCEPEmpresa;
             contract.VigenciaContrato = parameters.ContainsKey("Vigência-Contrato") ? parameters["Vigência-Contrato"] : DefaultVigenciaContrato;
 
-            string htmlTemplatePath = $"TemplatesContratos/{contract.TemplateFileName}";
+            string htmlTemplatePath = $"Templates/{contract.TemplateFileName}";
             if (!File.Exists(htmlTemplatePath))
             {
                 throw new FileNotFoundException($"Template não encontrado: {htmlTemplatePath}");
@@ -638,16 +625,6 @@ namespace Pregiato.API.Services
                 }).ToList());
         }
 
-        //private DateTime ConvertToUtcDateTime(DateTime dateTime)
-        //{
-        //    if (dateTime == DateTime.MinValue || dateTime == DateTime.MaxValue)
-        //    {
-        //        throw new ArgumentException("A data fornecida é inválida.");
-        //    }
-
-        //    return DateTime.SpecifyKind(dateTime, DateTimeKind.Utc);
-        //}
-
         public async Task<List<ContractsModels>> GetContractsByModelIdAsync(Guid modelId)
         {
             return await _modelAgencyContext.Contracts
@@ -660,5 +637,5 @@ namespace Pregiato.API.Services
            })
            .ToListAsync();
         }
-    }  
+    }
 }

@@ -14,7 +14,6 @@ namespace Pregiato.API.Models
         public Guid ModelId { get; set; }
         [JsonIgnore]
         public Model Model { get; set; }
-        public Guid JobId { get; set; }
         public DateTime CreatedAt { get; set; } = DateTime.UtcNow;
         public DateTime UpdatedAt { get; set; } = DateTime.UtcNow;
         public string Neighborhood { get; set; } 

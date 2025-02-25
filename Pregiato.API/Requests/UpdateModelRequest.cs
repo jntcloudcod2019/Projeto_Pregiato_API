@@ -13,7 +13,7 @@ namespace Pregiato.API.Requests
         public string? PostalCode { get; set; }
         public string? Address { get; set; }
         public string? BankAccount { get; set; }
-        public JsonDocument DNA { get; set; }
+        public JsonDocument ? DNA { get; set; }
         public PhysicalCharacteristics ? PhysicalCharacteristics { get; set; }
         public Appearance ? Appearance { get; set; }
         public AdditionalAttributes ? AdditionalAttributes { get; set; }
