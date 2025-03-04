@@ -1,7 +1,8 @@
 ﻿using Microsoft.EntityFrameworkCore;
+using Microsoft.EntityFrameworkCore.Storage.ValueConversion;
+using Pregiato.API.Enums;
 using Pregiato.API.Models;
 using Pregiato.API.Requests;
-using System.Diagnostics.Contracts;
 
 namespace Pregiato.API.Data
 {
@@ -18,31 +19,29 @@ namespace Pregiato.API.Data
         public DbSet<ModelsBilling> ModelsBilling { get; set; }
         public DbSet<ContractBase> Contracts { get; set; }
         public DbSet<Payment> Payments { get; set; }
-        public DbSet<ModelJob> ModelJob { get; set; }  
+        public DbSet<ModelJob> ModelJob { get; set; }
 
         protected override void OnModelCreating(ModelBuilder modelBuilder)
         {
             base.OnModelCreating(modelBuilder);
 
-            modelBuilder.Entity<ContractBase>()
-                  .ToTable("Contracts");  
-
-            modelBuilder.Entity<ContractsModels>()
-                .HasBaseType<ContractBase>(); 
+            // Ignorar LoginUserRequest
+            modelBuilder.Ignore<LoginUserRequest>();
 
             // Configuração para a tabela Payment
             modelBuilder.Entity<Payment>(entity =>
             {
-                entity.ToTable("Payment");
+                var statusPagamentoConverter = new ValueConverter<StatusPagamento, string>(
+                    v => v.Value,
+                    v => StatusPagamento.Create(v)
+                );
 
+                entity.ToTable("Payment");
                 entity.HasKey(e => e.Id);
 
-                entity.Property(e => e.MetodoPagamento)
-                    .HasColumnType("text") // Altere para 'text'
-                    .IsRequired();
-
                 entity.Property(e => e.StatusPagamento)
-                    .HasColumnType("text") // Altere para 'text'
+                    .HasConversion(statusPagamentoConverter)
+                    .HasColumnType("text")
                     .IsRequired();
 
                 entity.Property(e => e.Valor).IsRequired();
@@ -82,7 +81,6 @@ namespace Pregiato.API.Data
             // Configuração para a tabela ContractBase
             modelBuilder.Entity<ContractBase>(entity =>
             {
-
                 entity.ToTable("Contracts");
                 entity.HasKey(c => c.ContractId);
                 entity.Property(c => c.CodProposta)
@@ -96,76 +94,72 @@ namespace Pregiato.API.Data
                 entity.Property(c => c.Content).HasColumnType("bytea");
                 entity.Property(c => c.ValorContrato).IsRequired();
                 entity.Property(c => c.FormaPagamento)
-                    .HasColumnType("text") // Altere para 'text'
+                    .HasColumnType("text")
                     .IsRequired();
                 entity.Property(c => c.StatusPagamento)
-                    .HasColumnType("text") // Altere para 'text'
+                    .HasColumnType("text")
                     .IsRequired();
 
                 entity.HasOne(c => c.Model)
-                       .WithMany(m => m.Contracts)
-                       .HasForeignKey(c => c.ModelId)
-                       .OnDelete(DeleteBehavior.Cascade);
+                    .WithMany(m => m.Contracts)
+                    .HasForeignKey(c => c.ModelId)
+                    .OnDelete(DeleteBehavior.Cascade);
+            });
 
-                modelBuilder.Entity<AgencyContract>().ToTable("AgencyContracts");
-                modelBuilder.Entity<PhotographyProductionContract>().ToTable("PhotographyProductionContracts");
-                modelBuilder.Entity<CommitmentTerm>().ToTable("CommitmentTerms");
-                modelBuilder.Entity<ImageRightsTerm>().ToTable("ImageRightsContracts");
+            // Mapeamento das entidades derivadas
+            modelBuilder.Entity<AgencyContract>().ToTable("AgencyContracts");
+            modelBuilder.Entity<PhotographyProductionContract>().ToTable("PhotographyProductionContracts");
+            modelBuilder.Entity<CommitmentTerm>().ToTable("CommitmentTerms");
+            modelBuilder.Entity<ImageRightsTerm>().ToTable("ImageRightsContracts");
 
-                // Configuração para a tabela Models
-                modelBuilder.Entity<Model>(entity =>
-                {
-                    entity.HasKey(e => e.IdModel);
-                    entity.Property(e => e.IdModel)
-                        .ValueGeneratedOnAdd()
-                        .HasDefaultValueSql("gen_random_uuid()");
+            // Configuração para a tabela Model
+            modelBuilder.Entity<Model>(entity =>
+            {
+                entity.HasKey(e => e.IdModel);
+                entity.Property(e => e.IdModel)
+                    .ValueGeneratedOnAdd()
+                    .HasDefaultValueSql("gen_random_uuid()");
 
-                    entity.Property(e => e.CPF).IsRequired().HasMaxLength(14);
-                    entity.Property(e => e.RG).IsRequired().HasMaxLength(20);
-                    entity.Property(e => e.Email).IsRequired().HasMaxLength(255);
-                    entity.Property(e => e.PostalCode).HasMaxLength(10);
-                    entity.Property(e => e.Address).HasMaxLength(255);
-                    entity.Property(e => e.BankAccount).HasMaxLength(30);
-                    entity.Property(e => e.Status).HasDefaultValue(true);
-                    entity.Property(e => e.CreatedAt).HasDefaultValueSql("NOW()");
-                    entity.Property(e => e.UpdatedAt).HasDefaultValueSql("NOW()");
-                    entity.Property(e => e.DNA)
-                        .HasColumnType("jsonb")
-                        .HasDefaultValueSql("'{}'::jsonb");
-                });
+                entity.Property(e => e.CPF).IsRequired().HasMaxLength(14);
+                entity.Property(e => e.RG).IsRequired().HasMaxLength(20);
+                entity.Property(e => e.Email).IsRequired().HasMaxLength(255);
+                entity.Property(e => e.PostalCode).HasMaxLength(10);
+                entity.Property(e => e.Address).HasMaxLength(255);
+                entity.Property(e => e.BankAccount).HasMaxLength(30);
+                entity.Property(e => e.Status).HasDefaultValue(true);
+                entity.Property(e => e.CreatedAt).HasDefaultValueSql("NOW()");
+                entity.Property(e => e.UpdatedAt).HasDefaultValueSql("NOW()");
+                entity.Property(e => e.DNA)
+                    .HasColumnType("jsonb")
+                    .HasDefaultValueSql("'{}'::jsonb");
+            });
 
-                // Configuração para a tabela Jobs
-                modelBuilder.Entity<Job>(entity =>
-                {
-                    entity.HasKey(e => e.IdJob);
-                    entity.Property(e => e.IdJob)
-                        .ValueGeneratedOnAdd()
-                        .HasDefaultValueSql("gen_random_uuid()");
+            // Configuração para a tabela Job
+            modelBuilder.Entity<Job>(entity =>
+            {
+                entity.HasKey(e => e.IdJob);
+                entity.Property(e => e.IdJob)
+                    .ValueGeneratedOnAdd()
+                    .HasDefaultValueSql("gen_random_uuid()");
 
-                    entity.Property(e => e.Description).HasMaxLength(500);
-                    entity.Property(e => e.Status).HasMaxLength(20).HasDefaultValue("Pending");
-                    entity.Property(e => e.CreatedAt).HasDefaultValueSql("NOW()");
-                    entity.Property(e => e.UpdatedAt).HasDefaultValueSql("NOW()");
-                });
+                entity.Property(e => e.Description).HasMaxLength(500);
+                entity.Property(e => e.Status).HasMaxLength(20).HasDefaultValue("Pending");
+                entity.Property(e => e.CreatedAt).HasDefaultValueSql("NOW()");
+                entity.Property(e => e.UpdatedAt).HasDefaultValueSql("NOW()");
+            });
 
-                // Configuração para a tabela ModelsBilling
-                modelBuilder.Entity<ModelsBilling>(entity =>
-                {
-                    entity.HasKey(e => e.Id);
-                    entity.Property(e => e.Id)
-                        .ValueGeneratedOnAdd()
-                        .HasDefaultValueSql("gen_random_uuid()");
+            // Configuração para a tabela ModelsBilling
+            modelBuilder.Entity<ModelsBilling>(entity =>
+            {
+                entity.HasKey(e => e.Id);
+                entity.Property(e => e.Id)
+                    .ValueGeneratedOnAdd()
+                    .HasDefaultValueSql("gen_random_uuid()");
 
-                    entity.Property(e => e.Amount).IsRequired().HasColumnType("numeric(10, 2)");
-                    entity.Property(e => e.BillingDate).IsRequired();
-                    entity.Property(e => e.CreatedAt).HasDefaultValueSql("NOW()");
-                    entity.Property(e => e.UpdatedAt).HasDefaultValueSql("NOW()");
-                });
-
-                modelBuilder.Entity<LoginUserRequest>(entity =>
-                {
-                    entity.HasNoKey();
-                });
+                entity.Property(e => e.Amount).IsRequired().HasColumnType("numeric(10, 2)");
+                entity.Property(e => e.BillingDate).IsRequired();
+                entity.Property(e => e.CreatedAt).HasDefaultValueSql("NOW()");
+                entity.Property(e => e.UpdatedAt).HasDefaultValueSql("NOW()");
             });
         }
     }

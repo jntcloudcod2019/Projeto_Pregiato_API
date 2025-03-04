@@ -8,8 +8,10 @@ namespace Pregiato.API.Requests
     {
         [Required]
         public string Username { get; set; }
+
         [Required]
         public string Password { get; set; }
+
         [JsonIgnore]
         public string ?UserType { get; set; }
 

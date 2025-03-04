@@ -1,4 +1,5 @@
-﻿using Swashbuckle.AspNetCore.Annotations;
+﻿using Pregiato.API.Enums;
+using Swashbuckle.AspNetCore.Annotations;
 using System.ComponentModel;
 using System.ComponentModel.DataAnnotations;
 using System.Text.Json.Serialization;
@@ -18,7 +19,7 @@ namespace Pregiato.API.Models
         [JsonConverter(typeof(JsonDateTimeConverter))]
         [DisplayFormat(DataFormatString = "{dd-MM-yyyy}", ApplyFormatInEditMode = true)]
         public DateTime? DataPagamento { get; set; } = DateTime.UtcNow; 
-        public string  StatusPagamento{ get; set; } 
+        public StatusPagamento  StatusPagamento{ get; set; } 
         public byte[]? Comprovante { get; set; }
 
         [DefaultValue("05-02-2025")]
@@ -27,5 +28,8 @@ namespace Pregiato.API.Models
         [DisplayFormat(DataFormatString = "{dd-MM-yyyy}", ApplyFormatInEditMode = true)]
         public DateTime? DataAcordoPagamento { get; set; }
         public string MetodoPagamento { get; set; }
+        public ProviderEnum? Provider { get; set; }
+        public string? AutorizationNumber { get; set; }
+
     }
 }

@@ -4,5 +4,7 @@
     {
         string CreatePasswordHash(string password);
         bool VerifyPasswordHash(string password, string storedHash);
+        string GenerateRandomPassword(int length);
+
     }
 }

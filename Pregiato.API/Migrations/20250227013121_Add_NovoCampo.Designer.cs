@@ -13,8 +13,8 @@ using Pregiato.API.Data;
 namespace Pregiato.API.Migrations
 {
     [DbContext(typeof(ModelAgencyContext))]
-    [Migration("20250204015704_NovaMigracaoServidor")]
-    partial class NovaMigracaoServidor
+    [Migration("20250227013121_Add_NovoCampo")]
+    partial class Add_NovoCampo
     {
         /// <inheritdoc />
         protected override void BuildTargetModel(ModelBuilder modelBuilder)
@@ -138,7 +138,8 @@ namespace Pregiato.API.Migrations
 
                     b.Property<string>("DataAgendamento")
                         .IsRequired()
-                        .HasColumnType("text");
+                        .HasColumnType("text")
+                        .HasColumnName("DataAgendamento");
 
                     b.Property<string>("DataContrato")
                         .IsRequired()
@@ -155,9 +156,6 @@ namespace Pregiato.API.Migrations
                     b.Property<string>("HorarioAgendamento")
                         .IsRequired()
                         .HasColumnType("text");
-
-                    b.Property<Guid>("JobId")
-                        .HasColumnType("uuid");
 
                     b.Property<string>("LocalContrato")
                         .IsRequired()
@@ -285,10 +283,12 @@ namespace Pregiato.API.Migrations
                         .HasDefaultValueSql("NOW()");
 
                     b.Property<JsonDocument>("DNA")
-                        .IsRequired()
                         .ValueGeneratedOnAdd()
                         .HasColumnType("jsonb")
                         .HasDefaultValueSql("'{}'::jsonb");
+
+                    b.Property<DateTime>("DateOfBirth")
+                        .HasColumnType("timestamp with time zone");
 
                     b.Property<string>("Email")
                         .IsRequired()
@@ -307,11 +307,6 @@ namespace Pregiato.API.Migrations
                     b.Property<string>("NumberAddress")
                         .IsRequired()
                         .HasColumnType("text");
-
-                    b.Property<string>("PasswordHash")
-                        .IsRequired()
-                        .HasMaxLength(255)
-                        .HasColumnType("character varying(255)");
 
                     b.Property<string>("PostalCode")
                         .IsRequired()
@@ -333,6 +328,10 @@ namespace Pregiato.API.Migrations
                         .HasColumnType("text");
 
                     b.Property<string>("TelefoneSecundario")
+                        .IsRequired()
+                        .HasColumnType("text");
+
+                    b.Property<string>("UF")
                         .IsRequired()
                         .HasColumnType("text");
 
@@ -426,6 +425,9 @@ namespace Pregiato.API.Migrations
                         .ValueGeneratedOnAdd()
                         .HasColumnType("uuid");
 
+                    b.Property<string>("AutorizationNumber")
+                        .HasColumnType("text");
+
                     b.Property<byte[]>("Comprovante")
                         .HasColumnType("bytea");
 
@@ -445,6 +447,9 @@ namespace Pregiato.API.Migrations
                     b.Property<string>("MetodoPagamento")
                         .IsRequired()
                         .HasColumnType("text");
+
+                    b.Property<int?>("Provider")
+                        .HasColumnType("integer");
 
                     b.Property<int?>("QuantidadeParcela")
                         .HasColumnType("integer");
@@ -498,22 +503,6 @@ namespace Pregiato.API.Migrations
                     b.HasKey("UserId");
 
                     b.ToTable("Users");
-                });
-
-            modelBuilder.Entity("Pregiato.API.Requests.LoginUserRequest", b =>
-                {
-                    b.Property<string>("Password")
-                        .IsRequired()
-                        .HasColumnType("text");
-
-                    b.Property<string>("UserType")
-                        .HasColumnType("text");
-
-                    b.Property<string>("Username")
-                        .IsRequired()
-                        .HasColumnType("text");
-
-                    b.ToTable("LoginUserRequest");
                 });
 
             modelBuilder.Entity("Pregiato.API.Models.AgencyContract", b =>

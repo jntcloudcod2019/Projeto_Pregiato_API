@@ -14,8 +14,8 @@ var builder = WebApplication.CreateBuilder(args);
 
 
 builder.Environment.EnvironmentName = Environments.Production;
-Console.WriteLine($" Ambiente Atual: {builder.Environment.EnvironmentName}");
 
+Console.WriteLine($" Ambiente Atual: {builder.Environment.EnvironmentName}");
 
 var config = new ConfigurationBuilder()
     .SetBasePath(Directory.GetCurrentDirectory())
@@ -26,6 +26,7 @@ var config = new ConfigurationBuilder()
 
 builder.Configuration.AddConfiguration(config);
 
+builder.Services.Configure<SmtpSettings>(builder.Configuration.GetSection("SmtpSettings"));
 
 var connectionString = config.GetConnectionString("DefaultConnection");
 if (string.IsNullOrEmpty(connectionString))
@@ -37,7 +38,6 @@ builder.Services.AddDbContext<ModelAgencyContext>(options =>
     options.UseNpgsql(connectionString)
            .EnableSensitiveDataLogging(builder.Environment.IsDevelopment())
            .LogTo(Console.WriteLine, LogLevel.Information));
-
 
 builder.Services.AddAutoMapper(AppDomain.CurrentDomain.GetAssemblies());
 builder.Services.AddScoped<IClientRepository, ClientRepository>();
@@ -52,6 +52,9 @@ builder.Services.AddScoped<IContractService, ContractService>();
 builder.Services.AddScoped<IContractRepository, ContractRepository>();
 builder.Services.AddScoped<DigitalSignatureService>();
 builder.Services.AddScoped<IPasswordHasherService, PasswordHasherService>();
+builder.Services.AddScoped<IEmailService, EmailService>();
+builder.Services.AddScoped<IServiceUtilites, SericeUtilites>();
+builder.Services.Configure<SmtpSettings>(builder.Configuration.GetSection("SmtpSettings"));
 builder.Services.AddHttpContextAccessor();
 builder.Services.AddEndpointsApiExplorer();
 
@@ -91,7 +94,6 @@ builder.Services.AddSwaggerGen(c =>
     };
     c.AddSecurityRequirement(securityRequirement);
 });
-
 
 var jwtSettings = builder.Configuration.GetSection("JwtSettings");
 var secretKey = jwtSettings["SecretKey"];
@@ -153,11 +155,9 @@ builder.Services.AddControllers()
 
 builder.Services.AddAuthorization();
 
-
 builder.WebHost.UseUrls("http://+:8080");
 
 var app = builder.Build();
-
 
 app.UseSwagger();
 app.UseSwaggerUI(c =>
@@ -169,6 +169,8 @@ app.UseCors("AllowAllOrigins");
 app.UseRouting(); 
 app.UseAuthentication();
 app.UseAuthorization();
-
 app.MapControllers();
+
+
 app.Run();
+

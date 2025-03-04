@@ -3,6 +3,7 @@ using System;
 using System.Text.Json;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.EntityFrameworkCore.Infrastructure;
+using Microsoft.EntityFrameworkCore.Migrations;
 using Microsoft.EntityFrameworkCore.Storage.ValueConversion;
 using Npgsql.EntityFrameworkCore.PostgreSQL.Metadata;
 using Pregiato.API.Data;
@@ -12,9 +13,11 @@ using Pregiato.API.Data;
 namespace Pregiato.API.Migrations
 {
     [DbContext(typeof(ModelAgencyContext))]
-    partial class ModelAgencyContextModelSnapshot : ModelSnapshot
+    [Migration("20250224042038_FixPendingChanges")]
+    partial class FixPendingChanges
     {
-        protected override void BuildModel(ModelBuilder modelBuilder)
+        /// <inheritdoc />
+        protected override void BuildTargetModel(ModelBuilder modelBuilder)
         {
 #pragma warning disable 612, 618
             modelBuilder
@@ -256,9 +259,6 @@ namespace Pregiato.API.Migrations
                         .HasMaxLength(255)
                         .HasColumnType("character varying(255)");
 
-                    b.Property<int>("Age")
-                        .HasColumnType("integer");
-
                     b.Property<string>("BankAccount")
                         .IsRequired()
                         .HasMaxLength(30)
@@ -328,10 +328,6 @@ namespace Pregiato.API.Migrations
                         .HasColumnType("text");
 
                     b.Property<string>("TelefoneSecundario")
-                        .IsRequired()
-                        .HasColumnType("text");
-
-                    b.Property<string>("UF")
                         .IsRequired()
                         .HasColumnType("text");
 
@@ -425,7 +421,7 @@ namespace Pregiato.API.Migrations
                         .ValueGeneratedOnAdd()
                         .HasColumnType("uuid");
 
-                    b.Property<string>("AutorizationNumber")
+                    b.Property<string>("Autorizationumber")
                         .HasColumnType("text");
 
                     b.Property<byte[]>("Comprovante")
@@ -448,8 +444,8 @@ namespace Pregiato.API.Migrations
                         .IsRequired()
                         .HasColumnType("text");
 
-                    b.Property<int?>("Provider")
-                        .HasColumnType("integer");
+                    b.Property<string>("Provider")
+                        .HasColumnType("text");
 
                     b.Property<int?>("QuantidadeParcela")
                         .HasColumnType("integer");
