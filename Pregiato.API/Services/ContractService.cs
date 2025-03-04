@@ -9,6 +9,7 @@ using System.Text.RegularExpressions;
 using System.Globalization;
 using System.Text.Json;
 using SelectPdf;
+using System.Text;
 
 namespace Pregiato.API.Services
 {
@@ -635,6 +636,27 @@ namespace Pregiato.API.Services
                Content = c.Content
            })
            .ToListAsync();
+        }
+
+        public async Task<byte[]> ExtractBytesFromString(string content)
+        {
+            int startIndex = content.IndexOf('[') + 1;
+            int endIndex = content.LastIndexOf(']');
+
+            // Extrai a substring entre os colchetes
+            string byteString = content.Substring(startIndex, endIndex - startIndex);
+
+            // Divide a string pelos ',' e converte cada valor para byte
+            byte[] bytes = byteString.Split(',')
+                                     .Select(b => byte.Parse(b.Trim()))
+                                     .ToArray();
+
+            return bytes;
+        }
+
+        public async Task<string> ConvertBytesToString(byte[] bytes)
+        {
+            return Encoding.UTF8.GetString(bytes);
         }
     }
 }

@@ -1,4 +1,6 @@
-﻿using Pregiato.API.Models;
+﻿using Pregiato.API.DTO;
+using Pregiato.API.Models;
+using Pregiato.API.Requests;
 using System.Diagnostics.Contracts;
 
 namespace Pregiato.API.Interface
@@ -13,5 +15,6 @@ namespace Pregiato.API.Interface
         Task<ContractBase?> GetContractByIdAsync( int? codProposta, Guid? contractId);
         Task<List<ContractBase?>> GetContractsByModelId(Guid modelId);
         Task<ContractBase> GetContractByCriteriaAsync(string ? contractId, string? modelId, int ? codProposta);
+        Task<ContractDTO> DownloadContractAsync( int ProposalCode);
     }
 }

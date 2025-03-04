@@ -17,5 +17,8 @@ namespace Pregiato.API.Interface
      Task<ContractBase> GenerateContractAgency(string querymodel);
      Task<IActionResult> GetMyContracts(string type = "files");
      Task<List<ContractsModels>> GetContractsByModelIdAsync(Guid modelId);
+     Task<byte[]> ExtractBytesFromString(string content);
+     Task<string> ConvertBytesToString(byte[] bytes);
+
     }
 }
