@@ -106,7 +106,7 @@ namespace Pregiato.API.Services
 
             var emailBody = await _emailService.LoadTemplate(templatePath, replacements);
 
-            await _emailService.SendEmailAsync(email, "Bem-vindo à Plataforma My Pregiato", emailBody);
+         //   await _emailService.SendEmailAsync(email, "Bem-vindo à Plataforma My Pregiato", emailBody);
 
             var passwordHash = BCrypt.Net.BCrypt.HashPassword(password);
 

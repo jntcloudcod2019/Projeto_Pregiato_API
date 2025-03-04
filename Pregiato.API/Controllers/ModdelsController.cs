@@ -2,15 +2,12 @@
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.EntityFrameworkCore;
-using Newtonsoft.Json;
-using Newtonsoft.Json.Linq;
 using Pregiato.API.Data;
 using Pregiato.API.Interface;
 using Pregiato.API.Models;
 using Pregiato.API.Requests;
 using Pregiato.API.Services;
 using Swashbuckle.AspNetCore.Annotations;
-using System.Diagnostics.Contracts;
 using System.IdentityModel.Tokens.Jwt;
 using System.Text.Json;
 namespace Pregiato.API.Controllers
@@ -23,6 +20,7 @@ namespace Pregiato.API.Controllers
         private readonly IContractService _contractService;
         private readonly IJwtService _jwtService;   
         private readonly IUserService _userService; 
+        private readonly IServiceUtilites _serviceUtilites; 
         private readonly ModelAgencyContext _agencyContext;
 
         public ModdelsController
@@ -30,13 +28,16 @@ namespace Pregiato.API.Controllers
                ModelAgencyContext agencyContext, 
                IContractService contractService,
                IJwtService jwtService,
-               IUserService userService)
+               IUserService userService,
+               IServiceUtilites serviceUtilites)
         {
             _modelRepository = modelRepository ?? throw new ArgumentNullException(nameof(modelRepository));
             _agencyContext = agencyContext ?? throw new ArgumentNullException(nameof(agencyContext));
             _contractService = contractService; 
             _jwtService = jwtService; ;
-            _userService = userService;
+            _userService = userService; 
+            _serviceUtilites = serviceUtilites; 
+
         }
 
         [Authorize(Policy = "AdminOrManager")]
@@ -49,7 +50,7 @@ namespace Pregiato.API.Controllers
         }
 
 
-        [Authorize(Policy = "AdminOrManager")]
+       // [Authorize(Policy = "AdminOrManager")]
         [HttpPost("AddModels")]
         [SwaggerOperation("Criar novo modelo.")]
         public async Task<IActionResult> AddNewModel([FromBody] CreateModelRequest createModelRequest)
@@ -65,6 +66,7 @@ namespace Pregiato.API.Controllers
                 CPF = createModelRequest.CPF,
                 RG = createModelRequest.RG,
                 DateOfBirth = createModelRequest.DateOfBirth,
+                Age = await _serviceUtilites.CalculateAge(createModelRequest.DateOfBirth ?? DateTime.MinValue),
                 Email = createModelRequest.Email,
                 PostalCode = createModelRequest.PostalCode,
                 Address = createModelRequest.Address,

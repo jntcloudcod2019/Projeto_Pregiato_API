@@ -66,4 +66,11 @@ namespace Pregiato.API.Models
     {
         public override string TemplateFileName => "ImageRightsTerm.html";
     }
+
+    public class PhotographyProductionContractMinority : ContractBase
+    {
+        public override string TemplateFileName => "PhotographyProductionContractMinority.html";
+    }
+
+
 }

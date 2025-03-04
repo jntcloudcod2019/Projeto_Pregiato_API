@@ -35,6 +35,9 @@ namespace Pregiato.API.Models
         [DisplayFormat(DataFormatString = "{dd-MM-yyyy}", ApplyFormatInEditMode = true)]
         public DateTime? DateOfBirth { get; set; } = DateTime.UtcNow;
 
+        [JsonIgnore]
+        public int Age { get; set; }
+
         [Required]
         [EmailAddress(ErrorMessage = "Email inválido.")]
         [StringLength(255)]

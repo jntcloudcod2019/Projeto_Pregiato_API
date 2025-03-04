@@ -214,7 +214,8 @@ namespace Pregiato.API.Services
             ContractBase contract = contractType switch
             {
                 "Agency" => new AgencyContract(),
-                "Photography" => new PhotographyProductionContract(),
+                "Photography" => new PhotographyProductionContract(),           
+                "PhotographyMinority" => new PhotographyProductionContractMinority(),
                 _ => throw new ArgumentException("Invalid contract type.")
             };
 
@@ -277,16 +278,25 @@ namespace Pregiato.API.Services
                 {"CEP-Modelo", model.PostalCode},
                 {"Telefone-Principal", model.TelefonePrincipal},
                 {"Telefone-Secundário", model.TelefoneSecundario},
-                {"Valor-Contrato", createContractModelRequest.Payment.Valor.ToString("C", new CultureInfo("pt-BR"))},
+                {"Valor-Contrato", createContractModelRequest.Payment.Valor.ToString("N2", new CultureInfo("pt-BR"))},
                 {"Meses-Contrato", createContractModelRequest.MonthContract.ToString()},
                 {"Nome-Assinatura", model.Name},
             };
 
+            if (model.Age < 18)
+            {
+                parameters.Add("Nome-Menor-Idade", model.Name);
+                parameters.Add("CPF-Menor-Idade", model.CPF);
+            }
+
+            string templatePhotography = model.Age < 18 ? "PhotographyMinority" : "Photography";
+
             var contracts = new List<ContractBase>
             {
-                await GenerateContractAsync(createContractModelRequest, model.IdModel, "Photography", parameters)
-               
+                await GenerateContractAsync(createContractModelRequest, model.IdModel, templatePhotography, parameters),
+                await GenerateContractAsync(createContractModelRequest, model.IdModel, "Agency", parameters)
             };
+
 
             return contracts;
         }

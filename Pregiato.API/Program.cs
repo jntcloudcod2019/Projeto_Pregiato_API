@@ -53,6 +53,7 @@ builder.Services.AddScoped<IContractRepository, ContractRepository>();
 builder.Services.AddScoped<DigitalSignatureService>();
 builder.Services.AddScoped<IPasswordHasherService, PasswordHasherService>();
 builder.Services.AddScoped<IEmailService, EmailService>();
+builder.Services.AddScoped<IServiceUtilites, SericeUtilites>();
 builder.Services.Configure<SmtpSettings>(builder.Configuration.GetSection("SmtpSettings"));
 builder.Services.AddHttpContextAccessor();
 builder.Services.AddEndpointsApiExplorer();
