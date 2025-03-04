@@ -61,7 +61,10 @@ namespace Pregiato.API.Models
         [Required]
         public string? Neighborhood { get; set; } 
         [Required]
-        public string ? City { get; set; } 
+        public string ? City { get; set; }
+
+        [Required]
+        public string UF { get; set; }
 
         [Required]
         public string TelefonePrincipal { get; set; }

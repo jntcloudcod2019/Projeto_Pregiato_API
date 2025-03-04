@@ -182,7 +182,7 @@ namespace Pregiato.API.Controllers
             return Ok($"Termo de Concessão de direito de imagem para: {model.Name}, gerado com sucesso. Código da Proposta: {contract.CodProposta}.");
         }
 
-
+        //[Authorize(Policy = "AdminOrManager")]
         [SwaggerOperation("Processo de gerar todos os contratos.")]
         [HttpPost("generate/allContracts")]
         public async Task<IActionResult> GenerateAllContractsAsync(CreateContractModelRequest createContractModelRequest)

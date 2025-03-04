@@ -38,6 +38,7 @@ namespace Pregiato.API.Controllers
             _jwtService = jwtService; ;
             _userService = userService;
         }
+
         [Authorize(Policy = "AdminOrManager")]
         [HttpGet("GetAllModels")]
         [SwaggerOperation("Retorna todos os modelos cadastrados.")]
@@ -72,6 +73,7 @@ namespace Pregiato.API.Controllers
                 BankAccount = createModelRequest.BankAccount,
                 Neighborhood = createModelRequest.Neighborhood,
                 City = createModelRequest.City,
+                UF = createModelRequest.UF,
                 TelefonePrincipal = createModelRequest.TelefonePrincipal,
                 TelefoneSecundario = createModelRequest.TelefoneSecundario,
             };

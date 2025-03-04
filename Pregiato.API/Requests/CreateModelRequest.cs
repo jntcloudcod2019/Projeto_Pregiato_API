@@ -41,6 +41,10 @@ namespace Pregiato.API.Requests
         [Required]
         public string? City { get; set; }
 
+        [Required]
+
+        public string UF {  get; set; }
+
         public string TelefonePrincipal { get; set; }
         [Required]
         public string TelefoneSecundario { get; set; }

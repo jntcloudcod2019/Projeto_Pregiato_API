@@ -11,6 +11,9 @@ namespace Pregiato.API.Requests
         public string ModelIdentification { get; set; }
 
         [Required]
+        public string UFContract { get; set; }
+
+        [Required]
         public string City { get; set; }
 
         [Required]

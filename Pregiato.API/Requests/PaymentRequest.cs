@@ -24,7 +24,7 @@ namespace Pregiato.API.Requests
         public DateTime? DataPagamento { get; set; }
 
         [Required]  
-        public StatusPagamento StatusPagamento { get; set; }
+        public string StatusPagamento { get; set; }
 
         [DefaultValue("05-02-2025")]
         [SwaggerSchema("Data acordo Pagamento")]

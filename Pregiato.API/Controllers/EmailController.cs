@@ -1,17 +1,35 @@
 ﻿using Microsoft.AspNetCore.Mvc;
 using Pregiato.API.Interface;
 
-namespace Pregiato.API.Controllers
+[ApiController]
+[Route("api/email")]
+public class EmailController : ControllerBase
 {
-    [ApiController]
-    [Route("api/[controller]")]
-    public class EmailController : Controller
+    private readonly IEmailService _emailService;
+
+    public EmailController(IEmailService emailService)
     {
-        [HttpPost("send-email")]
-        public async Task<IActionResult> EnviarEmail([FromServices] IEmailService emailService)
-        {
-            await emailService.SendEmailAsync("jonathanfrnnd3@gmail.com", "Teste de E-mail Interno", "<h1>Funcionou!</h1><p>Este e-mail foi enviado para o servidor SMTP interno.</p>");
-            return Ok("E-mail enviado com sucesso!");
-        }
+        _emailService = emailService;
     }
+
+    [HttpPost("enviar")]
+    public async Task<IActionResult> EnviarEmail([FromBody] EmailRequest request)
+    {
+        if (request == null || string.IsNullOrEmpty(request.ToEmail))
+            return BadRequest("O e-mail de destino é obrigatório.");
+
+        bool sucesso = await _emailService.SendEmailAsync(request.ToEmail, request.Subject, request.Body);
+
+        if (sucesso)
+            return Ok("E-mail enviado com sucesso.");
+        else
+            return StatusCode(500, "Erro ao enviar e-mail.");
+    }
+}
+
+public class EmailRequest
+{
+    public string ToEmail { get; set; }
+    public string Subject { get; set; }
+    public string Body { get; set; }
 }

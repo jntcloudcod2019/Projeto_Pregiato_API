@@ -9,7 +9,6 @@ using Pregiato.API.Services;
 using System.Text.Json.Serialization;
 using Microsoft.OpenApi.Any;
 using Pregiato.API.Models;
-using Projeto_Pregiato_API.Services;
 
 var builder = WebApplication.CreateBuilder(args);
 
@@ -54,6 +53,7 @@ builder.Services.AddScoped<IContractRepository, ContractRepository>();
 builder.Services.AddScoped<DigitalSignatureService>();
 builder.Services.AddScoped<IPasswordHasherService, PasswordHasherService>();
 builder.Services.AddScoped<IEmailService, EmailService>();
+builder.Services.Configure<SmtpSettings>(builder.Configuration.GetSection("SmtpSettings"));
 builder.Services.AddHttpContextAccessor();
 builder.Services.AddEndpointsApiExplorer();
 
@@ -170,7 +170,6 @@ app.UseAuthentication();
 app.UseAuthorization();
 app.MapControllers();
 
-SmtpServerService.StartSmtpServer();
 
 app.Run();
 

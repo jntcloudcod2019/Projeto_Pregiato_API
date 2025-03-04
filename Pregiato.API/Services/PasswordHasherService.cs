@@ -1,4 +1,4 @@
-﻿using Org.BouncyCastle.Crypto.Generators;
+﻿ using Org.BouncyCastle.Crypto.Generators;
 using Pregiato.API.Interface;
 
 namespace Pregiato.API.Services
@@ -28,8 +28,6 @@ namespace Pregiato.API.Services
             Console.WriteLine($"Hash gerado: {storedHash}");
             return BCrypt.Net.BCrypt.Verify(password, storedHash);
         }
-
-
 
     }
 }

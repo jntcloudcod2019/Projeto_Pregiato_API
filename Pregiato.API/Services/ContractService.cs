@@ -1,6 +1,4 @@
-﻿using iText.Kernel.Pdf;
-using iText.Layout;
-using iText.Layout.Element;
+﻿using iText.Layout;
 using Microsoft.EntityFrameworkCore;
 using Pregiato.API.Data;
 using Pregiato.API.Interface;
@@ -10,7 +8,7 @@ using Microsoft.AspNetCore.Mvc;
 using System.Text.RegularExpressions;
 using System.Globalization;
 using System.Text.Json;
-using System.Text;
+using SelectPdf;
 
 namespace Pregiato.API.Services
 {
@@ -65,10 +63,12 @@ namespace Pregiato.API.Services
 
             foreach (var param in parameters)
             {
+               
+                template = template.Replace($"<span class=\"highlight\">{{{param.Key}}}</span>", param.Value);
                 template = template.Replace($"{{{param.Key}}}", param.Value);
             }
 
-            // Verifica se ainda há placeholders não substituídos
+            
             var unfilledPlaceholders = Regex.Matches(template, @"\{.*?\}");
             if (unfilledPlaceholders.Count > 0)
             {
@@ -79,31 +79,28 @@ namespace Pregiato.API.Services
             return template;
         }
 
-        public byte[] ConvertHtmlToPdf(string html)
+        public byte[] ConvertHtmlToPdf(string htmlTemplate, Dictionary<string, string> parameters)
         {
+            string htmlFinal = PopulateTemplate(htmlTemplate, parameters);
+
+            HtmlToPdf converter = new HtmlToPdf();
+            converter.Options.PdfPageSize = PdfPageSize.A4;
+            converter.Options.PdfPageOrientation = PdfPageOrientation.Portrait;
+            converter.Options.WebPageWidth = 1024;
+            converter.Options.WebPageHeight = 0;
+            converter.Options.MarginTop = 20;
+            converter.Options.MarginBottom = 40;
+            converter.Options.MarginLeft = 20;
+            converter.Options.MarginRight = 20;
+
+            Thread.Sleep(200);
+            SelectPdf.PdfDocument doc = converter.ConvertHtmlString(htmlFinal);
+
             using var memoryStream = new MemoryStream();
-            using (var pdfWriter = new PdfWriter(memoryStream))
-            {
-                using var pdfDocument = new PdfDocument(pdfWriter);
-                using var document = new Document(pdfDocument);
-
-                // Configurações do PDF
-                document.SetMargins(20, 20, 40, 20); // Margens: topo, direita, baixo, esquerda
-                document.SetFontSize(12); // Tamanho da fonte
-
-                // Extrai o texto do HTML e adiciona ao documento
-                string plainText = ExtractPlainTextFromHtml(html);
-                document.Add(new Paragraph(plainText));
-
-                document.Close();
-            }
+            doc.Save(memoryStream);
+            doc.Close();
 
             return memoryStream.ToArray();
-        }
-
-        private string ExtractPlainTextFromHtml(string html)
-        {
-            return Regex.Replace(html, "<.*?>", string.Empty);
         }
 
         public async Task SaveContractAsync(ContractBase contract, Stream pdfStream, string cpfModelo)
@@ -179,7 +176,7 @@ namespace Pregiato.API.Services
                 {"Numero-Modelo",model.NumberAddress},
                 {"Bairro-Modelo", model.Neighborhood},
                 {"Cidade-Modelo", model.City},
-                {"CEP-Modelo", model.PostalCode},
+                {"CPF-Modelo", model.PostalCode},
                 {"Complemento-Modelo", model.Complement},
                 {"Telefone-Principal", model.TelefonePrincipal},
                 {"Telefone-Secundário", model.TelefoneSecundario},
@@ -194,7 +191,7 @@ namespace Pregiato.API.Services
             };
 
             string populatedHtml = PopulateTemplate(htmlTemplate, parameters);
-            byte[] pdfBytes = ConvertHtmlToPdf(populatedHtml);
+            byte[] pdfBytes = ConvertHtmlToPdf(populatedHtml, parameters);
 
             string desktopPath = Environment.GetFolderPath(Environment.SpecialFolder.Desktop);
             string outputPath = Path.Combine(desktopPath, contractFilePath);
@@ -237,9 +234,9 @@ namespace Pregiato.API.Services
 
             string populatedHtml = PopulateTemplate(htmlTemplate, parameters);
 
-            byte[] pdfBytes = ConvertHtmlToPdf(populatedHtml);
+            byte[] pdfBytes = ConvertHtmlToPdf(populatedHtml, parameters);
 
-            await SaveContractAsync(contract, new MemoryStream(pdfBytes), parameters["CPF Modelo"]);
+            await SaveContractAsync(contract, new MemoryStream(pdfBytes), parameters["CPF-Modelo"]);
 
             var validationResult = await _paymentService.ValidatePayment(createContractModelRequest.Payment, contract);
 
@@ -264,28 +261,30 @@ namespace Pregiato.API.Services
             {
                 {"Cidade", createContractModelRequest.City},
                 {"Dia", createContractModelRequest.Day.ToString()},
-                {"Mês-Extenso", createContractModelRequest.Month },
+                {"UF-Local", createContractModelRequest.UFContract},
+                {"Mês-Extenso", createContractModelRequest.Month},
                 {"Ano", DateTime.Now.Year.ToString()},
-                {"Nome Completo", model.Name},
-                {"CPF Modelo,", model.CPF},
-                {"RG Modelo", model.RG},
-                {"Endereço Modelo", model.Address},
-                {"Número da Residência",model.NumberAddress},
-                {"Complemento Modelo,", model.Complement},
-                {"Bairro Modelo", model.Neighborhood},
-                {"Cidade Modelo - UF", model.City},
-                {"CEP Modelo", model.PostalCode},
-                {"Telefone Principal", model.TelefonePrincipal},
-                {"Telefone Secundário", model.TelefoneSecundario},
-                {"Valor-Contrato",createContractModelRequest.Payment.Valor.ToString("C")},
-                {"Meses de Contrato", createContractModelRequest.MonthContract.ToString()},
-                {"Nome Completo", model.Name},
+                {"Nome-Modelo", model.Name},
+                {"CPF-Modelo", model.CPF},
+                {"RG-Modelo", model.RG},
+                {"Endereço-Modelo", model.Address},
+                {"Número-Residência",model.NumberAddress},
+                {"Complemento-Modelo", model.Complement},
+                {"Bairro-Modelo", model.Neighborhood},
+                {"Cidade-Modelo", model.City},
+                {"UF", model.UF},
+                {"CEP-Modelo", model.PostalCode},
+                {"Telefone-Principal", model.TelefonePrincipal},
+                {"Telefone-Secundário", model.TelefoneSecundario},
+                {"Valor-Contrato", createContractModelRequest.Payment.Valor.ToString("C", new CultureInfo("pt-BR"))},
+                {"Meses-Contrato", createContractModelRequest.MonthContract.ToString()},
+                {"Nome-Assinatura", model.Name},
             };
 
             var contracts = new List<ContractBase>
             {
                 await GenerateContractAsync(createContractModelRequest, model.IdModel, "Photography", parameters)
-                //Acrescenat a geração do outro contrato 
+               
             };
 
             return contracts;
@@ -366,7 +365,7 @@ namespace Pregiato.API.Services
 
             string populatedHtml = PopulateTemplate(htmlTemplate, parameters);
 
-            byte[] pdfBytes = ConvertHtmlToPdf(populatedHtml);
+            byte[] pdfBytes = ConvertHtmlToPdf(populatedHtml, parameters);
 
             await SaveContractAsync(contract, new MemoryStream(pdfBytes), model.CPF);
 
@@ -446,7 +445,7 @@ namespace Pregiato.API.Services
 
             string populatedHtml = PopulateTemplate(htmlTemplate, parameters);
 
-            byte[] pdfBytes = ConvertHtmlToPdf(populatedHtml);
+            byte[] pdfBytes = ConvertHtmlToPdf(populatedHtml, parameters);
 
             await SaveContractAsync(contract, new MemoryStream(pdfBytes), model.CPF);
 
@@ -513,7 +512,7 @@ namespace Pregiato.API.Services
 
             string populatedHtml = PopulateTemplate(htmlTemplate, parameters);
 
-            byte[] pdfBytes = ConvertHtmlToPdf(populatedHtml);
+            byte[] pdfBytes = ConvertHtmlToPdf(populatedHtml, parameters);
 
             await SaveContractAsync(contract, new MemoryStream(pdfBytes), parameters["CPF-Modelo"]);
 
@@ -588,7 +587,7 @@ namespace Pregiato.API.Services
 
             string populatedHtml = PopulateTemplate(htmlTemplate, parameters);
 
-            byte[] pdfBytes = ConvertHtmlToPdf(populatedHtml);
+            byte[] pdfBytes = ConvertHtmlToPdf(populatedHtml, parameters);
 
             await SaveContractAsync(contract, new MemoryStream(pdfBytes), parameters["CPF-Modelo"]);
 

@@ -328,6 +328,10 @@ namespace Pregiato.API.Migrations
                         .IsRequired()
                         .HasColumnType("text");
 
+                    b.Property<string>("UF")
+                        .IsRequired()
+                        .HasColumnType("text");
+
                     b.Property<DateTime>("UpdatedAt")
                         .ValueGeneratedOnAdd()
                         .HasColumnType("timestamp with time zone")
@@ -418,7 +422,7 @@ namespace Pregiato.API.Migrations
                         .ValueGeneratedOnAdd()
                         .HasColumnType("uuid");
 
-                    b.Property<string>("Autorizationumber")
+                    b.Property<string>("AutorizationNumber")
                         .HasColumnType("text");
 
                     b.Property<byte[]>("Comprovante")
@@ -441,8 +445,8 @@ namespace Pregiato.API.Migrations
                         .IsRequired()
                         .HasColumnType("text");
 
-                    b.Property<string>("Provider")
-                        .HasColumnType("text");
+                    b.Property<int?>("Provider")
+                        .HasColumnType("integer");
 
                     b.Property<int?>("QuantidadeParcela")
                         .HasColumnType("integer");
