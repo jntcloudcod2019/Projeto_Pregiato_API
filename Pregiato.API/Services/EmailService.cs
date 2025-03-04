@@ -7,6 +7,7 @@ using System;
 using System.IO;
 using System.Threading.Tasks;
 using System.Collections.Generic;
+using SmtpServer.ComponentModel;
 using Pregiato.API.Models;
 using MailKit.Security;
 
@@ -23,8 +24,11 @@ namespace Pregiato.API.Services
             _logger = logger;
         }
 
-        public async Task<string> LoadTemplate(string templatePath, Dictionary<string, string> replacements)
+
+        public async Task<string> LoadTemplate(Dictionary<string, string> replacements)
         {
+            var templatePath = Path.Combine(Directory.GetCurrentDirectory(), "Templates", "WelcomeEmailTemplate.html");
+
             if (!File.Exists(templatePath))
             {
                 _logger.LogError($"Template de e-mail não encontrado: {templatePath}");
@@ -40,7 +44,7 @@ namespace Pregiato.API.Services
             return templateContent;
         }
 
-        public async Task<bool> SendEmailAsync(string toEmail, string subject, string body)
+        public async Task<bool> SendEmailAsync(Dictionary<string, string> replacements, string toEmail, string subject)
         {
             if (string.IsNullOrEmpty(toEmail))
             {
@@ -53,49 +57,32 @@ namespace Pregiato.API.Services
             message.To.Add(new MailboxAddress(toEmail, toEmail));
             message.Subject = subject;
 
-            var bodyBuilder = new BodyBuilder { HtmlBody = body };
+            var bodyBuilder = new BodyBuilder { HtmlBody = "Este é um e-mail de teste do servidor SMTP do Outlook." };
             message.Body = bodyBuilder.ToMessageBody();
 
-            int attempt = 0;
-
-            while (attempt < _smtpSettings.MaxRetryAttempts)
+            try
             {
-                try
-                {
-                    using var client = new SmtpClient();
+                using var client = new SmtpClient();
+                client.ServerCertificateValidationCallback = (s, c, h, e) => true;
 
-                    client.ServerCertificateValidationCallback = (s, c, h, e) => true;
+                _logger.LogInformation($"Conectando ao SMTP {_smtpSettings.Server}:{_smtpSettings.Port}...");
+                await client.ConnectAsync(_smtpSettings.Server, _smtpSettings.Port, SecureSocketOptions.StartTls);
 
-                    _logger.LogInformation($"Tentativa {attempt + 1}: Conectando ao SMTP {_smtpSettings.Server}:{_smtpSettings.Port}");
+                _logger.LogInformation("Autenticando no servidor SMTP do Outlook...");
+                await client.AuthenticateAsync(_smtpSettings.Username, _smtpSettings.Password);
 
-                    await client.ConnectAsync(_smtpSettings.Server, _smtpSettings.Port, SecureSocketOptions.StartTls);
-                    if (_smtpSettings.UseTls)
-                    {
-                        client.SslProtocols = System.Security.Authentication.SslProtocols.Tls;
-                    }
-                    await client.AuthenticateAsync(_smtpSettings.Username, _smtpSettings.Password);
-                    await client.SendAsync(message);
-                    await client.DisconnectAsync(true);
+                _logger.LogInformation("Enviando e-mail...");
+                await client.SendAsync(message);
+                await client.DisconnectAsync(true);
 
-                    _logger.LogInformation($"E-mail enviado com sucesso para {toEmail}");
-                    return true;
-                }
-                catch (Exception ex)
-                {
-                    attempt++;
-                    _logger.LogError(ex, $"Erro ao enviar e-mail para {toEmail}. Tentativa {attempt}/{_smtpSettings.MaxRetryAttempts}");
-
-                    if (attempt >= _smtpSettings.MaxRetryAttempts)
-                    {
-                        _logger.LogError($"Falha ao enviar e-mail após {attempt} tentativas.");
-                        return false;
-                    }
-
-                    await Task.Delay(TimeSpan.FromSeconds(_smtpSettings.RetryDelaySeconds));
-                }
+                _logger.LogInformation($"E-mail enviado com sucesso para {toEmail}.");
+                return true;
             }
-
-            return false;
+            catch (Exception ex)
+            {
+                _logger.LogError(ex, $"Erro ao enviar e-mail para {toEmail}.");
+                return false;
+            }
         }
     }
 }

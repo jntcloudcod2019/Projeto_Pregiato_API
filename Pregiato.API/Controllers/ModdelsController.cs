@@ -50,7 +50,7 @@ namespace Pregiato.API.Controllers
         }
 
 
-       // [Authorize(Policy = "AdminOrManager")]
+        [Authorize(Policy = "AdminOrManager")]
         [HttpPost("AddModels")]
         [SwaggerOperation("Criar novo modelo.")]
         public async Task<IActionResult> AddNewModel([FromBody] CreateModelRequest createModelRequest)

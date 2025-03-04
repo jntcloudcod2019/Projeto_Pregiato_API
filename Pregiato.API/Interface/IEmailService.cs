@@ -2,7 +2,7 @@
 {
     public interface IEmailService
     {
-        Task<bool> SendEmailAsync(string toEmail, string subject, string body);
-        Task<string> LoadTemplate(string templatePath, Dictionary<string, string> replacements);
+        Task<bool> SendEmailAsync(Dictionary<string, string> replacements,string toEmail, string subject);
+        Task<string> LoadTemplate( Dictionary<string, string> replacements);
     }
 }
