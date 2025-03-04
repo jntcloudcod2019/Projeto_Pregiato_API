@@ -53,8 +53,9 @@ builder.Services.AddScoped<IContractRepository, ContractRepository>();
 builder.Services.AddScoped<DigitalSignatureService>();
 builder.Services.AddScoped<IPasswordHasherService, PasswordHasherService>();
 builder.Services.AddScoped<IEmailService, EmailService>();
-builder.Services.AddScoped<IServiceUtilites, SericeUtilites>();
-builder.Services.Configure<SmtpSettings>(builder.Configuration.GetSection("SmtpSettings"));
+builder.Services.AddScoped<IServiceUtilites, ServiceUtilites>();
+builder.Services.AddSingleton<SmtpServerService>(); // Servidor SMTP interno
+builder.Services.AddHostedService<SmtpServerService>();
 builder.Services.AddHttpContextAccessor();
 builder.Services.AddEndpointsApiExplorer();
 
@@ -154,8 +155,9 @@ builder.Services.AddControllers()
     });
 
 builder.Services.AddAuthorization();
-
 builder.WebHost.UseUrls("http://+:8080");
+builder.Logging.ClearProviders();
+builder.Logging.AddConsole();
 
 var app = builder.Build();
 

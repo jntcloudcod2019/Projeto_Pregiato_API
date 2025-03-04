@@ -3,7 +3,7 @@ using System.Globalization;
 
 namespace Pregiato.API.Services
 {
-    public class SericeUtilites : IServiceUtilites
+    public class ServiceUtilites : IServiceUtilites
     {
         public async Task<int> CalculateAge(DateTime dateOfBirth)
         {

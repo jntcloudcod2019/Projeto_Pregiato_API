@@ -12,19 +12,19 @@ public class EmailController : ControllerBase
         _emailService = emailService;
     }
 
-    [HttpPost("enviar")]
-    public async Task<IActionResult> EnviarEmail([FromBody] EmailRequest request)
-    {
-        if (request == null || string.IsNullOrEmpty(request.ToEmail))
-            return BadRequest("O e-mail de destino é obrigatório.");
+    //[HttpPost("enviar")]
+    //public async Task<IActionResult> EnviarEmail([FromBody] EmailRequest request)
+    //{
+    //    if (request == null || string.IsNullOrEmpty(request.ToEmail))
+    //        return BadRequest("O e-mail de destino é obrigatório.");
 
-        bool sucesso = await _emailService.SendEmailAsync(request.ToEmail, request.Subject, request.Body);
+    //   // bool sucesso = await _emailService.SendEmailAsync(request.ToEmail, request.Subject, request.Body);
 
-        if (sucesso)
-            return Ok("E-mail enviado com sucesso.");
-        else
-            return StatusCode(500, "Erro ao enviar e-mail.");
-    }
+    //    if (sucesso)
+    //        return Ok("E-mail enviado com sucesso.");
+    //    else
+    //        return StatusCode(500, "Erro ao enviar e-mail.");
+    //}
 }
 
 public class EmailRequest

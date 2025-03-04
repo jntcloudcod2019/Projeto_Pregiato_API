@@ -188,7 +188,7 @@ namespace Pregiato.API.Controllers
             return Ok($"Termo de Concessão de direito de imagem para: {model.Name}, gerado com sucesso. Código da Proposta: {contract.CodProposta}.");
         }
 
-        //[Authorize(Policy = "AdminOrManager")]
+        [Authorize(Policy = "AdminOrManager")]
         [SwaggerOperation("Processo de gerar contrato de Agencimaneto e Fotoprgrafia.")]
         [HttpPost("generate/Agency&PhotographyProductionContracts")]
         public async Task<IActionResult> GenerateAgencyPhotographyProductionContractsAsync(CreateContractModelRequest createContractModelRequest)
@@ -218,7 +218,7 @@ namespace Pregiato.API.Controllers
             return Ok(response);
         }
 
-       // [Authorize(Policy = "AdminOrManagerOrModel")]
+        [Authorize(Policy = "AdminOrManagerOrModel")]
         [HttpGet("download-contract")]
         public async Task<IActionResult> DownloadContractAsync(int proposalCode)
         {
