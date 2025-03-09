@@ -14,6 +14,7 @@ namespace Pregiato.API.Requests
         public MetodoPagamento MetodoPagamento { get; set; }
 
         [Required]
+        [JsonConverter(typeof(DecimalJsonConverter))]
         public decimal Valor { get; set; }
         public int? QuantidadeParcela { get; set; }
         public string? FinalCartao { get; set; }

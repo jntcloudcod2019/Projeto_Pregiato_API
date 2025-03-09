@@ -240,7 +240,8 @@ namespace Pregiato.API.Services
 
             await SaveContractAsync(contract, new MemoryStream(pdfBytes), parameters["CPF-Modelo"]);
 
-            var validationResult = await _paymentService.ValidatePayment(createContractModelRequest.Payment, contract);
+            if (contractType == "Photography" || contractType == "PhotographyMinority")
+            { var validationResult = await _paymentService.ValidatePayment(createContractModelRequest.Payment, contract); }
 
             return contract;
         }
@@ -296,7 +297,6 @@ namespace Pregiato.API.Services
                 await GenerateContractAsync(createContractModelRequest, model.IdModel, templatePhotography, parameters),
                 await GenerateContractAsync(createContractModelRequest, model.IdModel, "Agency", parameters)
             };
-
 
             return contracts;
         }
@@ -653,10 +653,8 @@ namespace Pregiato.API.Services
             int startIndex = content.IndexOf('[') + 1;
             int endIndex = content.LastIndexOf(']');
 
-            // Extrai a substring entre os colchetes
             string byteString = content.Substring(startIndex, endIndex - startIndex);
 
-            // Divide a string pelos ',' e converte cada valor para byte
             byte[] bytes = byteString.Split(',')
                                      .Select(b => byte.Parse(b.Trim()))
                                      .ToArray();

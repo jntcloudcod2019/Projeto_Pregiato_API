@@ -208,13 +208,14 @@ namespace Pregiato.API.Controllers
             var response = new ContractGenerationResponse
             {
                 ContractName = $"Contrato de Agenciamento & Photography Production.",
-                Message = $"Contratos para {model.Name} gerados com sucesso!",
+                Message = $"Contrato para {model.Name}, gerados com sucesso!",
                 Contracts = contracts.Select(c => new ContractSummary
                 {
                     CodProposta = c.CodProposta
                 }).ToList()
             };
 
+            
             return Ok(response);
         }
 

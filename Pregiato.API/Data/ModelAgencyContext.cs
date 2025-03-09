@@ -24,8 +24,7 @@ namespace Pregiato.API.Data
         protected override void OnModelCreating(ModelBuilder modelBuilder)
         {
             base.OnModelCreating(modelBuilder);
-
-            // Ignorar LoginUserRequest
+            
             modelBuilder.Ignore<LoginUserRequest>();
 
             // Configuração para a tabela Payment
@@ -36,13 +35,21 @@ namespace Pregiato.API.Data
                     v => StatusPagamento.Create(v)
                 );
 
+                // Conversor para ProviderEnum
+                var providerConverter = new EnumToStringConverter<ProviderEnum>();
+
+                entity.Property(e => e.Provider)
+                       .HasConversion(providerConverter)
+                       .HasColumnType("text")
+                       .IsRequired();
+
                 entity.ToTable("Payment");
                 entity.HasKey(e => e.Id);
 
                 entity.Property(e => e.StatusPagamento)
-                    .HasConversion(statusPagamentoConverter)
-                    .HasColumnType("text")
-                    .IsRequired();
+                        .HasConversion(statusPagamentoConverter)
+                        .HasColumnType("text")
+                        .IsRequired();
 
                 entity.Property(e => e.Valor).IsRequired();
                 entity.Property(e => e.QuantidadeParcela).IsRequired(false);
@@ -50,7 +57,6 @@ namespace Pregiato.API.Data
                 entity.Property(e => e.DataPagamento).IsRequired();
                 entity.Property(e => e.Comprovante).IsRequired(false);
                 entity.Property(e => e.DataAcordoPagamento).IsRequired(false);
-
                 entity.HasOne<ContractBase>()
                     .WithMany()
                     .HasForeignKey(e => e.ContractId)
@@ -105,8 +111,7 @@ namespace Pregiato.API.Data
                     .HasForeignKey(c => c.ModelId)
                     .OnDelete(DeleteBehavior.Cascade);
             });
-
-            // Mapeamento das entidades derivadas
+    
             modelBuilder.Entity<AgencyContract>().ToTable("AgencyContracts");
             modelBuilder.Entity<PhotographyProductionContract>().ToTable("PhotographyProductionContracts");
             modelBuilder.Entity<CommitmentTerm>().ToTable("CommitmentTerms");
