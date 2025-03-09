@@ -9,7 +9,7 @@ public class DecimalJsonConverter : JsonConverter<decimal>
     {
         if (reader.TokenType == JsonTokenType.Number)
         {
-            return reader.GetDecimal(); // Se já for um número, retorna direto
+            return reader.GetDecimal(); 
         }
         else if (reader.TokenType == JsonTokenType.String)
         {
@@ -17,7 +17,6 @@ public class DecimalJsonConverter : JsonConverter<decimal>
             if (string.IsNullOrWhiteSpace(numberString))
                 throw new JsonException("Valor decimal inválido.");
 
-            // Remover separadores de milhar e substituir vírgula por ponto (para decimal)
             numberString = numberString.Replace(".", "").Replace(",", ".");
 
             if (decimal.TryParse(numberString, NumberStyles.Any, CultureInfo.InvariantCulture, out decimal result))
@@ -32,7 +31,6 @@ public class DecimalJsonConverter : JsonConverter<decimal>
 
     public override void Write(Utf8JsonWriter writer, decimal value, JsonSerializerOptions options)
     {
-        // Formata corretamente no estilo brasileiro (1.200,00)
         writer.WriteStringValue(value.ToString("N2", new CultureInfo("pt-BR")));
     }
 }

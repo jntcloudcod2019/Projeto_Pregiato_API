@@ -2,12 +2,6 @@
 using MimeKit;
 using Pregiato.API.Interface;
 using Microsoft.Extensions.Options;
-using Microsoft.Extensions.Logging;
-using System;
-using System.IO;
-using System.Threading.Tasks;
-using System.Collections.Generic;
-using SmtpServer.ComponentModel;
 using Pregiato.API.Models;
 using MailKit.Security;
 
@@ -52,23 +46,46 @@ namespace Pregiato.API.Services
                 throw new ArgumentNullException(nameof(toEmail), "O e-mail de destino não pode ser nulo ou vazio.");
             }
 
-            var message = new MimeMessage();
-            message.From.Add(new MailboxAddress("Pregiato Management", _smtpSettings.Username));
-            message.To.Add(new MailboxAddress(toEmail, toEmail));
-            message.Subject = subject;
-
-            var bodyBuilder = new BodyBuilder { HtmlBody = "Este é um e-mail de teste do servidor SMTP do Outlook." };
-            message.Body = bodyBuilder.ToMessageBody();
-
             try
             {
+                // Carregar o template do e-mail
+                var templateContent = await LoadTemplate(replacements);
+
+                // Criar a mensagem de e-mail
+                var message = new MimeMessage();
+                message.From.Add(new MailboxAddress("Pregiato Management", _smtpSettings.Username));
+                message.To.Add(new MailboxAddress(toEmail, toEmail));
+                message.Subject = subject;
+
+                var bodyBuilder = new BodyBuilder();
+
+                // Caminho da imagem dentro do projeto (ajuste conforme necessário)
+                var imagePath = Path.Combine(Directory.GetCurrentDirectory(), "Templates", "logo.png");
+
+                if (File.Exists(imagePath))
+                {
+                    // Adicionar a imagem como recurso embutido no e-mail
+                    var image = bodyBuilder.LinkedResources.Add(imagePath);
+                    image.ContentId = "logo";
+                }
+                else
+                {
+                    _logger.LogWarning($"Imagem da logo não encontrada: {imagePath}");
+                }
+
+                // Substituir no template
+                templateContent = templateContent.Replace("{logo}", "cid:logo");
+                bodyBuilder.HtmlBody = templateContent;
+
+                message.Body = bodyBuilder.ToMessageBody();
+
                 using var client = new SmtpClient();
                 client.ServerCertificateValidationCallback = (s, c, h, e) => true;
 
                 _logger.LogInformation($"Conectando ao SMTP {_smtpSettings.Server}:{_smtpSettings.Port}...");
                 await client.ConnectAsync(_smtpSettings.Server, _smtpSettings.Port, SecureSocketOptions.StartTls);
 
-                _logger.LogInformation("Autenticando no servidor SMTP do Outlook...");
+                _logger.LogInformation("Autenticando no servidor SMTP do Gmail...");
                 await client.AuthenticateAsync(_smtpSettings.Username, _smtpSettings.Password);
 
                 _logger.LogInformation("Enviando e-mail...");
@@ -84,5 +101,6 @@ namespace Pregiato.API.Services
                 return false;
             }
         }
+
     }
 }
