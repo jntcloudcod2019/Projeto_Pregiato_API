@@ -2,7 +2,9 @@
 using Swashbuckle.AspNetCore.Annotations;
 using System.ComponentModel;
 using System.ComponentModel.DataAnnotations;
+using System.ComponentModel.DataAnnotations.Schema;
 using System.Text.Json.Serialization;
+
 
 namespace Pregiato.API.Models
 {
@@ -28,6 +30,8 @@ namespace Pregiato.API.Models
         [DisplayFormat(DataFormatString = "{dd-MM-yyyy}", ApplyFormatInEditMode = true)]
         public DateTime? DataAcordoPagamento { get; set; }
         public string MetodoPagamento { get; set; }
+
+        [Column(TypeName = "text")]
         public ProviderEnum? Provider { get; set; }
         public string? AutorizationNumber { get; set; }
 

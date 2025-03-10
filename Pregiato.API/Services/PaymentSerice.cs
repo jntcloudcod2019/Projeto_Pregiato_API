@@ -2,8 +2,10 @@
 using Pregiato.API.Models;
 using Pregiato.API.Requests;
 using Pregiato.API.Data;
+using Pregiato.API.Enums;
 using Pregiato.API.Services;
 using Microsoft.EntityFrameworkCore;
+using System.Globalization;
 
 public class PaymentService : IPaymentService
 {
@@ -24,8 +26,8 @@ public class PaymentService : IPaymentService
             {
                 Id = Guid.NewGuid(),
                 ContractId = contract.ContractId,
-                Valor = contract.ValorContrato,
-                DataPagamento = payment.DataPagamento.Value,
+                Valor = payment.Valor,
+                DataPagamento = payment.DataPagamento.Value.ToUniversalTime(),
                 MetodoPagamento = payment.MetodoPagamento,
                 StatusPagamento = StatusPagamento.Create(payment.StatusPagamento),
                 AutorizationNumber = payment.AutorizationNumber,
@@ -42,7 +44,7 @@ public class PaymentService : IPaymentService
 
                 paymentContract.QuantidadeParcela = payment.QuantidadeParcela;
                 paymentContract.FinalCartao = payment.FinalCartao;
-                paymentContract.DataAcordoPagamento = payment.DataAcordoPagamento;
+                paymentContract.DataAcordoPagamento = payment.DataAcordoPagamento.Value.ToUniversalTime();
             }
 
             else if (payment.MetodoPagamento == MetodoPagamento.CartaoDebito)
@@ -56,6 +58,7 @@ public class PaymentService : IPaymentService
                     throw new ArgumentException("É necessário  informar o provedor da maquina.");
 
                 paymentContract.FinalCartao = payment.FinalCartao;
+               
             }
 
             else if (payment.MetodoPagamento == MetodoPagamento.Pix)
@@ -76,10 +79,10 @@ public class PaymentService : IPaymentService
             if (payment.StatusPagamento == "Pending" && payment.DataAcordoPagamento == null)
                 throw new ArgumentException("A Data do Acordo de Pagamento é obrigatória para status Pending.");
 
-         //   await _context.AddAsync(paymentContract);
-          //  await _context.SaveChangesAsync();
-
-            return $"validação de pagamento  para o contrato: {payment.ContractId} ok";
+            await _context.AddAsync(paymentContract);
+            await _context.SaveChangesAsync();
+            
+            return $"validação de pagamento  para o contrato: {contract.ContractId} ok";
         }
         catch (Exception ex)
         {

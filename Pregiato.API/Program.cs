@@ -9,9 +9,9 @@ using Pregiato.API.Services;
 using System.Text.Json.Serialization;
 using Microsoft.OpenApi.Any;
 using Pregiato.API.Models;
+using System.Globalization;
 
 var builder = WebApplication.CreateBuilder(args);
-
 
 builder.Environment.EnvironmentName = Environments.Production;
 
@@ -23,6 +23,8 @@ var config = new ConfigurationBuilder()
     .AddJsonFile($"appsettings.{builder.Environment.EnvironmentName}.json", optional: true, reloadOnChange: true)
     .AddEnvironmentVariables()
     .Build();
+
+CultureInfo.DefaultThreadCurrentUICulture = new CultureInfo("pt-BR");
 
 builder.Configuration.AddConfiguration(config);
 
@@ -39,25 +41,23 @@ builder.Services.AddDbContext<ModelAgencyContext>(options =>
            .EnableSensitiveDataLogging(builder.Environment.IsDevelopment())
            .LogTo(Console.WriteLine, LogLevel.Information));
 
+builder.Services.AddHttpContextAccessor();
+builder.Services.AddEndpointsApiExplorer();
 builder.Services.AddAutoMapper(AppDomain.CurrentDomain.GetAssemblies());
-builder.Services.AddScoped<IClientRepository, ClientRepository>();
-builder.Services.AddScoped<IModelRepository, ModelsRepository>();
-builder.Services.AddScoped<IClientBillingRepository, ClientBillingRepository>();
+builder.Services.AddScoped<DigitalSignatureService>();
 builder.Services.AddScoped<IJobRepository, JobRepository>();
 builder.Services.AddScoped<IUserRepository, UserRepository>();
 builder.Services.AddScoped<IUserService, UserService>();
-builder.Services.AddScoped<IPaymentService, PaymentService>();
 builder.Services.AddScoped<IJwtService, JwtService>();
+builder.Services.AddScoped<IPaymentService, PaymentService>();
+builder.Services.AddScoped<IClientRepository, ClientRepository>();
+builder.Services.AddScoped<IModelRepository, ModelsRepository>();
 builder.Services.AddScoped<IContractService, ContractService>();
 builder.Services.AddScoped<IContractRepository, ContractRepository>();
-builder.Services.AddScoped<DigitalSignatureService>();
-builder.Services.AddScoped<IPasswordHasherService, PasswordHasherService>();
 builder.Services.AddScoped<IEmailService, EmailService>();
 builder.Services.AddScoped<IServiceUtilites, ServiceUtilites>();
-builder.Services.AddSingleton<SmtpServerService>(); // Servidor SMTP interno
-builder.Services.AddHostedService<SmtpServerService>();
-builder.Services.AddHttpContextAccessor();
-builder.Services.AddEndpointsApiExplorer();
+builder.Services.AddScoped<IPasswordHasherService, PasswordHasherService>();
+builder.Services.AddScoped<IClientBillingRepository, ClientBillingRepository>();
 
 
 builder.Services.AddSwaggerGen(c =>
@@ -98,10 +98,6 @@ builder.Services.AddSwaggerGen(c =>
 
 var jwtSettings = builder.Configuration.GetSection("JwtSettings");
 var secretKey = jwtSettings["SecretKey"];
-if (string.IsNullOrEmpty(secretKey))
-{
-    throw new Exception("ERRO: A chave secreta do JWT não foi encontrada no appsettings.json!");
-}
 
 builder.Services.AddAuthentication(JwtBearerDefaults.AuthenticationScheme)
     .AddJwtBearer(options =>
@@ -141,17 +137,17 @@ builder.Services.AddCors(options =>
         });
 });
 
-
 builder.Services.AddControllers()
     .AddJsonOptions(options =>
     {
-        options.JsonSerializerOptions.PropertyNamingPolicy = null;
-        options.JsonSerializerOptions.DefaultIgnoreCondition = JsonIgnoreCondition.WhenWritingNull;
-        options.JsonSerializerOptions.Converters.Add(new JsonStringEnumConverter());
-        options.JsonSerializerOptions.Converters.Add(new JsonDateTimeConverter("dd-MM-yyyy", "yyyy-MM-dd", "MM/dd/yyyy", "dd/MM/yyyy"));
-        options.JsonSerializerOptions.Converters.Add(new MetodoPagamentoConverter());
-        options.JsonSerializerOptions.IgnoreReadOnlyProperties = true;
         options.JsonSerializerOptions.WriteIndented = true;
+        options.JsonSerializerOptions.PropertyNamingPolicy = null;              
+        options.JsonSerializerOptions.IgnoreReadOnlyProperties = true;
+        options.JsonSerializerOptions.Converters.Add(new DecimalJsonConverter());
+        options.JsonSerializerOptions.Converters.Add(new JsonStringEnumConverter());
+        options.JsonSerializerOptions.Converters.Add(new MetodoPagamentoConverter());
+        options.JsonSerializerOptions.DefaultIgnoreCondition = JsonIgnoreCondition.WhenWritingNull;
+        options.JsonSerializerOptions.Converters.Add(new JsonDateTimeConverter("dd-MM-yyyy", "yyyy-MM-dd", "MM/dd/yyyy", "dd/MM/yyyy"));
     });
 
 builder.Services.AddAuthorization();
@@ -172,7 +168,5 @@ app.UseRouting();
 app.UseAuthentication();
 app.UseAuthorization();
 app.MapControllers();
-
-
 app.Run();
 
