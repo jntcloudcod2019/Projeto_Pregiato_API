@@ -69,6 +69,7 @@ namespace Pregiato.API.Controllers
             }
 
             var job = await _agencyContext.Jobs.FindAsync(request.JobId);
+
             if (job == null)
             {
                 return NotFound($"Job com ID {request.JobId} não encontrado.");

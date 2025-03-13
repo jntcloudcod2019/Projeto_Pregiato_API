@@ -12,13 +12,6 @@ namespace Pregiato.API.Services
         private readonly SmtpSettings _smtpSettings;
         private readonly ILogger<EmailService> _logger;
 
-        public EmailService(IOptions<SmtpSettings> smtpOptions, ILogger<EmailService> logger)
-        {
-            _smtpSettings = smtpOptions.Value;
-            _logger = logger;
-        }
-
-
         public async Task<string> LoadTemplate(Dictionary<string, string> replacements)
         {
             var templatePath = Path.Combine(Directory.GetCurrentDirectory(), "Templates", "WelcomeEmailTemplate.html");

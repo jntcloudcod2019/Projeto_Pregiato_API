@@ -14,7 +14,7 @@ namespace Pregiato.API.Controllers
 {
     [ApiController]
     [Route("api/[controller]")]
-    public class ModdelsController : ControllerBase
+    public class ModelsController : ControllerBase
     {
         private readonly IModelRepository _modelRepository;
         private readonly IContractService _contractService;
@@ -23,7 +23,7 @@ namespace Pregiato.API.Controllers
         private readonly IServiceUtilites _serviceUtilites; 
         private readonly ModelAgencyContext _agencyContext;
 
-        public ModdelsController
+        public ModelsController
               (IModelRepository modelRepository, 
                ModelAgencyContext agencyContext, 
                IContractService contractService,
