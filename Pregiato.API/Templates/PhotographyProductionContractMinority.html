@@ -29,10 +29,21 @@
         p {
             margin: 5px 0;
         }
+
+        .highlight {
+            background-color: yellow;
+            padding: 2px;
+        }
+
         .signature {
             margin-top: 40px;
             text-align: center;
             font-weight: bold;
+            position: relative;
+            width: 100%;
+            max-width: 400px;
+            margin-left: auto;
+            margin-right: auto;
         }
 
             .signature p {
@@ -46,6 +57,14 @@
             border-bottom: 2px solid black;
             margin: 10px auto;
             padding-top: 10px;
+        }
+
+        .signature-img {
+            width: 250px;
+            height: auto;
+            display: block;
+            margin: 10px auto;
+            object-fit: contain;
         }
     </style>
 </head>
@@ -120,11 +139,11 @@
         <div class="signature-line"></div>
         <p>Assinatura:</p>
     </div>
-
-    <div class="signature">
-        <p>SUPER FOTOS FOTOGRAFIAS LTDA</p>
-        <div class="signature-line"></div>
-        <p>Assinatura:</p>
-    </div>
+      <div class="signature">
+      <p>SUPER FOTOS FOTOGRAFIAS LTDA</p>
+      <img src="{NameImageSignature}" alt="Assinatura" class="signature-img">
+      <div class="signature-line"></div>
+      <p>Assinatura:</p>
+  </div>
 </body>
 </html>

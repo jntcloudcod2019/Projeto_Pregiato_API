@@ -25,12 +25,16 @@ namespace Pregiato.API.Controllers
         [HttpPost("register/login")]
         [SwaggerOperation(Summary = "Autentica um usuário e retorna um token JWT")]
         [SwaggerResponse(200, "Retorna o token JWT", typeof(string))]
+        [SwaggerResponse(400, "Requisição inválida")]
         [SwaggerResponse(401, "Não autorizado")]
         public async Task<IActionResult> Login([FromBody]LoginUserRequest loginUserRequest)
         {
             try
             {
+               
+                // Autentica o usuário e gera o token JWT
                 var token = await _userService.AuthenticateUserAsync(loginUserRequest);
+
                 return Ok(new LoginResponse
                 {
                     Token = token,
@@ -45,7 +49,11 @@ namespace Pregiato.API.Controllers
             }
             catch (Exception ex)
             {
-                return Unauthorized(new { error = ex.Message });
+                return StatusCode(500, new ErrorResponse
+                {
+                    Message = "Erro interno no servidor.",
+                    Details = ex.Message
+                });
             }
         }
 
