@@ -216,7 +216,7 @@ namespace Pregiato.API.Controllers
                 DNA = dnaJson,
             };
                                
-           _modelRepository.UpdateModelAsync(model);
+           await _modelRepository.UpdateModelAsync(model);
 
             return NoContent();
         }
@@ -267,12 +267,12 @@ namespace Pregiato.API.Controllers
                 throw new Exception($"Nenhum modelo encontrado para o usuário: {username}");
             }
             var contracts = await _agencyContext.Contracts
-                 .Where(c => c.ModelId == modelSearch.IdModel) // Filtra pelos contratos do modelo
+                 .Where(c => c.ModelId == modelSearch.IdModel) 
                  .Select(c => new
                  {
                      c.ModelId,
                      c.ContractFilePath,
-                     c.Content // Apenas os campos necessários
+                     c.Content 
                  })
                  .ToListAsync();
             var listContracts = contracts.Select(c =>
