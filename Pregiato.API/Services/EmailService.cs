@@ -41,10 +41,8 @@ namespace Pregiato.API.Services
 
             try
             {
-                // Carregar o template do e-mail
                 var templateContent = await LoadTemplate(replacements);
 
-                // Criar a mensagem de e-mail
                 var message = new MimeMessage();
                 message.From.Add(new MailboxAddress("Pregiato Management", _smtpSettings.Username));
                 message.To.Add(new MailboxAddress(toEmail, toEmail));
@@ -52,12 +50,10 @@ namespace Pregiato.API.Services
 
                 var bodyBuilder = new BodyBuilder();
 
-                // Caminho da imagem dentro do projeto (ajuste conforme necessário)
                 var imagePath = Path.Combine(Directory.GetCurrentDirectory(), "Templates", "logo.png");
 
                 if (File.Exists(imagePath))
                 {
-                    // Adicionar a imagem como recurso embutido no e-mail
                     var image = bodyBuilder.LinkedResources.Add(imagePath);
                     image.ContentId = "logo";
                 }
@@ -66,7 +62,6 @@ namespace Pregiato.API.Services
                     _logger.LogWarning($"Imagem da logo não encontrada: {imagePath}");
                 }
 
-                // Substituir no template
                 templateContent = templateContent.Replace("{logo}", "cid:logo");
                 bodyBuilder.HtmlBody = templateContent;
 

@@ -24,10 +24,11 @@ var config = new ConfigurationBuilder()
     .AddEnvironmentVariables()
     .Build();
 
+
+
 CultureInfo.DefaultThreadCurrentUICulture = new CultureInfo("pt-BR");
 
 builder.Configuration.AddConfiguration(config);
-
 builder.Services.Configure<SmtpSettings>(builder.Configuration.GetSection("SmtpSettings"));
 
 var connectionString = config.GetConnectionString("DefaultConnection");
@@ -57,7 +58,6 @@ builder.Services.AddScoped<IEmailService, EmailService>();
 builder.Services.AddScoped<IServiceUtilites, ServiceUtilites>();
 builder.Services.AddScoped<IPasswordHasherService, PasswordHasherService>();
 builder.Services.AddScoped<IClientBillingRepository, ClientBillingRepository>();
-
 
 builder.Services.AddSwaggerGen(c =>
 {
@@ -153,6 +153,8 @@ builder.Services.AddAuthorization();
 builder.WebHost.UseUrls("http://+:8080");
 builder.Logging.ClearProviders();
 builder.Logging.AddConsole();
+builder.Logging.AddDebug();
+builder.Logging.SetMinimumLevel(LogLevel.Trace);
 
 var app = builder.Build();
 

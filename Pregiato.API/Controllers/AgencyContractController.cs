@@ -36,6 +36,12 @@ namespace Pregiato.API.Controllers
             
         }
 
+        [HttpGet("test")]
+        public IActionResult Test()
+        {
+            return Ok(" AgencyContractController está funcionando!");
+        }
+
         [Authorize(Policy = "AdminOrManager")]
         [SwaggerOperation( Summary = "Gera um contrato Termo de comprometimento", Description = "Este endpoint gera o Termo de comprometimento.")]
         [SwaggerResponse(200, "Contrato gerado com sucesso", typeof(string))]
@@ -117,6 +123,8 @@ namespace Pregiato.API.Controllers
         [HttpPost("generate/Agency&PhotographyProductionContracts")]
         public async Task<IActionResult> GenerateAgencyPhotographyProductionContractsAsync(CreateContractModelRequest createContractModelRequest)
         {
+
+
             var model = await _modelRepository.GetModelByCriteriaAsync(createContractModelRequest.ModelIdentification);
 
             if (model == null)
