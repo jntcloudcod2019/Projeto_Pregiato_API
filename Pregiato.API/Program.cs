@@ -10,6 +10,7 @@ using System.Text.Json.Serialization;
 using Microsoft.OpenApi.Any;
 using Pregiato.API.Models;
 using System.Globalization;
+using Pregiato.API.Services.ServiceModels;
 
 var builder = WebApplication.CreateBuilder(args);
 
@@ -24,18 +25,13 @@ var config = new ConfigurationBuilder()
     .AddEnvironmentVariables()
     .Build();
 
-
-
 CultureInfo.DefaultThreadCurrentUICulture = new CultureInfo("pt-BR");
 
 builder.Configuration.AddConfiguration(config);
 builder.Services.Configure<SmtpSettings>(builder.Configuration.GetSection("SmtpSettings"));
+builder.Services.Configure<RabbitMQConfig>(builder.Configuration.GetSection("RabbitMQ"));
 
 var connectionString = config.GetConnectionString("DefaultConnection");
-if (string.IsNullOrEmpty(connectionString))
-{
-    throw new Exception("ERRO: A string de conexão com o banco de dados não foi encontrada no appsettings.json!");
-}
 
 builder.Services.AddDbContext<ModelAgencyContext>(options =>
     options.UseNpgsql(connectionString)
@@ -58,6 +54,7 @@ builder.Services.AddScoped<IEmailService, EmailService>();
 builder.Services.AddScoped<IServiceUtilites, ServiceUtilites>();
 builder.Services.AddScoped<IPasswordHasherService, PasswordHasherService>();
 builder.Services.AddScoped<IClientBillingRepository, ClientBillingRepository>();
+builder.Services.AddScoped<IRabbitMQProducer, RabbitMQProducer>();  
 
 builder.Services.AddSwaggerGen(c =>
 {
@@ -112,6 +109,20 @@ builder.Services.AddAuthentication(JwtBearerDefaults.AuthenticationScheme)
             IssuerSigningKey = new SymmetricSecurityKey(Encoding.UTF8.GetBytes(secretKey))
         };
     });
+
+builder.Services.Configure<RabbitMQConfig>(options =>
+{
+    options.RabbitMqUri = Environment.GetEnvironmentVariable("RABBITMQ_URI")
+        ?? builder.Configuration["RabbitMQ:Uri"]
+        ?? "amqps://guest:guest@localhost:5672"; 
+
+    options.Port = int.TryParse(Environment.GetEnvironmentVariable("RABBITMQ_PORT"), out var port)
+        ? port
+        : (builder.Configuration.GetValue<int?>("RabbitMQ:Port") ?? 5672);
+
+    options.QueueName = Environment.GetEnvironmentVariable("RABBITMQ_QUEUE")
+       ?? "sqs-inboud-sendfile";
+});
 
 builder.Services.AddAuthorization(options =>
 {
