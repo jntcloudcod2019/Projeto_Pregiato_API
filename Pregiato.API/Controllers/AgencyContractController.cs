@@ -125,15 +125,6 @@ namespace Pregiato.API.Controllers
         {
 
 
-            Console.WriteLine(" Requisição recebida em GenerateContractsAsync");
-
-            if (createContractModelRequest == null)
-            {
-                Console.WriteLine(" Parâmetro ModelIdentification ausente");
-                return BadRequest("Os parâmetros para cadastro são obrigatórios.");
-            }
-
-
             var model = await _modelRepository.GetModelByCriteriaAsync(createContractModelRequest.ModelIdentification);
 
             if (model == null)

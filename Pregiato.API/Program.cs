@@ -10,7 +10,6 @@ using System.Text.Json.Serialization;
 using Microsoft.OpenApi.Any;
 using Pregiato.API.Models;
 using System.Globalization;
-using Pregiato.API.Services.ServiceModels;
 
 var builder = WebApplication.CreateBuilder(args);
 
@@ -31,7 +30,6 @@ CultureInfo.DefaultThreadCurrentUICulture = new CultureInfo("pt-BR");
 
 builder.Configuration.AddConfiguration(config);
 builder.Services.Configure<SmtpSettings>(builder.Configuration.GetSection("SmtpSettings"));
-builder.Services.Configure<AuthenctiSettings>(builder.Configuration.GetSection("AuthenticSettings"));
 
 var connectionString = config.GetConnectionString("DefaultConnection");
 if (string.IsNullOrEmpty(connectionString))
@@ -60,8 +58,6 @@ builder.Services.AddScoped<IEmailService, EmailService>();
 builder.Services.AddScoped<IServiceUtilites, ServiceUtilites>();
 builder.Services.AddScoped<IPasswordHasherService, PasswordHasherService>();
 builder.Services.AddScoped<IClientBillingRepository, ClientBillingRepository>();
-builder.Services.AddScoped<IAuthenticService, AuthenticService>();
-builder.Services.AddHttpClient<IAuthenticService, AuthenticService>();
 
 builder.Services.AddSwaggerGen(c =>
 {

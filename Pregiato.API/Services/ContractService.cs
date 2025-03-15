@@ -22,15 +22,13 @@ namespace Pregiato.API.Services
         private readonly IJwtService _jwtService;
         private readonly IPaymentService _paymentService;
         private readonly IConfiguration _configuration;
-        private readonly IAuthenticService _authenticService;   
 
         public ContractService(IContractRepository contractRepository,
                IModelRepository modelRepository,
                ModelAgencyContext context,
                IJwtService jwtService,
                IPaymentService paymentSerice,
-               IConfiguration configuration,
-               IAuthenticService authenticService)
+               IConfiguration configuration)
         {
             _contractRepository = contractRepository ?? throw new ArgumentNullException(nameof(context));
             _modelRepository = modelRepository;
@@ -38,7 +36,7 @@ namespace Pregiato.API.Services
             _jwtService = jwtService;
             _paymentService = paymentSerice;
             _configuration = configuration;
-            _authenticService = authenticService;   
+             
         }
 
         private static readonly string DefaultNomeEmpresa = "Pregiato Management";
@@ -207,7 +205,6 @@ namespace Pregiato.API.Services
                 await GenerateContractAsync(createContractModelRequest, model.IdModel, "Agency", AddSignatureToParameters(parameters, "Agency"))
             };
 
-            var uploadFileAuthentic = await _authenticService.UploadContractAsync(contracts, model.IdModel);
 
             return contracts;
         }
