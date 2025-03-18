@@ -10,6 +10,7 @@ using System.Text.Json;
 using SelectPdf;
 using System.Text;
 using System.Diagnostics.Contracts;
+using iText.Commons.Actions.Contexts;
 
 namespace Pregiato.API.Services
 {
@@ -160,6 +161,8 @@ namespace Pregiato.API.Services
 
             if (contractType == "Photography" || contractType == "PhotographyMinority")
             { var validationResult = await _paymentService.ValidatePayment(createContractModelRequest.Payment, contract); }
+
+            await _modelAgencyContext.SaveChangesAsync();
 
             return contract;
         }

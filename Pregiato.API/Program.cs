@@ -54,7 +54,7 @@ builder.Services.AddScoped<IEmailService, EmailService>();
 builder.Services.AddScoped<IServiceUtilites, ServiceUtilites>();
 builder.Services.AddScoped<IPasswordHasherService, PasswordHasherService>();
 builder.Services.AddScoped<IClientBillingRepository, ClientBillingRepository>();
-builder.Services.AddScoped<IRabbitMQProducer, RabbitMQProducer>();  
+builder.Services.AddSingleton<IRabbitMQProducer, RabbitMQProducer>();  
 
 builder.Services.AddSwaggerGen(c =>
 {

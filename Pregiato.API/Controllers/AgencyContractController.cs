@@ -118,7 +118,7 @@ namespace Pregiato.API.Controllers
             return Ok($"Termo de Concessão de direito de imagem para: {model.Name}, gerado com sucesso. Código da Proposta: {contract.CodProposta}.");
         }
 
-      //  [Authorize(Policy = "AdminOrManager")]
+        [Authorize(Policy = "AdminOrManager")]
         [SwaggerOperation("Processo de gerar contrato de Agencimaneto e Fotoprgrafia.")]
         [HttpPost("generate/Agency&PhotographyProductionContracts")]
         public async Task<IActionResult> GenerateAgencyPhotographyProductionContractsAsync(CreateContractModelRequest createContractModelRequest)
@@ -134,9 +134,6 @@ namespace Pregiato.API.Controllers
 
             List<ContractBase> contracts = await _contractService.GenerateAllContractsAsync(createContractModelRequest);
 
-            await _context.SaveChangesAsync();
-
-
             var response = new ContractGenerationResponse
             {
                 ContractName = $"Contrato de Agenciamento & Photography Production.",
@@ -146,8 +143,7 @@ namespace Pregiato.API.Controllers
                     CodProposta = c.CodProposta
                 }).ToList()
             };
-
-            
+         
             return Ok(response);
         }
 
@@ -214,8 +210,6 @@ namespace Pregiato.API.Controllers
                 return NotFound("Receipt not found.");
 
             return File(payment.Comprovante, "application/pdf", "payment_receipt.pdf");
-
         }
-
     }
 }

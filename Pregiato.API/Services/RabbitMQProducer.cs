@@ -56,6 +56,8 @@ public class RabbitMQProducer : IRabbitMQProducer
                 routingKey: _config.QueueName,
                 body: body
             );
+            channel.CloseAsync();
+            connection.CloseAsync();    
 
             return ($"[x] Enviado para '{_config.QueueName}': {jsonMessage}");
         }
