@@ -134,9 +134,6 @@ namespace Pregiato.API.Controllers
 
             List<ContractBase> contracts = await _contractService.GenerateAllContractsAsync(createContractModelRequest);
 
-            await _context.SaveChangesAsync();
-
-
             var response = new ContractGenerationResponse
             {
                 ContractName = $"Contrato de Agenciamento & Photography Production.",
@@ -146,8 +143,7 @@ namespace Pregiato.API.Controllers
                     CodProposta = c.CodProposta
                 }).ToList()
             };
-
-            
+         
             return Ok(response);
         }
 
@@ -194,7 +190,6 @@ namespace Pregiato.API.Controllers
             await request.File.CopyToAsync(memoryStream);
             payment.Comprovante = memoryStream.ToArray();
            
-            // Inclusão de dados na base sem o mapeamento feito EntityFramework na tabela. 
             _context.Entry(payment).Property(p => p.Comprovante).IsModified = true;
 
             await _context.SaveChangesAsync();
@@ -215,8 +210,6 @@ namespace Pregiato.API.Controllers
                 return NotFound("Receipt not found.");
 
             return File(payment.Comprovante, "application/pdf", "payment_receipt.pdf");
-
         }
-
     }
 }

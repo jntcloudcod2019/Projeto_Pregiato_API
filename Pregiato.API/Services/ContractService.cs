@@ -10,6 +10,7 @@ using System.Text.Json;
 using SelectPdf;
 using System.Text;
 using System.Diagnostics.Contracts;
+using iText.Commons.Actions.Contexts;
 
 namespace Pregiato.API.Services
 {
@@ -22,13 +23,15 @@ namespace Pregiato.API.Services
         private readonly IJwtService _jwtService;
         private readonly IPaymentService _paymentService;
         private readonly IConfiguration _configuration;
+        private readonly IRabbitMQProducer _rabbitmqProducer;   
 
         public ContractService(IContractRepository contractRepository,
                IModelRepository modelRepository,
                ModelAgencyContext context,
                IJwtService jwtService,
                IPaymentService paymentSerice,
-               IConfiguration configuration)
+               IConfiguration configuration,
+               IRabbitMQProducer rabbitMQProducer)
         {
             _contractRepository = contractRepository ?? throw new ArgumentNullException(nameof(context));
             _modelRepository = modelRepository;
@@ -36,6 +39,7 @@ namespace Pregiato.API.Services
             _jwtService = jwtService;
             _paymentService = paymentSerice;
             _configuration = configuration;
+            _rabbitmqProducer = rabbitMQProducer;   
              
         }
 
@@ -158,6 +162,8 @@ namespace Pregiato.API.Services
             if (contractType == "Photography" || contractType == "PhotographyMinority")
             { var validationResult = await _paymentService.ValidatePayment(createContractModelRequest.Payment, contract); }
 
+            await _modelAgencyContext.SaveChangesAsync();
+
             return contract;
         }
 
@@ -205,6 +211,7 @@ namespace Pregiato.API.Services
                 await GenerateContractAsync(createContractModelRequest, model.IdModel, "Agency", AddSignatureToParameters(parameters, "Agency"))
             };
 
+            await _rabbitmqProducer.SendMensage(contracts, model.CPF);
 
             return contracts;
         }
