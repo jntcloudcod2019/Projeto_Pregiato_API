@@ -5,6 +5,10 @@ using Microsoft.EntityFrameworkCore;
 using Swashbuckle.AspNetCore.Annotations;
 using Pregiato.API.Data;
 using Microsoft.AspNetCore.Authorization;
+using Pregiato.API.Response;
+using Pregiato.API.Models;
+using Pregiato.API.Services;
+using System.Diagnostics.Contracts;
 
 namespace Pregiato.API.Controllers
 {
@@ -15,17 +19,27 @@ namespace Pregiato.API.Controllers
         private readonly IContractService _contractService;
         private readonly IModelRepository _modelRepository;
         private readonly IPaymentService _paymentService;
+        private readonly IContractRepository _contractRepository;    
         private readonly ModelAgencyContext _context;     
         public AgencyContractController(
             IContractService contractService,
             IModelRepository modelRepository,
             ModelAgencyContext context,
-            IPaymentService paymentService)
+            IPaymentService paymentService,
+            IContractRepository contractRepository)
         {
             _contractService = contractService ?? throw new ArgumentNullException(nameof(contractService));
             _modelRepository = modelRepository ?? throw new ArgumentNullException(nameof(modelRepository));
             _context = context ?? throw new ArgumentNullException(nameof(context));
             _paymentService = paymentService;
+            _contractRepository = contractRepository; 
+            
+        }
+
+        [HttpGet("test")]
+        public IActionResult Test()
+        {
+            return Ok(" AgencyContractController está funcionando!");
         }
 
         [Authorize(Policy = "AdminOrManager")]
@@ -68,84 +82,6 @@ namespace Pregiato.API.Controllers
             return Ok($"Termo de comprometimento para: {model.Name}, gerado com sucesso. Código da Proposta: {contract.CodProposta}.");
         }
 
-        [Authorize(Policy = "AdminOrManager")]
-        [SwaggerResponse(200, "Contrato gerado com sucesso", typeof(string))]
-        [SwaggerResponse(400, "Requisição inválida")]
-        [SwaggerResponse(404, "Modelo não encontrado")]
-        [SwaggerOperation("Processo de gerar o contrato: CONTRATO DE PRODUÇÃO FOTOGRÁFICA E ACESSO A PLATAFORMA MY PREGIATO")]
-        [HttpPost("generate/photographyProductionContract")]
-        public async Task<IActionResult> GeneratePhotographyProductionContract
-        ([FromBody] PaymentRequest paymentRequest,[FromQuery] string queryModel)
-        {
-            var model = await _modelRepository.GetModelByCriteriaAsync(queryModel);
-
-            if (model == null)
-            {
-                return NotFound("Modelo não encontrado.");
-            }
-
-            var parameters = new Dictionary<string, string>
-            {
-                    {"Nome-Modelo", model.Name },
-                    {"CPF-Modelo", model.CPF },
-                    {"RG-Modelo", model.RG },
-                    {"Endereço-Modelo", model.Address},
-                    {"Numero-Modelo",model.NumberAddress},
-                    {"Bairro-Modelo", model.Neighborhood},
-                    {"Cidade-Modelo", model.City},
-                    {"CEP-Modelo", model.PostalCode},
-                    {"Complemento-Modelo", model.Complement},
-                    {"Telefone-Principal", model.TelefonePrincipal},
-                    {"Telefone-Secundário", model.TelefoneSecundario},
-            };
-
-
-            var contract = await _contractService.GenerateContractPhotographyProduction(paymentRequest, queryModel);
-
-            await _context.SaveChangesAsync();
-
-            return Ok($"Contrato de PFPMP para {model.Name}, gerado com sucesso. Código da Proposta: {contract.CodProposta}.");
-        }
-
-        [Authorize(Policy = "AdminOrManager")]
-        [SwaggerResponse(200, "Contrato gerado com sucesso", typeof(string))]
-        [SwaggerResponse(400, "Requisição inválida")]
-        [SwaggerResponse(404, "Modelo não encontrado")]
-        [SwaggerOperation("Processo de gerar o contrato: CONTRATO DE AGENCIAMENTO")]
-        [HttpPost("generate/agencyContract")]
-        public async Task<IActionResult> GenerateAgencyContract
-        ([FromQuery] string queryModel)
-        {
-            var model = await _modelRepository.GetModelByCriteriaAsync(queryModel);
-
-            if (model == null)
-            {
-                return NotFound("Modelo não encontrado.");
-            }
-
-            var parameters = new Dictionary<string, string>
-            {
-                    {"Nome-Modelo", model.Name },
-                    {"CPF-Modelo", model.CPF },
-                    {"RG-Modelo", model.RG },
-                    {"Endereço-Modelo", model.Address},
-                    {"Numero-Modelo",model.NumberAddress},
-                    {"Bairro-Modelo", model.Neighborhood},
-                    {"Cidade-Modelo", model.City},
-                    {"CEP-Modelo", model.PostalCode},
-                    {"Complemento-Modelo", model.Complement},
-                    {"Telefone-Principal", model.TelefonePrincipal},
-                    {"Telefone-Secundário", model.TelefoneSecundario},
-            };
-
-            var contract = await _contractService.GenerateContractAgency(queryModel);
-
-            await _context.SaveChangesAsync();
-
-            return Ok($"Contrato de PFPMP para {model.Name}, gerado com sucesso. Código da Proposta: {contract.CodProposta}.");
-
-        }
-
 
         [Authorize(Policy = "AdminOrManager")]
         [SwaggerResponse(200, "Contrato gerado com sucesso", typeof(string))]
@@ -182,64 +118,60 @@ namespace Pregiato.API.Controllers
             return Ok($"Termo de Concessão de direito de imagem para: {model.Name}, gerado com sucesso. Código da Proposta: {contract.CodProposta}.");
         }
 
+        [Authorize(Policy = "AdminOrManager")]
+        [SwaggerOperation("Processo de gerar contrato de Agencimaneto e Fotoprgrafia.")]
+        [HttpPost("generate/Agency&PhotographyProductionContracts")]
+        public async Task<IActionResult> GenerateAgencyPhotographyProductionContractsAsync(CreateContractModelRequest createContractModelRequest)
+        {
 
-        //[SwaggerOperation("Processo de gerar todos os contratos.")]
-        //[HttpPost("generate/allContracts")]
-        //public async Task<IActionResult> GenerateAllContractsAsync([FromBody] PaymentRequest paymentRequest, [FromQuery] string query)
-        //{
-        //    var model = await _modelRepository.GetModelByCriteriaAsync(query);
 
-        //    if (model == null)
-        //    {
-        //        return NotFound("Modelo não encontrado.");
-        //    }
+            var model = await _modelRepository.GetModelByCriteriaAsync(createContractModelRequest.ModelIdentification);
 
-        //    var parameters = new Dictionary<string, string>
-        //    {
-        //            {"Nome-Modelo", model.Name },
-        //            {"CPF-Modelo", model.CPF },
-        //            {"RG-Modelo", model.RG },
-        //            {"Endereço-Modelo", model.Address},
-        //            {"Numero-Modelo",model.NumberAddress},
-        //            {"Bairro-Modelo", model.Neighborhood},
-        //            {"Cidade-Modelo", model.City},
-        //            {"CEP-Modelo", model.PostalCode},
-        //            {"Complemento-Modelo", model.Complement},
-        //            {"Telefone-Principal", model.TelefonePrincipal},
-        //            {"Telefone-Secundário", model.TelefoneSecundario},
-        //            {"Valor-Contrato",paymentRequest.Valor.ToString("C")},
-        //            {"Forma-Pagamento", paymentRequest.MetodoPagamento}
-        //    };
+            if (model == null)
+            {
+                return NotFound("Modelo não encontrado.");
+            }
 
-        //    var contracts = await _contractService.GenerateAllContractsAsync(
-        //     paymentRequest,
-        //     idModel: model.IdModel.ToString(),
-        //     cpf: model.CPF,
-        //     rg: model.RG
-        //   );
+            List<ContractBase> contracts = await _contractService.GenerateAllContractsAsync(createContractModelRequest);
 
-        //    await _context.SaveChangesAsync();
-        //    return Ok(contracts);
-        //}
+            var response = new ContractGenerationResponse
+            {
+                ContractName = $"Contrato de Agenciamento & Photography Production.",
+                Message = $"Contrato para {model.Name}, gerados com sucesso!",
+                Contracts = contracts.Select(c => new ContractSummary
+                {
+                    CodProposta = c.CodProposta
+                }).ToList()
+            };
+         
+            return Ok(response);
+        }
 
         [Authorize(Policy = "AdminOrManagerOrModel")]
         [HttpGet("download-contract")]
-        public async Task<IActionResult> DownloadContract([FromQuery] Guid? modelId,[FromQuery] Guid? contractId,[FromQuery] int codProposta)
+        public async Task<IActionResult> DownloadContractAsync(int proposalCode)
         {
-            var contract = await _context.Contracts
-                .FirstOrDefaultAsync(c =>
-                    (modelId != null && c.ModelId == modelId) ||
-                    (contractId != null && c.ContractId == contractId) ||
-                    (codProposta != null && c.CodProposta == codProposta));
+
+            var contract = await _contractRepository.DownloadContractAsync(proposalCode);
 
             if (contract == null)
             {
                 return NotFound("Contrato não encontrado.");
             }
 
-            var pdfBytes = contract.Content;
+            string contentString = await _contractService.ConvertBytesToString(contract.Content);
 
-            return File(pdfBytes, "application/pdf", contract.ContractFilePath);
+            byte[] pdfBytes;
+            try
+            {
+                pdfBytes =  await _contractService.ExtractBytesFromString(contentString);
+            }
+            catch (Exception ex)
+            {
+                return BadRequest($"Erro ao processar o conteúdo do contrato: {ex.Message}");
+            }
+
+            return File(pdfBytes, "application/pdf", "contract.pdf");
         }
 
         [Authorize(Policy = "AdminOrManager")]
@@ -258,7 +190,6 @@ namespace Pregiato.API.Controllers
             await request.File.CopyToAsync(memoryStream);
             payment.Comprovante = memoryStream.ToArray();
            
-            // Inclusão de dados na base sem o mapeamento feito EntityFramework na tabela. 
             _context.Entry(payment).Property(p => p.Comprovante).IsModified = true;
 
             await _context.SaveChangesAsync();
@@ -279,8 +210,6 @@ namespace Pregiato.API.Controllers
                 return NotFound("Receipt not found.");
 
             return File(payment.Comprovante, "application/pdf", "payment_receipt.pdf");
-
         }
-
     }
 }

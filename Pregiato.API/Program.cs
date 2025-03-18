@@ -9,13 +9,14 @@ using Pregiato.API.Services;
 using System.Text.Json.Serialization;
 using Microsoft.OpenApi.Any;
 using Pregiato.API.Models;
+using System.Globalization;
+using Pregiato.API.Services.ServiceModels;
 
 var builder = WebApplication.CreateBuilder(args);
 
-
 builder.Environment.EnvironmentName = Environments.Production;
-Console.WriteLine($" Ambiente Atual: {builder.Environment.EnvironmentName}");
 
+Console.WriteLine($" Ambiente Atual: {builder.Environment.EnvironmentName}");
 
 var config = new ConfigurationBuilder()
     .SetBasePath(Directory.GetCurrentDirectory())
@@ -24,37 +25,36 @@ var config = new ConfigurationBuilder()
     .AddEnvironmentVariables()
     .Build();
 
-builder.Configuration.AddConfiguration(config);
+CultureInfo.DefaultThreadCurrentUICulture = new CultureInfo("pt-BR");
 
+builder.Configuration.AddConfiguration(config);
+builder.Services.Configure<SmtpSettings>(builder.Configuration.GetSection("SmtpSettings"));
+builder.Services.Configure<RabbitMQConfig>(builder.Configuration.GetSection("RabbitMQ"));
 
 var connectionString = config.GetConnectionString("DefaultConnection");
-if (string.IsNullOrEmpty(connectionString))
-{
-    throw new Exception("ERRO: A string de conexão com o banco de dados não foi encontrada no appsettings.json!");
-}
 
 builder.Services.AddDbContext<ModelAgencyContext>(options =>
     options.UseNpgsql(connectionString)
            .EnableSensitiveDataLogging(builder.Environment.IsDevelopment())
            .LogTo(Console.WriteLine, LogLevel.Information));
 
-
+builder.Services.AddHttpContextAccessor();
+builder.Services.AddEndpointsApiExplorer();
 builder.Services.AddAutoMapper(AppDomain.CurrentDomain.GetAssemblies());
-builder.Services.AddScoped<IClientRepository, ClientRepository>();
-builder.Services.AddScoped<IModelRepository, ModelsRepository>();
-builder.Services.AddScoped<IClientBillingRepository, ClientBillingRepository>();
 builder.Services.AddScoped<IJobRepository, JobRepository>();
 builder.Services.AddScoped<IUserRepository, UserRepository>();
 builder.Services.AddScoped<IUserService, UserService>();
-builder.Services.AddScoped<IPaymentService, PaymentService>();
 builder.Services.AddScoped<IJwtService, JwtService>();
+builder.Services.AddScoped<IPaymentService, PaymentService>();
+builder.Services.AddScoped<IClientRepository, ClientRepository>();
+builder.Services.AddScoped<IModelRepository, ModelsRepository>();
 builder.Services.AddScoped<IContractService, ContractService>();
 builder.Services.AddScoped<IContractRepository, ContractRepository>();
-builder.Services.AddScoped<DigitalSignatureService>();
+builder.Services.AddScoped<IEmailService, EmailService>();
+builder.Services.AddScoped<IServiceUtilites, ServiceUtilites>();
 builder.Services.AddScoped<IPasswordHasherService, PasswordHasherService>();
-builder.Services.AddHttpContextAccessor();
-builder.Services.AddEndpointsApiExplorer();
-
+builder.Services.AddScoped<IClientBillingRepository, ClientBillingRepository>();
+builder.Services.AddSingleton<IRabbitMQProducer, RabbitMQProducer>();  
 
 builder.Services.AddSwaggerGen(c =>
 {
@@ -92,13 +92,8 @@ builder.Services.AddSwaggerGen(c =>
     c.AddSecurityRequirement(securityRequirement);
 });
 
-
 var jwtSettings = builder.Configuration.GetSection("JwtSettings");
 var secretKey = jwtSettings["SecretKey"];
-if (string.IsNullOrEmpty(secretKey))
-{
-    throw new Exception("ERRO: A chave secreta do JWT não foi encontrada no appsettings.json!");
-}
 
 builder.Services.AddAuthentication(JwtBearerDefaults.AuthenticationScheme)
     .AddJwtBearer(options =>
@@ -114,6 +109,20 @@ builder.Services.AddAuthentication(JwtBearerDefaults.AuthenticationScheme)
             IssuerSigningKey = new SymmetricSecurityKey(Encoding.UTF8.GetBytes(secretKey))
         };
     });
+
+builder.Services.Configure<RabbitMQConfig>(options =>
+{
+    options.RabbitMqUri = Environment.GetEnvironmentVariable("RABBITMQ_URI")
+        ?? builder.Configuration["RabbitMQ:Uri"]
+        ?? "amqps://guest:guest@localhost:5672"; 
+
+    options.Port = int.TryParse(Environment.GetEnvironmentVariable("RABBITMQ_PORT"), out var port)
+        ? port
+        : (builder.Configuration.GetValue<int?>("RabbitMQ:Port") ?? 5672);
+
+    options.QueueName = Environment.GetEnvironmentVariable("RABBITMQ_QUEUE")
+       ?? "sqs-inboud-sendfile";
+});
 
 builder.Services.AddAuthorization(options =>
 {
@@ -138,26 +147,27 @@ builder.Services.AddCors(options =>
         });
 });
 
-
 builder.Services.AddControllers()
     .AddJsonOptions(options =>
     {
-        options.JsonSerializerOptions.PropertyNamingPolicy = null;
-        options.JsonSerializerOptions.DefaultIgnoreCondition = JsonIgnoreCondition.WhenWritingNull;
-        options.JsonSerializerOptions.Converters.Add(new JsonStringEnumConverter());
-        options.JsonSerializerOptions.Converters.Add(new JsonDateTimeConverter("dd-MM-yyyy", "yyyy-MM-dd", "MM/dd/yyyy", "dd/MM/yyyy"));
-        options.JsonSerializerOptions.Converters.Add(new MetodoPagamentoConverter());
-        options.JsonSerializerOptions.IgnoreReadOnlyProperties = true;
         options.JsonSerializerOptions.WriteIndented = true;
+        options.JsonSerializerOptions.PropertyNamingPolicy = null;              
+        options.JsonSerializerOptions.IgnoreReadOnlyProperties = true;
+        options.JsonSerializerOptions.Converters.Add(new DecimalJsonConverter());
+        options.JsonSerializerOptions.Converters.Add(new JsonStringEnumConverter());
+        options.JsonSerializerOptions.Converters.Add(new MetodoPagamentoConverter());
+        options.JsonSerializerOptions.DefaultIgnoreCondition = JsonIgnoreCondition.WhenWritingNull;
+        options.JsonSerializerOptions.Converters.Add(new JsonDateTimeConverter("dd-MM-yyyy", "yyyy-MM-dd", "MM/dd/yyyy", "dd/MM/yyyy"));
     });
 
 builder.Services.AddAuthorization();
-
-
 builder.WebHost.UseUrls("http://+:8080");
+builder.Logging.ClearProviders();
+builder.Logging.AddConsole();
+builder.Logging.AddDebug();
+builder.Logging.SetMinimumLevel(LogLevel.Trace);
 
 var app = builder.Build();
-
 
 app.UseSwagger();
 app.UseSwaggerUI(c =>
@@ -169,6 +179,6 @@ app.UseCors("AllowAllOrigins");
 app.UseRouting(); 
 app.UseAuthentication();
 app.UseAuthorization();
-
 app.MapControllers();
 app.Run();
+

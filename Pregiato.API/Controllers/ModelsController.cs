@@ -2,35 +2,44 @@
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.EntityFrameworkCore;
-using Newtonsoft.Json;
-using Newtonsoft.Json.Linq;
 using Pregiato.API.Data;
 using Pregiato.API.Interface;
 using Pregiato.API.Models;
 using Pregiato.API.Requests;
 using Pregiato.API.Services;
 using Swashbuckle.AspNetCore.Annotations;
-using System.Diagnostics.Contracts;
 using System.IdentityModel.Tokens.Jwt;
 using System.Text.Json;
 namespace Pregiato.API.Controllers
 {
     [ApiController]
     [Route("api/[controller]")]
-    public class ModdelsController : ControllerBase
+    public class ModelsController : ControllerBase
     {
         private readonly IModelRepository _modelRepository;
         private readonly IContractService _contractService;
         private readonly IJwtService _jwtService;   
+        private readonly IUserService _userService; 
+        private readonly IServiceUtilites _serviceUtilites; 
         private readonly ModelAgencyContext _agencyContext;
 
-        public ModdelsController(IModelRepository modelRepository, ModelAgencyContext agencyContext, IContractService contractService, IJwtService jwtService)
+        public ModelsController
+              (IModelRepository modelRepository, 
+               ModelAgencyContext agencyContext, 
+               IContractService contractService,
+               IJwtService jwtService,
+               IUserService userService,
+               IServiceUtilites serviceUtilites)
         {
             _modelRepository = modelRepository ?? throw new ArgumentNullException(nameof(modelRepository));
             _agencyContext = agencyContext ?? throw new ArgumentNullException(nameof(agencyContext));
             _contractService = contractService; 
-            _jwtService = jwtService;
+            _jwtService = jwtService; ;
+            _userService = userService; 
+            _serviceUtilites = serviceUtilites; 
+
         }
+
         [Authorize(Policy = "AdminOrManager")]
         [HttpGet("GetAllModels")]
         [SwaggerOperation("Retorna todos os modelos cadastrados.")]
@@ -51,34 +60,31 @@ namespace Pregiato.API.Controllers
                 return BadRequest(ModelState);
             }
 
-            var dnaJson = JsonDocument.Parse(System.Text.Json.JsonSerializer.Serialize(new
-            {
-                physicalCharacteristics = createModelRequest.PhysicalCharacteristics,
-                appearance = createModelRequest.Appearance,
-                additionalAttributes = createModelRequest.AdditionalAttributes
-            }));
-
             var model = new Model
             {
                 Name = createModelRequest.Name,
                 CPF = createModelRequest.CPF,
                 RG = createModelRequest.RG,
+                DateOfBirth = createModelRequest.DateOfBirth,
+                Age = await _serviceUtilites.CalculateAge(createModelRequest.DateOfBirth ?? DateTime.MinValue),
                 Email = createModelRequest.Email,
                 PostalCode = createModelRequest.PostalCode,
                 Address = createModelRequest.Address,
-                NumberAddress = createModelRequest.NumberAddress,   
+                NumberAddress = createModelRequest.NumberAddress,
                 Complement = createModelRequest.Complement,
                 BankAccount = createModelRequest.BankAccount,
-                PasswordHash = createModelRequest.PasswordHash,
                 Neighborhood = createModelRequest.Neighborhood,
                 City = createModelRequest.City,
-                DNA = dnaJson,
-                TelefonePrincipal = createModelRequest.TelefonePrincipal,   
+                UF = createModelRequest.UF,
+                TelefonePrincipal = createModelRequest.TelefonePrincipal,
                 TelefoneSecundario = createModelRequest.TelefoneSecundario,
-
             };
 
+      
             await _modelRepository.AddModelAsync(model);
+
+            await _userService.RegisterUserModel(createModelRequest.Name.Split(' ')[0], createModelRequest.Email);
+
             return Ok($"Modelo {model.Name}, criado com sucesso!");
         }
 
@@ -176,7 +182,7 @@ namespace Pregiato.API.Controllers
 
         [Authorize(Policy = "AdminOrManagerOrModel")]
         [HttpPut("updateResgiterModel/{query}")]
-        public async Task<IActionResult> UpdateRegisterModel(string query , [FromBody] CreateModelRequest createModelRequest)
+        public async Task<IActionResult> UpdateRegisterModel(string query , [FromBody] UpdateModelRequest updateModelRequest)
         {
             var model = await _modelRepository.GetModelByCriteriaAsync(query);
             if (model == null)
@@ -186,32 +192,31 @@ namespace Pregiato.API.Controllers
 
             var dnaJson = JsonDocument.Parse(System.Text.Json.JsonSerializer.Serialize(new
             {
-                physicalCharacteristics = createModelRequest.PhysicalCharacteristics,
-                appearance = createModelRequest.Appearance,
-                additionalAttributes = createModelRequest.AdditionalAttributes
+                physicalCharacteristics = updateModelRequest.PhysicalCharacteristics,
+                appearance = updateModelRequest.Appearance,
+                additionalAttributes = updateModelRequest.AdditionalAttributes
             }));
 
              model = new Model
             {
-                Name = createModelRequest.Name,
-                CPF = createModelRequest.CPF,
-                RG = createModelRequest.RG,
-                Email = createModelRequest.Email,
-                PostalCode = createModelRequest.PostalCode,
-                Address = createModelRequest.Address,
-                NumberAddress = createModelRequest.NumberAddress,
-                Complement = createModelRequest.Complement,
-                BankAccount = createModelRequest.BankAccount,
-                PasswordHash = createModelRequest.PasswordHash,
-                Neighborhood = createModelRequest.Neighborhood,
-                City = createModelRequest.City,
+                Name = updateModelRequest.Name,
+                CPF = updateModelRequest.CPF,
+                RG = updateModelRequest.RG,
+                DateOfBirth = updateModelRequest.DateOfBirth,
+                Email =updateModelRequest.Email,
+                PostalCode = updateModelRequest.PostalCode,
+                Address = updateModelRequest.Address,
+                NumberAddress =updateModelRequest.NumberAddress,
+                Complement = updateModelRequest.Complement,
+                BankAccount = updateModelRequest.BankAccount,
+                Neighborhood = updateModelRequest.Neighborhood,
+                City = updateModelRequest.City,
+                TelefonePrincipal = updateModelRequest.TelefonePrincipal,
+                TelefoneSecundario = updateModelRequest.TelefoneSecundario,
                 DNA = dnaJson,
-                TelefonePrincipal = createModelRequest.TelefonePrincipal,
-                TelefoneSecundario = createModelRequest.TelefoneSecundario,
-
             };
                                
-           _modelRepository.UpdateModelAsync(model);    
+           await _modelRepository.UpdateModelAsync(model);
 
             return NoContent();
         }
@@ -262,12 +267,12 @@ namespace Pregiato.API.Controllers
                 throw new Exception($"Nenhum modelo encontrado para o usuário: {username}");
             }
             var contracts = await _agencyContext.Contracts
-                 .Where(c => c.ModelId == modelSearch.IdModel) // Filtra pelos contratos do modelo
+                 .Where(c => c.ModelId == modelSearch.IdModel) 
                  .Select(c => new
                  {
                      c.ModelId,
                      c.ContractFilePath,
-                     c.Content // Apenas os campos necessários
+                     c.Content 
                  })
                  .ToListAsync();
             var listContracts = contracts.Select(c =>

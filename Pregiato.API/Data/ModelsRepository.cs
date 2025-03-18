@@ -14,7 +14,12 @@ namespace Pregiato.API.Data
 
         public async Task AddModelAsync(Model model)
         {
-           _context.Model.Add(model);  
+            if (model.DateOfBirth.HasValue)
+            {
+                model.DateOfBirth = DateTime.SpecifyKind(model.DateOfBirth.Value, DateTimeKind.Utc);
+            }
+
+            _context.Model.Add(model);  
             await _context.SaveChangesAsync();  
         }
 
