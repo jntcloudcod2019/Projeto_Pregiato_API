@@ -228,7 +228,6 @@ namespace Pregiato.API.Controllers
                 eyeAttributes = updateModelRequest.EyeAttributes,
                 hairAttributes = updateModelRequest.HairAttributes ,
                 physicalCharacteristics = updateModelRequest.PhysicalCharacteristics,
-
                 additionalAttributes = updateModelRequest.AdditionalAttributes,
 
 
