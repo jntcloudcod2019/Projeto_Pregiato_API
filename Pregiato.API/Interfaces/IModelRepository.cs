@@ -1,4 +1,5 @@
 ﻿using Pregiato.API.Models;
+using Pregiato.API.Requests;
 
 namespace Pregiato.API.Interface
 {
@@ -11,5 +12,6 @@ namespace Pregiato.API.Interface
         Task DeleteModelAsync(Guid id);
         Task<Model?> GetModelByCriteriaAsync(string query);
         Task<Model> GetModelAllAsync(string? idModel, string? cpf, string? rg);
+        Task<Model> ModelExistsAsync(CreateModelRequest inputModel);
     }
 }

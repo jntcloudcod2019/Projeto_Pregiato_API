@@ -1,25 +1,20 @@
 ﻿using Microsoft.Extensions.Options;
 using Pregiato.API.Interface;
 using Pregiato.API.Models;
-using Pregiato.API.Requests;
 using Pregiato.API.Services.ServiceModels;
 using RabbitMQ.Client;
-using System;
 using System.Text;
 using System.Text.Json;
-using System.Threading.Tasks;
 
 public class RabbitMQProducer : IRabbitMQProducer
 {
     private readonly RabbitMQConfig _config;
     private readonly string _rabbitMqUri;
-
     public RabbitMQProducer(IOptions<RabbitMQConfig> options)
     {
         _config = options.Value;
         _rabbitMqUri = _config.RabbitMqUri; 
     }
-
     public async Task<string> SendMensage(List<ContractBase> contracts, string modelDocument)
     {
         try
