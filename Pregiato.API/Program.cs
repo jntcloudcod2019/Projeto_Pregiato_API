@@ -11,12 +11,11 @@ using Microsoft.OpenApi.Any;
 using Pregiato.API.Models;
 using System.Globalization;
 using Pregiato.API.Services.ServiceModels;
+using Pregiato.API.Interfaces;
 
 var builder = WebApplication.CreateBuilder(args);
 
 builder.Environment.EnvironmentName = Environments.Production;
-
-Console.WriteLine($" Ambiente Atual: {builder.Environment.EnvironmentName}");
 
 var config = new ConfigurationBuilder()
     .SetBasePath(Directory.GetCurrentDirectory())
@@ -28,10 +27,10 @@ var config = new ConfigurationBuilder()
 CultureInfo.DefaultThreadCurrentUICulture = new CultureInfo("pt-BR");
 
 builder.Configuration.AddConfiguration(config);
-builder.Services.Configure<SmtpSettings>(builder.Configuration.GetSection("SmtpSettings"));
+
 builder.Services.Configure<RabbitMQConfig>(builder.Configuration.GetSection("RabbitMQ"));
 
-var connectionString = config.GetConnectionString("DefaultConnection");
+var connectionString = Environment.GetEnvironmentVariable("SECRET_KEY_DATABASE", EnvironmentVariableTarget.Machine);
 
 builder.Services.AddDbContext<ModelAgencyContext>(options =>
     options.UseNpgsql(connectionString)
@@ -50,7 +49,8 @@ builder.Services.AddScoped<IClientRepository, ClientRepository>();
 builder.Services.AddScoped<IModelRepository, ModelsRepository>();
 builder.Services.AddScoped<IContractService, ContractService>();
 builder.Services.AddScoped<IContractRepository, ContractRepository>();
-builder.Services.AddScoped<IEmailService, EmailService>();
+builder.Services.AddSingleton<IEnvironmentVariableProviderEmail, EnvironmentVariableProviderEmail>();
+builder.Services.AddTransient<IEmailService, EmailService>();
 builder.Services.AddScoped<IServiceUtilites, ServiceUtilites>();
 builder.Services.AddScoped<IPasswordHasherService, PasswordHasherService>();
 builder.Services.AddScoped<IClientBillingRepository, ClientBillingRepository>();
@@ -92,8 +92,7 @@ builder.Services.AddSwaggerGen(c =>
     c.AddSecurityRequirement(securityRequirement);
 });
 
-var jwtSettings = builder.Configuration.GetSection("JwtSettings");
-var secretKey = jwtSettings["SecretKey"];
+var secretKey = Environment.GetEnvironmentVariable("SECRETKEY_TOKEN", EnvironmentVariableTarget.Machine);
 
 builder.Services.AddAuthentication(JwtBearerDefaults.AuthenticationScheme)
     .AddJwtBearer(options =>
@@ -104,8 +103,8 @@ builder.Services.AddAuthentication(JwtBearerDefaults.AuthenticationScheme)
             ValidateAudience = true,
             ValidateLifetime = true,
             ValidateIssuerSigningKey = true,
-            ValidIssuer = jwtSettings["Issuer"],
-            ValidAudience = jwtSettings["Audience"],
+            ValidIssuer = Environment.GetEnvironmentVariable("ISSUER_JWT", EnvironmentVariableTarget.Machine),
+            ValidAudience = Environment.GetEnvironmentVariable("AUDIENCE_JWT", EnvironmentVariableTarget.Machine),
             IssuerSigningKey = new SymmetricSecurityKey(Encoding.UTF8.GetBytes(secretKey))
         };
     });

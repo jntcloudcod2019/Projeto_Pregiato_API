@@ -7,9 +7,6 @@ using Pregiato.API.Data;
 using Microsoft.AspNetCore.Authorization;
 using Pregiato.API.Response;
 using Pregiato.API.Models;
-using Pregiato.API.Services;
-using System.Diagnostics.Contracts;
-
 namespace Pregiato.API.Controllers
 {
     [ApiController]
@@ -34,13 +31,7 @@ namespace Pregiato.API.Controllers
             _paymentService = paymentService;
             _contractRepository = contractRepository; 
             
-        }
-
-        [HttpGet("test")]
-        public IActionResult Test()
-        {
-            return Ok(" AgencyContractController está funcionando!");
-        }
+        } 
 
         [Authorize(Policy = "AdminOrManager")]
         [SwaggerOperation( Summary = "Gera um contrato Termo de comprometimento", Description = "Este endpoint gera o Termo de comprometimento.")]
@@ -118,7 +109,7 @@ namespace Pregiato.API.Controllers
             return Ok($"Termo de Concessão de direito de imagem para: {model.Name}, gerado com sucesso. Código da Proposta: {contract.CodProposta}.");
         }
 
-        [Authorize(Policy = "AdminOrManager")]
+        //[Authorize(Policy = "AdminOrManager")]
         [SwaggerOperation("Processo de gerar contrato de Agencimaneto e Fotoprgrafia.")]
         [HttpPost("generate/Agency&PhotographyProductionContracts")]
         public async Task<IActionResult> GenerateAgencyPhotographyProductionContractsAsync(CreateContractModelRequest createContractModelRequest)
@@ -137,7 +128,7 @@ namespace Pregiato.API.Controllers
             var response = new ContractGenerationResponse
             {
                 ContractName = $"Contrato de Agenciamento & Photography Production.",
-                Message = $"Contrato para {model.Name}, gerados com sucesso!",
+                Message = $"Contrato para {model.Name}, emitidos com sucesso!",
                 Contracts = contracts.Select(c => new ContractSummary
                 {
                     CodProposta = c.CodProposta

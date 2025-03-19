@@ -1,6 +1,7 @@
 ﻿using Microsoft.EntityFrameworkCore;
 using Pregiato.API.Interface;
 using Pregiato.API.Models;
+using Pregiato.API.Requests;
 
 namespace Pregiato.API.Data
 {
@@ -66,6 +67,16 @@ namespace Pregiato.API.Data
                 (cpf != null && m.CPF == cpf) ||
                 (rg != null && m.RG == rg));       
         }
-    }
+        public async Task<Model> ModelExistsAsync(CreateModelRequest inputModel)
+        {
 
+            var existingModel = await _context.Model
+                .FirstOrDefaultAsync(m =>
+                    m.CPF == inputModel.CPF &&
+                    m.Name == inputModel.Name &&
+                    m.RG == inputModel.RG &&
+                    m.Email == inputModel.Email);       
+            return existingModel;
+        }
+    }
 }

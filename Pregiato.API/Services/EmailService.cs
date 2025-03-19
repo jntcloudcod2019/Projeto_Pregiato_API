@@ -4,6 +4,7 @@ using Pregiato.API.Interface;
 using Microsoft.Extensions.Options;
 using Pregiato.API.Models;
 using MailKit.Security;
+using Pregiato.API.Interfaces;
 
 namespace Pregiato.API.Services
 {
@@ -11,6 +12,25 @@ namespace Pregiato.API.Services
     {
         private readonly SmtpSettings _smtpSettings;
         private readonly ILogger<EmailService> _logger;
+
+        public EmailService(IEnvironmentVariableProviderEmail envVarProvider, ILogger<EmailService> logger)
+        {
+            _logger = logger;
+            _smtpSettings = new SmtpSettings
+            {
+                Server = envVarProvider.GetVariable("SERVER_EMAIL", EnvironmentVariableTarget.Machine),
+                Port = int.TryParse(envVarProvider.GetVariable("SERVER_EMAIL_PORT", EnvironmentVariableTarget.Machine), out var port) ? port : 587,
+                Username = envVarProvider.GetVariable("SERVER_EMAIL_USERNAME", EnvironmentVariableTarget.Machine),
+                Password = envVarProvider.GetVariable("SERVER_EMAIL_PASSWORD", EnvironmentVariableTarget.Machine),
+                UseTls = true
+            };
+            
+            if (string.IsNullOrEmpty(_smtpSettings.Server) || string.IsNullOrEmpty(_smtpSettings.Username) || string.IsNullOrEmpty(_smtpSettings.Password))
+            {
+                throw new InvalidOperationException("Configurações do SMTP não foram carregadas corretamente. Verifique as variáveis de ambiente.");
+            }
+            _logger.LogInformation("Configurações do SMTP carregadas com sucesso.");
+        }
 
         public async Task<string> LoadTemplate(Dictionary<string, string> replacements)
         {
@@ -26,6 +46,7 @@ namespace Pregiato.API.Services
             foreach (var replacement in replacements)
             {
                 templateContent = templateContent.Replace($"{{{replacement.Key}}}", replacement.Value);
+                _logger.LogInformation($"Populando tamplate do e-mail P:{replacement.Key}  V:{replacement.Value}");
             }
 
             return templateContent;
@@ -71,12 +92,15 @@ namespace Pregiato.API.Services
                 client.ServerCertificateValidationCallback = (s, c, h, e) => true;
 
                 _logger.LogInformation($"Conectando ao SMTP {_smtpSettings.Server}:{_smtpSettings.Port}...");
+
                 await client.ConnectAsync(_smtpSettings.Server, _smtpSettings.Port, SecureSocketOptions.StartTls);
 
-                _logger.LogInformation("Autenticando no servidor SMTP do Gmail...");
+                _logger.LogInformation("Autenticando no servidor SMTP...");
+
                 await client.AuthenticateAsync(_smtpSettings.Username, _smtpSettings.Password);
 
                 _logger.LogInformation("Enviando e-mail...");
+
                 await client.SendAsync(message);
                 await client.DisconnectAsync(true);
 
@@ -89,6 +113,6 @@ namespace Pregiato.API.Services
                 return false;
             }
         }
-
     }
 }
+

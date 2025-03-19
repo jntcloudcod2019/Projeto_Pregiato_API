@@ -1,11 +1,11 @@
-﻿using iText.Commons.Actions.Contexts;
-using Microsoft.AspNetCore.Authorization;
+﻿using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.EntityFrameworkCore;
 using Pregiato.API.Data;
 using Pregiato.API.Interface;
 using Pregiato.API.Models;
 using Pregiato.API.Requests;
+using Pregiato.API.Response;
 using Pregiato.API.Services;
 using Swashbuckle.AspNetCore.Annotations;
 using System.IdentityModel.Tokens.Jwt;
@@ -60,6 +60,13 @@ namespace Pregiato.API.Controllers
                 return BadRequest(ModelState);
             }
 
+            var checkExistence = await _modelRepository.ModelExistsAsync(createModelRequest);
+
+            if (checkExistence != null)
+            {
+                throw new Exception($"Modelo {createModelRequest.Name} já cadastrado.");
+            }
+
             var model = new Model
             {
                 Name = createModelRequest.Name,
@@ -79,13 +86,19 @@ namespace Pregiato.API.Controllers
                 TelefonePrincipal = createModelRequest.TelefonePrincipal,
                 TelefoneSecundario = createModelRequest.TelefoneSecundario,
             };
-
       
             await _modelRepository.AddModelAsync(model);
 
-            await _userService.RegisterUserModel(createModelRequest.Name.Split(' ')[0], createModelRequest.Email);
+            await _userService.RegisterUserModel(createModelRequest.Name, createModelRequest.Email);
 
-            return Ok($"Modelo {model.Name}, criado com sucesso!");
+            return Ok(new ModelResponse
+            {
+                Mensage = "Cadastro do modelo criado com sucesso.",
+                Model = new ModelInfo
+                {
+                    Name = model.Name
+                }
+            });
         }
 
         [Authorize(Policy = "AdminOrManager")]
@@ -198,7 +211,7 @@ namespace Pregiato.API.Controllers
             }));
 
              model = new Model
-            {
+             {
                 Name = updateModelRequest.Name,
                 CPF = updateModelRequest.CPF,
                 RG = updateModelRequest.RG,
@@ -216,7 +229,7 @@ namespace Pregiato.API.Controllers
                 DNA = dnaJson,
             };
                                
-           await _modelRepository.UpdateModelAsync(model);
+            await _modelRepository.UpdateModelAsync(model);
 
             return NoContent();
         }

@@ -1,8 +1,8 @@
-﻿using Microsoft.AspNetCore.Identity.Data;
-using Microsoft.IdentityModel.Tokens;
+﻿using Microsoft.IdentityModel.Tokens;
 using Pregiato.API.Interface;
 using Pregiato.API.Requests;
 using System.IdentityModel.Tokens.Jwt;
+using System.Runtime.CompilerServices;
 using System.Security.Claims;
 using System.Text;
 
@@ -14,6 +14,9 @@ namespace Pregiato.API.Services
         private readonly IModelRepository _modelRepository;
         private readonly IHttpContextAccessor _httpContextAccessor;
 
+        private readonly string SECRETKEY_JWT_TOKEN = Environment.GetEnvironmentVariable("SECRETKEY_TOKEN", EnvironmentVariableTarget.Machine);
+        private readonly string ISSUER_JWT = Environment.GetEnvironmentVariable("ISSUER_JWT", EnvironmentVariableTarget.Machine);
+        private readonly string AUDIENCE_JWT = Environment.GetEnvironmentVariable("AUDIENCE_JWT", EnvironmentVariableTarget.Machine);
         public JwtService(IConfiguration configuration, IModelRepository modelRepository, IHttpContextAccessor httpContextAccessor)
         {
             _configuration = configuration;
@@ -21,7 +24,6 @@ namespace Pregiato.API.Services
             _modelRepository = _modelRepository ?? throw new ArgumentNullException(nameof(modelRepository));
             _httpContextAccessor = httpContextAccessor;
         }
-
         public string GenerateToken(LoginUserRequest loginUserRequest)
         {
             var user = loginUserRequest;
@@ -31,14 +33,13 @@ namespace Pregiato.API.Services
               new Claim(ClaimTypes.Role, loginUserRequest.UserType.ToString())
             };
        
-            var secretKey = Encoding.ASCII.GetBytes(_configuration["JwtSettings:SecretKey"]);
+            var secretKey = Encoding.ASCII.GetBytes(SECRETKEY_JWT_TOKEN);
             var key = new SymmetricSecurityKey(secretKey);
             var credentials = new SigningCredentials(key, SecurityAlgorithms.HmacSha256); 
-
           
             var token = new JwtSecurityToken(
-                issuer: "PregiatoAPI",
-                audience: "PregiatoAPIToken", 
+                issuer: ISSUER_JWT,
+                audience: AUDIENCE_JWT, 
                 claims: claims,
                 expires: DateTime.Now.AddHours(4), 
                 signingCredentials: credentials
@@ -47,8 +48,6 @@ namespace Pregiato.API.Services
             var jwt = new JwtSecurityTokenHandler().WriteToken(token);
             return jwt;
         }
-
-
         public Task<string> GetUsernameFromTokenAsync(string token)
         {
             var handler = new JwtSecurityTokenHandler();

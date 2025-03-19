@@ -9,8 +9,6 @@ using System.Globalization;
 using System.Text.Json;
 using SelectPdf;
 using System.Text;
-using System.Diagnostics.Contracts;
-using iText.Commons.Actions.Contexts;
 
 namespace Pregiato.API.Services
 {
@@ -55,6 +53,7 @@ namespace Pregiato.API.Services
         private static readonly string DefaultVigenciaContrato = DateTime.UtcNow.ToString("dd/MM/yyyy");
         private static readonly string DefaultMesContrato = DateTime.UtcNow.ToString("MMMM");
 
+        //refatorar processo de popular a tabela de contratos no banco de dados
         public async Task<string> PopulateTemplate(string template, Dictionary<string, string> parameters)
         {
             if (string.IsNullOrWhiteSpace(template))
@@ -75,7 +74,6 @@ namespace Pregiato.API.Services
            
             return template;
         }
-
         public async Task<byte[]> ConvertHtmlToPdf(string populatedHtml, Dictionary<string, string> parameters)
         {
 
@@ -99,7 +97,6 @@ namespace Pregiato.API.Services
 
             return memoryStream.ToArray();
         }
-
         public async Task SaveContractAsync(ContractBase contract, Stream pdfStream, string cpfModelo)
         {
             using var memoryStream = new MemoryStream();
@@ -119,13 +116,11 @@ namespace Pregiato.API.Services
             contract.ContractFilePath = $"CodigoProposta_{contract.CodProposta}_CPF:{cpfModelo}_{DateTime.UtcNow:dd-MM-yyyy}_{contract.TemplateFileName}.pdf";
             await _contractRepository.SaveContractAsync(contract);
         }
-
         private async Task<int> GetNextCodPropostaAsync()
         {
             var maxCodProposta = await _modelAgencyContext.Contracts.MaxAsync(c => (int?)c.CodProposta) ?? 109;
             return maxCodProposta + 1;
         }
-
         public async Task<ContractBase> GenerateContractAsync(CreateContractModelRequest createContractModelRequest, Guid modelId, string contractType, Dictionary<string, string> parameters)
         {
             parameters ??= new Dictionary<string, string>();
@@ -166,7 +161,6 @@ namespace Pregiato.API.Services
 
             return contract;
         }
-
         public async Task<List<ContractBase>> GenerateAllContractsAsync(CreateContractModelRequest createContractModelRequest)
         {
            
@@ -215,7 +209,6 @@ namespace Pregiato.API.Services
 
             return contracts;
         }
-
         private Dictionary<string, string> AddSignatureToParameters(Dictionary<string, string> parameters, string contractType)
         {
             var updatedParameters = new Dictionary<string, string>(parameters);
@@ -232,7 +225,6 @@ namespace Pregiato.API.Services
             updatedParameters["NameImageSignature"] = imagePath;
             return updatedParameters;
         }
-
         private void AddMinorModelInfo(Model model, Dictionary<string, string> parameters)
         {
             if (model.Age < 18)
@@ -242,6 +234,7 @@ namespace Pregiato.API.Services
             }
         }
 
+        //Refatorar
         public async Task<ContractBase> GenerateContractCommitmentTerm(CreateRequestCommitmentTerm createRequestContractImageRights, string querymodel)
         {
             var model = await _modelRepository.GetModelByCriteriaAsync(querymodel);
@@ -324,6 +317,7 @@ namespace Pregiato.API.Services
             return contract;
         }
 
+        //Refatorar
         public async Task<ContractBase> GenetayeContractImageRightsTerm(string querymodel)
         {
             var model = await _modelRepository.GetModelByCriteriaAsync(querymodel);
@@ -398,7 +392,6 @@ namespace Pregiato.API.Services
 
             return contract;
         }
-
         public async Task<IActionResult> GetMyContracts(string type = "files")
         {
             var username = await _jwtService.GetAuthenticatedUsernameAsync();
@@ -429,6 +422,7 @@ namespace Pregiato.API.Services
                 }).ToList());
         }
 
+        //Testar esse cara 
         public async Task<List<ContractsModels>> GetContractsByModelIdAsync(Guid modelId)
         {
             return await _modelAgencyContext.Contracts
@@ -441,7 +435,6 @@ namespace Pregiato.API.Services
            })
            .ToListAsync();
         }
-
         public async Task<byte[]> ExtractBytesFromString(string content)
         {
             int startIndex = content.IndexOf('[') + 1;
@@ -455,7 +448,6 @@ namespace Pregiato.API.Services
 
             return bytes;
         }
-
         public async Task<string> ConvertBytesToString(byte[] bytes)
         {
             return Encoding.UTF8.GetString(bytes);
