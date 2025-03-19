@@ -33,48 +33,65 @@ namespace Pregiato.API.Services
             await _userRepository.DeleteUserAsync(id);
             await _userRepository.SaveChangesAsync();
         }
-        public async Task<string> RegisterUserAsync(string username, string email, string password, string userType)
+        public async Task<string> RegisterUserAsync(string username, string email)
         {
 
             if (await _userRepository.GetByUsernameAsync(username) != null)
             {
-                throw new Exception("Username already exists.");
+                _customResponse.Message = $"Usuário: {username} já cadasttrado.";
             }
 
-            var passwordHash = BCrypt.Net.BCrypt.HashPassword(password);
+            string nikeName = username.Replace(" ", "").ToLower();
+
+            string password = await _passwordHasherService.GenerateRandomPasswordAsync(12);
+
+            var replacements = new Dictionary<string, string>
+            {
+                {"Nome",username},
+                {"User",nikeName },
+                {"Password", password}
+            };
+
+            await _emailService.SendEmailAsync(replacements, email, "Bem-vindo à Plataforma My Pregiato");
+
+            string passwordHash = await _passwordHasherService.CreatePasswordHashAsync(password);
 
             var user = new User
-
             {
                 UserId = new Guid(),
-                Name = username,
+                Name = nikeName,
                 Email = email,
                 PasswordHash = passwordHash,
-                UserType = userType
+                UserType = UserType.Administrator,
             };
 
             await _userRepository.AddUserAsync(user);
             await _userRepository.SaveChangesAsync();
 
-            return "Usuário cadastrado comsucesso.";
+            return ("Usuário cadastrado com suesso.");
         }
 
         public async Task<string> AuthenticateUserAsync(LoginUserRequest loginUserRequest)
         {
             try
             {
+                if (loginUserRequest == null || string.IsNullOrWhiteSpace(loginUserRequest.Username))
+                {
+                    throw new ArgumentException("Nome de usuário não pode ser nulo ou vazio.");
+                }
+
                 var user = await _userRepository.GetByUsernameAsync(loginUserRequest.Username);
 
                 if (user == null)
                 {
-                   _customResponse.Message ="Usuário não encontrado. Verifique o nome de usuário e tente novamente.";
-                    throw new Exception("Usuário não encontrado. Verifique o nome de usuário e tente novamente.");
+                    _customResponse.Message = "Usuário não encontrado. Verifique o nome de usuário e tente novamente.";
+                    throw new Exception(_customResponse.Message);
                 }
 
-                if (!BCrypt.Net.BCrypt.Verify(loginUserRequest.Password, user.PasswordHash))
+                if (string.IsNullOrWhiteSpace(loginUserRequest.Password) || !BCrypt.Net.BCrypt.Verify(loginUserRequest.Password, user.PasswordHash))
                 {
                     _customResponse.Message = "Senha inválida. Verifique a senha digitada e tente novamente.";
-                    throw new Exception("Senha inválida. Verifique a senha digitada e tente novamente.");                  
+                    throw new Exception(_customResponse.Message);
                 }
 
                 loginUserRequest.UserType = user.UserType;
@@ -86,7 +103,7 @@ namespace Pregiato.API.Services
             catch (Exception ex)
             {
                 _customResponse.Message = "Erro durante o processo de autenticação. Por favor, contate o time de I.T.";
-                throw new Exception("Erro durante o processo de autenticação. Por favor, contate o time de I.T.");
+                throw new Exception($"Erro durante o processo de autenticação. {ex.Message}");
             }
         }
 
