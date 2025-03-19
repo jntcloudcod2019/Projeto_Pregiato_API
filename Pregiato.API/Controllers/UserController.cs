@@ -5,6 +5,7 @@ using Pregiato.API.Models;
 using Microsoft.AspNetCore.Authorization;
 using Swashbuckle.AspNetCore.Annotations;
 using Pregiato.API.Response;
+using Pregiato.API.DTO;
 
 namespace Pregiato.API.Controllers
 {
@@ -13,12 +14,14 @@ namespace Pregiato.API.Controllers
     public class UserController : ControllerBase
     {
         private readonly IUserService _userService;
-        private readonly IUserRepository _userRepository;   
+        private readonly IUserRepository _userRepository;
+        private readonly CustomResponse _customResponse;
 
-        public UserController(IUserService userService, IUserRepository userRepository)
+        public UserController(IUserService userService, IUserRepository userRepository, CustomResponse customResponse)
         {
             _userService = userService;
-            _userRepository = userRepository;   
+            _userRepository = userRepository;
+            _customResponse = customResponse;
         }
 
         [AllowAnonymous]
@@ -31,8 +34,14 @@ namespace Pregiato.API.Controllers
         {
             try
             {
-               
-                // Autentica o usuário e gera o token JWT
+                if (loginUserRequest == null)
+                {
+                    return BadRequest(new ErrorResponse
+                    {
+                        Message = "Requisição inválida. Verifique os dados enviados."
+                    });
+                }
+
                 var token = await _userService.AuthenticateUserAsync(loginUserRequest);
 
                 return Ok(new LoginResponse
@@ -40,10 +49,10 @@ namespace Pregiato.API.Controllers
                     Token = token,
                     User = new UserInfo
                     {
-                        UserId = loginUserRequest.IdUser.ToString(),
-                        Username = loginUserRequest.Username,
-                        Email = loginUserRequest.Email,
-                        UserType = loginUserRequest.UserType
+                        UserId = loginUserRequest.IdUser?.ToString() ?? string.Empty,
+                        Username = loginUserRequest.Username ?? string.Empty,
+                        Email = loginUserRequest.Email ?? string.Empty,
+                        UserType = loginUserRequest.UserType ?? string.Empty
                     }
                 });
             }
@@ -74,12 +83,19 @@ namespace Pregiato.API.Controllers
 
         [Authorize(Policy = "AdminOrManager")]
         [HttpPost("register/administrator")]
-        public async Task<IActionResult> RegisterAdministrator([FromBody] UserRegisterDto dto)
+        public async Task<IActionResult> RegisterAdministrator([FromBody] UserRegisterDto user)
         {
+
             try
             {
-                var result = await _userService.RegisterUserAsync(dto.Username, dto.Email, dto.Password, UserType.Administrator.ToString());
-                return Ok(new { message = result });
+                if (user == null || string.IsNullOrWhiteSpace(user.Username) || string.IsNullOrWhiteSpace(user.Email))
+                {
+                    return BadRequest(new { error = "Nome de usuário e email são obrigatórios." });
+                }
+
+                var result = await _userService.RegisterUserAsync(user.Username, user.Email);
+
+                return Ok(new { message = "Usuário ADM cadastrado com sucesso." });
             }
             catch (Exception ex)
             {
@@ -89,34 +105,43 @@ namespace Pregiato.API.Controllers
 
         [Authorize(Policy = "AdminOrManager")]
         [HttpPost("register/model")]
-        public async Task<IActionResult> RegisterModel([FromBody] UserRegisterDto dto)
+        public async Task<IActionResult> RegisterModel([FromBody] UserRegisterDto user)
         {
             try
             {
-                
-                var result = await _userService.RegisterUserAsync(dto.Username, dto.Email, dto.Password, UserType.Model);
-                return Ok(new { message = result });
+                if (user == null || string.IsNullOrWhiteSpace(user.Username) || string.IsNullOrWhiteSpace(user.Email))
+                {
+                    return BadRequest(new { error = "Nome de usuário e email são obrigatórios." });
+                }
+
+                var result = await _userService.RegisterUserAsync(user.Username, user.Email);
+
+                return Ok(new { message = "Usuário ADM cadastrado com sucesso." });
             }
             catch (Exception ex)
             {
                 return BadRequest(new { error = ex.Message });
-            }
+            }       
         }
 
         [Authorize(Policy = "AdminOrManager")]
         [HttpPost("register/manager")]
-        public async Task<IActionResult> RegisterManager([FromBody] UserRegisterDto dto)
+        public async Task<IActionResult> RegisterManager([FromBody] UserRegisterDto user)
         {
             try
             {
-                var result = await _userService.RegisterUserAsync(dto.Username, dto.Email, dto.Password, UserType.Manager);
-                return Ok(new { message = result });
+                if (user == null || string.IsNullOrWhiteSpace(user.Username) || string.IsNullOrWhiteSpace(user.Email))
+                {
+                    return BadRequest(new { error = "Nome de usuário e email são obrigatórios." });
+                }
+
+                var result = await _userService.RegisterUserAsync(user.Username, user.Email);              
             }
             catch (Exception ex)
             {
                 return BadRequest(new { error = ex.Message });
-            }
+            }        
+            return Ok(_customResponse.Message = $"Usuario {user} cadastrado com sucessp.");
         }
-
     }
 }
