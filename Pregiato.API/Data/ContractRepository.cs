@@ -35,7 +35,6 @@ namespace Pregiato.API.Data
             await _context.SaveChangesAsync();
         }
 
-
         public async Task<ContractsModels> GetByIdContractAsync(Guid id)
         {
             return await _context.ContractsModels.FindAsync(id);
@@ -60,18 +59,25 @@ namespace Pregiato.API.Data
              .ToListAsync();
         }
 
-        public async Task<ContractBase> GetContractByCriteriaAsync(string ? contractId, string? modelId, int? codProposta)
+        public async Task<ContractBase> GetContractByCriteriaAsync(string? contractId, string? modelId, int? codProposta)
         {
-           return await _context.Contracts.FirstOrDefaultAsync( m => 
-           ( modelId != null && m.ModelId.ToString() == modelId) ||
-           ( contractId != null && m.ContractId.ToString() == contractId) ||
+           var contract = await _context.Contracts.FirstOrDefaultAsync(m =>
+           (modelId != null && m.ModelId.ToString() == modelId) ||
+           (contractId != null && m.ContractId.ToString() == contractId) ||
            (codProposta != null && m.CodProposta == codProposta));
+
+            if (contract == null)
+            {
+                throw new InvalidOperationException("Contrato não encontrado.");
+            }
+
+            return contract;
 
         }
 
-        public async Task<ContractDTO> DownloadContractAsync(int proposalCode)
+        public async Task<ContractDTO?> DownloadContractAsync(int proposalCode)
         {
-            var contract = await _context.Contracts
+           var contract = await _context.Contracts
           .Where(c =>             
               (c.CodProposta == proposalCode))
           .Select(c => new ContractDTO 
@@ -84,7 +90,7 @@ namespace Pregiato.API.Data
           })
           .FirstOrDefaultAsync();
 
-          return contract;
+          return await Task.FromResult(contract);
 
         }
     }

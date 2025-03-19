@@ -2,9 +2,8 @@
 {
     public interface IPasswordHasherService
     {
-        string CreatePasswordHash(string password);
-        bool VerifyPasswordHash(string password, string storedHash);
-        string GenerateRandomPassword(int length);
+       Task<string> CreatePasswordHashAsync(string password);
+       Task<string> GenerateRandomPasswordAsync(int length);
 
     }
 }
