@@ -5,12 +5,12 @@ namespace Pregiato.API.Services
 {
     public class PasswordHasherService : IPasswordHasherService
     {
-        public string CreatePasswordHash(string password)
+        public async Task< string> CreatePasswordHashAsync(string password)
         {
-            return BCrypt.Net.BCrypt.HashPassword(password, BCrypt.Net.BCrypt.GenerateSalt(12));
+            return await Task.FromResult( BCrypt.Net.BCrypt.HashPassword(password, BCrypt.Net.BCrypt.GenerateSalt(12)));
         }
 
-        public string GenerateRandomPassword(int length)
+        public async Task<string> GenerateRandomPasswordAsync(int length)
         {
            
             const string chars = "ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789";
@@ -20,13 +20,7 @@ namespace Pregiato.API.Services
             var password = new string(Enumerable.Repeat(chars, length)
                 .Select(s => s[random.Next(s.Length)]).ToArray());
 
-            return password;
-        }
-
-        public bool VerifyPasswordHash(string password, string storedHash)
-        {
-            Console.WriteLine($"Hash gerado: {storedHash}");
-            return BCrypt.Net.BCrypt.Verify(password, storedHash);
+            return await Task.FromResult(password);
         }
 
     }

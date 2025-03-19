@@ -4,6 +4,7 @@ using Pregiato.API.Interface;
 using Pregiato.API.Models;
 using Pregiato.API.Requests;
 using Pregiato.API.Response;
+using PuppeteerSharp;
 
 
 namespace Pregiato.API.Services
@@ -14,7 +15,8 @@ namespace Pregiato.API.Services
         private readonly IJwtService _jwtService; 
         private readonly IEmailService _emailService;   
         private readonly IPasswordHasherService _passwordHasherService;
-
+        private readonly CustomResponse _customResponse;
+    
         public UserService(IUserRepository userRepository, IJwtService jwtService, 
                            IPasswordHasherService passwordHasherService,
                            IEmailService emailService)
@@ -23,6 +25,7 @@ namespace Pregiato.API.Services
             _jwtService = jwtService;  
             _passwordHasherService = passwordHasherService; 
             _emailService = emailService;
+            _customResponse = new CustomResponse();
         }
 
         public async Task DeleteUserAsync(Guid id)
@@ -64,23 +67,25 @@ namespace Pregiato.API.Services
 
                 if (user == null)
                 {
+                   _customResponse.Message ="Usuário não encontrado. Verifique o nome de usuário e tente novamente.";
                     throw new Exception("Usuário não encontrado. Verifique o nome de usuário e tente novamente.");
                 }
 
                 if (!BCrypt.Net.BCrypt.Verify(loginUserRequest.Password, user.PasswordHash))
                 {
-                    throw new Exception("Senha inválida. Verifique a senha digitada e tente novamente.");
-                  
+                    _customResponse.Message = "Senha inválida. Verifique a senha digitada e tente novamente.";
+                    throw new Exception("Senha inválida. Verifique a senha digitada e tente novamente.");                  
                 }
 
                 loginUserRequest.UserType = user.UserType;
                 loginUserRequest.IdUser = user.UserId;
                 loginUserRequest.Email = user.Email;
+
                 return _jwtService.GenerateToken(loginUserRequest);
             }
             catch (Exception ex)
             {
-                Console.WriteLine($"[Erro na Autenticação] {ex.Message}");
+                _customResponse.Message = "Erro durante o processo de autenticação. Por favor, contate o time de I.T.";
                 throw new Exception("Erro durante o processo de autenticação. Por favor, contate o time de I.T.");
             }
         }
@@ -90,26 +95,28 @@ namespace Pregiato.API.Services
 
             if (await _userRepository.GetByUsernameAsync(username) != null)
             {
-                throw new Exception("Usuário já cadastrado.");
+                _customResponse.Message = $"Usuário: {username} já cadasttrado.";
             }
 
-            var password = _passwordHasherService.GenerateRandomPassword(8) ;
+            string nikeName = username.Replace(" ", "").ToLower();
+
+            string password = await _passwordHasherService.GenerateRandomPasswordAsync(12);
 
             var replacements = new Dictionary<string, string>
             {
-                {"Nome",  username.Split(" ") [0]},
-                {"User", username },
-                {"Password", password }
+                {"Nome",username},
+                {"User",nikeName },
+                {"Password", password}
             };     
 
             await _emailService.SendEmailAsync(replacements, email, "Bem-vindo à Plataforma My Pregiato");
 
-            var passwordHash = BCrypt.Net.BCrypt.HashPassword(password);
+            string passwordHash = await _passwordHasherService.CreatePasswordHashAsync(password);
 
             var user = new User
             {
                 UserId = new Guid(),
-                Name = username.Split(" ")[0],
+                Name =nikeName,
                 Email = email,
                 PasswordHash = passwordHash,
                 UserType = UserType.Model.ToString(),
@@ -118,7 +125,7 @@ namespace Pregiato.API.Services
             await _userRepository.AddUserAsync(user);
             await _userRepository.SaveChangesAsync();
 
-            return "Usuário cadastrado comsucesso.";
+            return ("Usuário cadastrado com suesso.");
         }  
     }
 }

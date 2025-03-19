@@ -15,21 +15,22 @@ namespace Pregiato.API.Controllers
     {
         private readonly IContractService _contractService;
         private readonly IModelRepository _modelRepository;
-        private readonly IPaymentService _paymentService;
         private readonly IContractRepository _contractRepository;    
-        private readonly ModelAgencyContext _context;     
-        public AgencyContractController(
-            IContractService contractService,
-            IModelRepository modelRepository,
-            ModelAgencyContext context,
-            IPaymentService paymentService,
-            IContractRepository contractRepository)
+        private readonly ModelAgencyContext _context;
+        private readonly CustomResponse _customResponse;
+        public AgencyContractController
+              (IContractService contractService,
+              IModelRepository modelRepository,          
+              IPaymentService paymentService,
+              IContractRepository contractRepository,
+              ModelAgencyContext context,
+              CustomResponse customResponse)
         {
             _contractService = contractService ?? throw new ArgumentNullException(nameof(contractService));
             _modelRepository = modelRepository ?? throw new ArgumentNullException(nameof(modelRepository));
             _context = context ?? throw new ArgumentNullException(nameof(context));
-            _paymentService = paymentService;
-            _contractRepository = contractRepository; 
+            _contractRepository = contractRepository;
+            _customResponse = customResponse;
             
         } 
 
@@ -42,35 +43,16 @@ namespace Pregiato.API.Controllers
         public async Task<IActionResult> GenerateCommitmentTermContract
         ([FromBody]CreateRequestCommitmentTerm createRequestCommitmentTerm,[FromQuery] string queryModel)
         {
-            var model = await _modelRepository.GetModelByCriteriaAsync(queryModel);
-
-            if (model == null)
-            {
-                return NotFound("Modelo não encontrado.");
-            }
-
-            var parameters = new Dictionary<string, string>
-            {
-                    {"Nome-Modelo", model.Name },
-                    {"CPF-Modelo", model.CPF },
-                    {"RG-Modelo", model.RG },
-                    {"Endereço-Modelo", model.Address},
-                    {"Numero-Modelo",model.NumberAddress},
-                    {"Bairro-Modelo", model.Neighborhood},
-                    {"Cidade-Modelo", model.City},
-                    {"CEP-Modelo", model.PostalCode},
-                    {"Complemento-Modelo", model.Complement},
-                    {"Telefone-Principal", model.TelefonePrincipal},
-                    {"Telefone-Secundário", model.TelefoneSecundario},
-            };
-
-            createRequestCommitmentTerm.cpfModelo = model.CPF;
+           if(createRequestCommitmentTerm == null || queryModel == null)
+           {
+                throw new Exception("Campos de parametros vazio.");
+           }
 
             var contract = await _contractService.GenerateContractCommitmentTerm(createRequestCommitmentTerm, queryModel);
 
             await _context.SaveChangesAsync();
 
-            return Ok($"Termo de comprometimento para: {model.Name}, gerado com sucesso. Código da Proposta: {contract.CodProposta}.");
+            return Ok($"Termo de comprometimento , gerado com sucesso. Código da Proposta: {contract.CodProposta}.");
         }
 
 
@@ -90,7 +72,7 @@ namespace Pregiato.API.Controllers
                 return NotFound("Modelo não encontrado.");
             }
 
-            var parameters = new Dictionary<string, string>
+            var parameters = new Dictionary<string, string?>
             {
                     {"Nome-Modelo", model.Name },
                     {"CPF-Modelo", model.CPF },
@@ -110,20 +92,25 @@ namespace Pregiato.API.Controllers
         }
 
         //[Authorize(Policy = "AdminOrManager")]
-        [SwaggerOperation("Processo de gerar contrato de Agencimaneto e Fotoprgrafia.")]
+        [SwaggerOperation("Processo de gerar contrato de Agenciamento e Fotoprgrafia.")]
         [HttpPost("generate/Agency&PhotographyProductionContracts")]
         public async Task<IActionResult> GenerateAgencyPhotographyProductionContractsAsync(CreateContractModelRequest createContractModelRequest)
         {
-
+            if (!ModelState.IsValid)
+            {
+                _customResponse.Message = "Dados preechidos incorretamente";
+                return BadRequest(ModelState);
+            }
 
             var model = await _modelRepository.GetModelByCriteriaAsync(createContractModelRequest.ModelIdentification);
 
             if (model == null)
             {
+                _customResponse.Message = "Modelo não encontrado";
                 return NotFound("Modelo não encontrado.");
             }
 
-            List<ContractBase> contracts = await _contractService.GenerateAllContractsAsync(createContractModelRequest);
+            List<ContractBase> contracts = await _contractService.GenerateAllContractsAsync(createContractModelRequest, model);
 
             var response = new ContractGenerationResponse
             {
@@ -150,9 +137,10 @@ namespace Pregiato.API.Controllers
                 return NotFound("Contrato não encontrado.");
             }
 
-            string contentString = await _contractService.ConvertBytesToString(contract.Content);
+            string contentString = await _contractService.ConvertBytesToString(contract.Content );
 
             byte[] pdfBytes;
+
             try
             {
                 pdfBytes =  await _contractService.ExtractBytesFromString(contentString);

@@ -1,6 +1,7 @@
 ﻿using Microsoft.AspNetCore.Identity.Data;
 using Pregiato.API.Models;
 using Pregiato.API.Requests;
+using Pregiato.API.Response;
 
 namespace Pregiato.API.Interface
 {
@@ -8,7 +9,6 @@ namespace Pregiato.API.Interface
     {
         Task<string> RegisterUserAsync(string username, string email, string password, string  userType);
         Task<string> RegisterUserModel(string username, string email);
-
         Task <string> AuthenticateUserAsync(LoginUserRequest loginRequest);
         Task DeleteUserAsync(Guid id);
     }

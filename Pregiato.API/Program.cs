@@ -12,6 +12,7 @@ using Pregiato.API.Models;
 using System.Globalization;
 using Pregiato.API.Services.ServiceModels;
 using Pregiato.API.Interfaces;
+using Pregiato.API.Response;
 
 var builder = WebApplication.CreateBuilder(args);
 
@@ -54,7 +55,8 @@ builder.Services.AddTransient<IEmailService, EmailService>();
 builder.Services.AddScoped<IServiceUtilites, ServiceUtilites>();
 builder.Services.AddScoped<IPasswordHasherService, PasswordHasherService>();
 builder.Services.AddScoped<IClientBillingRepository, ClientBillingRepository>();
-builder.Services.AddSingleton<IRabbitMQProducer, RabbitMQProducer>();  
+builder.Services.AddSingleton<IRabbitMQProducer, RabbitMQProducer>();
+builder.Services.AddScoped<CustomResponse>();
 
 builder.Services.AddSwaggerGen(c =>
 {

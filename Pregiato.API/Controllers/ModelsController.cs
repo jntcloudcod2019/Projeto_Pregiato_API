@@ -1,4 +1,5 @@
-﻿using Microsoft.AspNetCore.Authorization;
+﻿using iText.Layout.Element;
+using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.EntityFrameworkCore;
 using Pregiato.API.Data;
@@ -6,7 +7,6 @@ using Pregiato.API.Interface;
 using Pregiato.API.Models;
 using Pregiato.API.Requests;
 using Pregiato.API.Response;
-using Pregiato.API.Services;
 using Swashbuckle.AspNetCore.Annotations;
 using System.IdentityModel.Tokens.Jwt;
 using System.Text.Json;
@@ -20,23 +20,29 @@ namespace Pregiato.API.Controllers
         private readonly IContractService _contractService;
         private readonly IJwtService _jwtService;   
         private readonly IUserService _userService; 
-        private readonly IServiceUtilites _serviceUtilites; 
+        private readonly IServiceUtilites _serviceUtilites;
+        private readonly IUserRepository _userRepository;
         private readonly ModelAgencyContext _agencyContext;
+        private readonly CustomResponse _customResponse;
 
         public ModelsController
-              (IModelRepository modelRepository, 
-               ModelAgencyContext agencyContext, 
+              (CustomResponse customResponse,
+               ModelAgencyContext agencyContext,
+               IModelRepository modelRepository,
                IContractService contractService,
                IJwtService jwtService,
                IUserService userService,
-               IServiceUtilites serviceUtilites)
+               IServiceUtilites serviceUtilites,
+               IUserRepository userRepository)
         {
             _modelRepository = modelRepository ?? throw new ArgumentNullException(nameof(modelRepository));
             _agencyContext = agencyContext ?? throw new ArgumentNullException(nameof(agencyContext));
             _contractService = contractService; 
             _jwtService = jwtService; ;
             _userService = userService; 
-            _serviceUtilites = serviceUtilites; 
+            _serviceUtilites = serviceUtilites;
+            _userRepository = userRepository;
+            _customResponse = customResponse;
 
         }
 
@@ -53,19 +59,32 @@ namespace Pregiato.API.Controllers
         [Authorize(Policy = "AdminOrManager")]
         [HttpPost("AddModels")]
         [SwaggerOperation("Criar novo modelo.")]
+        [ProducesResponseType(typeof(CustomResponse), StatusCodes.Status200OK)]
+        [ProducesResponseType(typeof(CustomResponse), StatusCodes.Status404NotFound)]
+        [ProducesResponseType(typeof(CustomResponse), StatusCodes.Status400BadRequest)]
         public async Task<IActionResult> AddNewModel([FromBody] CreateModelRequest createModelRequest)
         {
             if (!ModelState.IsValid)
             {
-                return BadRequest(ModelState);
+                return BadRequest(new CustomResponse
+                {
+                    StatusCode = StatusCodes.Status400BadRequest,
+                    Message = "Preenchimento de campos invalidos.",
+                    Data = null
+                });
             }
 
             var checkExistence = await _modelRepository.ModelExistsAsync(createModelRequest);
 
             if (checkExistence != null)
             {
-                throw new Exception($"Modelo {createModelRequest.Name} já cadastrado.");
-            }
+                return BadRequest(new CustomResponse
+                {
+                    StatusCode = StatusCodes.Status304NotModified,
+                    Message = $"Modelo {createModelRequest.Name} já cadastrado.",
+                    Data = null
+                }); 
+            } 
 
             var model = new Model
             {
@@ -195,7 +214,7 @@ namespace Pregiato.API.Controllers
 
         [Authorize(Policy = "AdminOrManagerOrModel")]
         [HttpPut("updateResgiterModel/{query}")]
-        public async Task<IActionResult> UpdateRegisterModel(string query , [FromBody] UpdateModelRequest updateModelRequest)
+        public async Task<IActionResult> UpdateRegisterModel(string query, [FromBody] UpdateModelRequest updateModelRequest)
         {
             var model = await _modelRepository.GetModelByCriteriaAsync(query);
             if (model == null)
@@ -205,9 +224,14 @@ namespace Pregiato.API.Controllers
 
             var dnaJson = JsonDocument.Parse(System.Text.Json.JsonSerializer.Serialize(new
             {
-                physicalCharacteristics = updateModelRequest.PhysicalCharacteristics,
                 appearance = updateModelRequest.Appearance,
-                additionalAttributes = updateModelRequest.AdditionalAttributes
+                eyeAttributes = updateModelRequest.EyeAttributes,
+                hairAttributes = updateModelRequest.HairAttributes ,
+                physicalCharacteristics = updateModelRequest.PhysicalCharacteristics,
+
+                additionalAttributes = updateModelRequest.AdditionalAttributes,
+
+
             }));
 
              model = new Model
@@ -260,8 +284,11 @@ namespace Pregiato.API.Controllers
                 return Unauthorized("Usuário não autenticado.");
             }
             var username = usernameClaim.Value;
+
+            var schforModel = await _userRepository.GetByUsernameAsync(username);
+
             var model = await _agencyContext.Model
-                .FirstOrDefaultAsync(m => m.Name == username);
+                .FirstOrDefaultAsync(m => m.Email == schforModel.Email);
             if (model == null)
             {
                 return Unauthorized("Usuário não encontrado na base de dados.");
@@ -271,16 +298,9 @@ namespace Pregiato.API.Controllers
             {
                 return Forbid("Permissão insuficiente.");
             }
-            var modelSearch = await _agencyContext.Model
-                .Where(m => m.Name == username)
-                .Select(m => new { m.IdModel })
-                .FirstOrDefaultAsync();
-            if (model == null)
-            {
-                throw new Exception($"Nenhum modelo encontrado para o usuário: {username}");
-            }
+            
             var contracts = await _agencyContext.Contracts
-                 .Where(c => c.ModelId == modelSearch.IdModel) 
+                 .Where(c => c.ModelId == model.IdModel) 
                  .Select(c => new
                  {
                      c.ModelId,
@@ -288,17 +308,22 @@ namespace Pregiato.API.Controllers
                      c.Content 
                  })
                  .ToListAsync();
-            var listContracts = contracts.Select(c =>
+
+            if (contracts != null )
             {
-                byte[] fileBytes = c.Content ?? Array.Empty<byte>();
-                return new
+                var listContracts = contracts.Select(c =>
                 {
-                    ModelId = c.ModelId,
-                    ContractFilePath = c.ContractFilePath,
-                    ContentBase64 = fileBytes.Length > 0 ? Convert.ToBase64String(fileBytes) : null
-                };
-            }).ToList();
-            return Ok(listContracts);
+                    byte[] fileBytes = c.Content ?? Array.Empty<byte>();
+                    return new
+                    {
+                        ModelId = c.ModelId,
+                        ContractFilePath = c.ContractFilePath,
+                        ContentBase64 = fileBytes.Length > 0 ? Convert.ToBase64String(fileBytes) : null
+                    };
+                }).ToList();
+                return Ok(listContracts);
+            }
+            return BadRequest( _customResponse.Message = "Desculpe, mas não encontramos contratos relacionados ao seu usuário. ");
         }
 
     }
