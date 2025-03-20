@@ -6,6 +6,8 @@ namespace Pregiato.API.DTO
     {
         public string? Username { get; set; }
         public string? Email { get; set; }
+
+        [JsonIgnore]
         public string? Password { get; set; }
     }
 }
