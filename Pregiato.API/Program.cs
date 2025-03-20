@@ -162,7 +162,7 @@ builder.Services.AddControllers()
     });
 
 builder.Services.AddAuthorization();
-builder.WebHost.UseUrls("http://+:8080");
+builder.WebHost.UseUrls("http://+:80");
 builder.Logging.ClearProviders();
 builder.Logging.AddConsole();
 builder.Logging.AddDebug();
@@ -174,7 +174,7 @@ app.UseSwagger();
 app.UseSwaggerUI(c =>
 {
     c.SwaggerEndpoint("/swagger/v1/swagger.json", "Model Agency API v1");
-    c.RoutePrefix = string.Empty; // Deixa o Swagger disponível em http://localhost:8080
+    c.RoutePrefix = string.Empty; // Deixa o Swagger disponível em http://localhost:80
 });
 app.UseCors("AllowAllOrigins");
 app.UseRouting(); 
