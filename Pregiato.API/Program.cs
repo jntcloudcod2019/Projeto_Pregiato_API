@@ -95,6 +95,12 @@ builder.Services.AddSwaggerGen(c =>
 });
 
 var secretKey = Environment.GetEnvironmentVariable("SECRETKEY_TOKEN", EnvironmentVariableTarget.Machine);
+Console.WriteLine($"{secretKey}");
+if (string.IsNullOrEmpty(secretKey))
+{
+    throw new ArgumentException(nameof(secretKey));
+}
+
 
 builder.Services.AddAuthentication(JwtBearerDefaults.AuthenticationScheme)
     .AddJwtBearer(options =>
