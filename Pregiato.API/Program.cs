@@ -16,8 +16,6 @@ using Pregiato.API.Response;
 
 var builder = WebApplication.CreateBuilder(args);
 
-builder.Environment.EnvironmentName = Environments.Production;
-
 var config = new ConfigurationBuilder()
     .SetBasePath(Directory.GetCurrentDirectory())
     .AddJsonFile("appsettings.json", optional: false, reloadOnChange: true)
@@ -32,6 +30,8 @@ builder.Configuration.AddConfiguration(config);
 builder.Services.Configure<RabbitMQConfig>(builder.Configuration.GetSection("RabbitMQ"));
 
 var connectionString = Environment.GetEnvironmentVariable("SECRET_KEY_DATABASE", EnvironmentVariableTarget.Machine);
+
+var pathBase = Environment.GetEnvironmentVariable("PATH_BASE", EnvironmentVariableTarget.Machine);
 
 builder.Services.AddDbContext<ModelAgencyContext>(options =>
     options.UseNpgsql(connectionString)
@@ -162,7 +162,6 @@ builder.Services.AddControllers()
     });
 
 builder.Services.AddAuthorization();
-builder.WebHost.UseUrls("http://+:80");
 builder.Logging.ClearProviders();
 builder.Logging.AddConsole();
 builder.Logging.AddDebug();
@@ -170,11 +169,21 @@ builder.Logging.SetMinimumLevel(LogLevel.Trace);
 
 var app = builder.Build();
 
+if (!string.IsNullOrEmpty(pathBase))
+{
+    app.UsePathBase(pathBase);
+    app.Use((context, next) =>
+    {
+        context.Request.PathBase = new PathString(pathBase);
+        return next();
+    });
+}
+
 app.UseSwagger();
 app.UseSwaggerUI(c =>
 {
     c.SwaggerEndpoint("/swagger/v1/swagger.json", "Model Agency API v1");
-    c.RoutePrefix = string.Empty; // Deixa o Swagger disponível em http://localhost:80
+    c.RoutePrefix = string.Empty;
 });
 app.UseCors("AllowAllOrigins");
 app.UseRouting(); 
