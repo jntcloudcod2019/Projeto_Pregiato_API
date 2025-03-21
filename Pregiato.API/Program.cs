@@ -94,11 +94,11 @@ builder.Services.AddSwaggerGen(c =>
     c.AddSecurityRequirement(securityRequirement);
 });
 
-var secretKey = Environment.GetEnvironmentVariable("SECRETKEY_TOKEN", EnvironmentVariableTarget.Machine);
-Console.WriteLine($"{secretKey}");
+var secretKey = Environment.GetEnvironmentVariable("SECRETKEY_JWT_TOKEN", EnvironmentVariableTarget.Machine);
+
 if (string.IsNullOrEmpty(secretKey))
 {
-    throw new ArgumentException(nameof(secretKey));
+   Console.WriteLine(nameof(secretKey));
 }
 
 
