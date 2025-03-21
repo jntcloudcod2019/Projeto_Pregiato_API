@@ -211,6 +211,7 @@ namespace Pregiato.API.Services
 
             if (!File.Exists(imagePath))
             {
+                //colocar outra coisa
                 throw new FileNotFoundException($"Imagem da assinatura não encontrada para o contrato {contractType}.", imagePath);
             }
 
