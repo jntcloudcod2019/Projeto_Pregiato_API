@@ -32,5 +32,5 @@ RUN apt-get update && apt-get install -y \
     && rm -rf /var/lib/apt/lists/*
 
 COPY --from=build /app/publish .
-EXPOSE 80
+EXPOSE 8080
 ENTRYPOINT ["dotnet", "Pregiato.API.dll"]
