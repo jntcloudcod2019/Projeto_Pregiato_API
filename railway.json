@@ -1,0 +1,29 @@
+{
+  "$schema": "https://railway.app/railway.schema.json",
+  "build": {
+    "builder": "DOCKERFILE",
+    "dockerfilePath": "Dockerfile"
+  },
+  "deploy": {
+    "runtime": "V2",
+    "numReplicas": 1,
+    "sleepApplication": false,
+    "multiRegionConfig": {
+      "us-west2": {
+        "numReplicas": 1
+      }
+    },
+    "restartPolicyType": "ON_FAILURE",
+    "restartPolicyMaxRetries": 10
+  },
+  "env": {
+    "SERVER_EMAIL": "smtp.gmail.com",
+    "SERVER_EMAIL_PORT": "587",
+    "SECRET_KEY_DATABASE": "Host=191.101.235.250;Port=5432;Database=pregiato;Username=pregiato;Password=pregiato123",
+    "SERVER_EMAIL_USERNAME": "jonathanfrnnd3@gmail.com",
+    "SERVER_EMAIL_PASSWORD": "ospuqsmrlvaqqrdr",
+    "SECRETKEY_JWT_TOKEN": "3+XcgYxev9TcGXECMBq0ilANarHN68wsDsrhG60icMaACkw9ajU97IYT+cv9IDepqrQjPaj4WUQS3VqOvpmtDw==",
+    "ISSUER_JWT": "PregiatoAPI",
+    "AUDIENCE_JWT": "PregiatoAPIToken"
+  }
+}
