@@ -29,9 +29,9 @@ builder.Configuration.AddConfiguration(config);
 
 builder.Services.Configure<RabbitMQConfig>(builder.Configuration.GetSection("RabbitMQ"));
 
-var connectionString = Environment.GetEnvironmentVariable("SECRET_KEY_DATABASE", EnvironmentVariableTarget.Machine);
+var connectionString = Environment.GetEnvironmentVariable("SECRET_KEY_DATABASE");
 
-var pathBase = Environment.GetEnvironmentVariable("PATH_BASE", EnvironmentVariableTarget.Machine);
+var pathBase = Environment.GetEnvironmentVariable("PATH_BASE");
 
 builder.Services.AddDbContext<ModelAgencyContext>(options =>
     options.UseNpgsql(connectionString)
@@ -94,13 +94,7 @@ builder.Services.AddSwaggerGen(c =>
     c.AddSecurityRequirement(securityRequirement);
 });
 
-var secretKey = Environment.GetEnvironmentVariable("SECRETKEY_JWT_TOKEN", EnvironmentVariableTarget.Machine);
-
-if (string.IsNullOrEmpty(secretKey))
-{
-   Console.WriteLine(nameof(secretKey));
-}
-
+var secretKey = Environment.GetEnvironmentVariable("SECRETKEY_JWT_TOKEN");
 
 builder.Services.AddAuthentication(JwtBearerDefaults.AuthenticationScheme)
     .AddJwtBearer(options =>
@@ -111,8 +105,8 @@ builder.Services.AddAuthentication(JwtBearerDefaults.AuthenticationScheme)
             ValidateAudience = true,
             ValidateLifetime = true,
             ValidateIssuerSigningKey = true,
-            ValidIssuer = Environment.GetEnvironmentVariable("ISSUER_JWT", EnvironmentVariableTarget.Machine),
-            ValidAudience = Environment.GetEnvironmentVariable("AUDIENCE_JWT", EnvironmentVariableTarget.Machine),
+            ValidIssuer = Environment.GetEnvironmentVariable("ISSUER_JWT"),
+            ValidAudience = Environment.GetEnvironmentVariable("AUDIENCE_JWT"),
             IssuerSigningKey = new SymmetricSecurityKey(Encoding.UTF8.GetBytes(secretKey))
         };
     });
@@ -154,7 +148,6 @@ builder.Services.AddCors(options =>
         });
 });
 
-
 builder.Services.AddControllers()
     .AddJsonOptions(options =>
     {
@@ -174,11 +167,6 @@ builder.Logging.AddConsole();
 builder.Logging.AddDebug();
 builder.Logging.SetMinimumLevel(LogLevel.Trace);
 
-builder.WebHost.ConfigureKestrel(serverOptions =>
-{
-    serverOptions.ListenAnyIP(8080);
-});
-
 var app = builder.Build();
 
 if (!string.IsNullOrEmpty(pathBase))
@@ -190,7 +178,6 @@ if (!string.IsNullOrEmpty(pathBase))
         return next();
     });
 }
-
 
 app.UseSwagger();
 app.UseSwaggerUI(c =>
