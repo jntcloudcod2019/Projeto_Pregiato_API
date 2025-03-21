@@ -13,9 +13,9 @@ namespace Pregiato.API.Services
         private readonly IModelRepository _modelRepository;
         private readonly IHttpContextAccessor _httpContextAccessor;
 
-        private readonly string SECRETKEY_JWT_TOKEN = Environment.GetEnvironmentVariable("SECRETKEY_JWT_TOKEN", EnvironmentVariableTarget.Machine);
-        private readonly string ISSUER_JWT = Environment.GetEnvironmentVariable("ISSUER_JWT", EnvironmentVariableTarget.Machine);
-        private readonly string AUDIENCE_JWT = Environment.GetEnvironmentVariable("AUDIENCE_JWT", EnvironmentVariableTarget.Machine);
+        private readonly string SECRETKEY_JWT_TOKEN = Environment.GetEnvironmentVariable("SECRETKEY_JWT_TOKEN");
+        private readonly string ISSUER_JWT = Environment.GetEnvironmentVariable("ISSUER_JWT");
+        private readonly string AUDIENCE_JWT = Environment.GetEnvironmentVariable("AUDIENCE_JWT");
         public JwtService(IConfiguration configuration, IModelRepository modelRepository, IHttpContextAccessor httpContextAccessor)
         {
             _configuration = configuration;
