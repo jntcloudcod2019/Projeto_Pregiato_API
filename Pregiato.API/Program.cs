@@ -154,6 +154,7 @@ builder.Services.AddCors(options =>
         });
 });
 
+
 builder.Services.AddControllers()
     .AddJsonOptions(options =>
     {
@@ -173,6 +174,11 @@ builder.Logging.AddConsole();
 builder.Logging.AddDebug();
 builder.Logging.SetMinimumLevel(LogLevel.Trace);
 
+builder.WebHost.ConfigureKestrel(serverOptions =>
+{
+    serverOptions.ListenAnyIP(8080);
+});
+
 var app = builder.Build();
 
 if (!string.IsNullOrEmpty(pathBase))
@@ -184,6 +190,7 @@ if (!string.IsNullOrEmpty(pathBase))
         return next();
     });
 }
+
 
 app.UseSwagger();
 app.UseSwaggerUI(c =>
