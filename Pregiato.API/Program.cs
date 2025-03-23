@@ -65,7 +65,7 @@ builder.Services.AddSwaggerGen(c =>
     c.MapType<MetodoPagamento>(() => new OpenApiSchema
     {
         Type = "string",
-        Example = new OpenApiString("CartaoCredito"),
+        Example = new OpenApiString("CartaoCredito" ),
         Description = "Método de pagamento. Valores permitidos: CartaoCredito, CartaoDebito, Pix, Dinheiro, LinkPagamento"
     });
 
