@@ -20,7 +20,7 @@ namespace Pregiato.API.Models
         [SwaggerSchema("Data Pagamento")]
         [JsonConverter(typeof(JsonDateTimeConverter))]
         [DisplayFormat(DataFormatString = "{dd-MM-yyyy}", ApplyFormatInEditMode = true)]
-        public DateTime? DataPagamento { get; set; } = DateTime.UtcNow; 
+        public DateTime? DataPagamento { get; set; }
         public StatusPagamento  StatusPagamento{ get; set; } 
         public byte[]? Comprovante { get; set; }
 

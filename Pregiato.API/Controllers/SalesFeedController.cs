@@ -146,7 +146,7 @@ public class SalesFeedController : ControllerBase
         }
     }
 
-    [Authorize(Policy = "AdminOrManager")]
+   [Authorize(Policy = "AdminOrManager")]
     [HttpGet("monthly")]
     public async Task<IActionResult> GetMonthlySales()
     {
@@ -177,7 +177,7 @@ public class SalesFeedController : ControllerBase
             return Ok(new BillingResponse
             {
                 Success = true,
-                Message = $"Faturamento do  mês  de {startOfMonth.Month.ToString("MMMM")}. ",
+                Message = $"Faturamento do  mês  de {startOfMonth.ToString("MMMM")}",
                 Data = new BillingData
                 {
                     TotalSales = totalSales,
