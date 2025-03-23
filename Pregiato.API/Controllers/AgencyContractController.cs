@@ -86,12 +86,12 @@ namespace Pregiato.API.Controllers
                     {"Telefone-Principal", model.TelefonePrincipal},
                     {"Telefone-Secundário", model.TelefoneSecundario},
             };
-            var contract = await _contractService.GenerateContractImageRightsTerm(queryModel);
+            var contract = await _contractService.GenetayeContractImageRightsTerm(queryModel);
             await _context.SaveChangesAsync();
             return Ok($"Termo de Concessão de direito de imagem para: {model.Name}, gerado com sucesso. Código da Proposta: {contract.CodProposta}.");
         }
 
-        [Authorize(Policy = "AdminOrManager")]
+       // [Authorize(Policy = "AdminOrManager")]
         [SwaggerOperation("Processo de gerar contrato de Agenciamento e Fotoprgrafia.")]
         [HttpPost("generate/Agency&PhotographyProductionContracts")]
         public async Task<IActionResult> GenerateAgencyPhotographyProductionContractsAsync(CreateContractModelRequest createContractModelRequest)
