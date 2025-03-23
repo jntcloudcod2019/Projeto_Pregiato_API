@@ -130,7 +130,6 @@ namespace Pregiato.API.Services
             contract.Content = jsonBytes;
             contract.ContractFilePath = $"CodigoProposta_{contract.CodProposta}_CPF:{cpfModelo}_{DateTime.UtcNow.ToString("dd-MM-yyyy", CultureInfo.InvariantCulture)}_{contract.TemplateFileName}.pdf";
 
-            // Usar um novo escopo para salvar o contrato
             using var scope = _scopeFactory.CreateScope();
             var context = scope.ServiceProvider.GetRequiredService<ModelAgencyContext>();
             context.Contracts.Add(contract);
@@ -159,10 +158,16 @@ namespace Pregiato.API.Services
 
             contract.ModelId = modelId;
             contract.CodProposta = await GetNextCodPropostaAsync();
-            contract.LocalContrato = parameters.ContainsKey("Cidade Modelo - UF") ? parameters["Cidade Modelo - UF"] : createContractModelRequest.City;
-            contract.DataContrato = parameters.ContainsKey("Dia") ? parameters["Dia"] : createContractModelRequest.Day.ToString(CultureInfo.InvariantCulture);
-            contract.MesContrato = parameters.ContainsKey("Mês-Contrato") ? parameters["Mês-Contrato"] : createContractModelRequest.MonthContract.ToString(CultureInfo.InvariantCulture);
-            contract.ValorContrato = parameters.ContainsKey("Valor-Contrato") ? decimal.Parse(parameters["Valor-Contrato"].Replace("R$", "").Replace(".", "").Replace(",", ".").Trim(), CultureInfo.InvariantCulture) : throw new ArgumentException("A chave 'Valor-Contrato' é obrigatória.");
+
+            // Usar TryGetValue para evitar dupla busca no dicionário
+            contract.LocalContrato = parameters.TryGetValue("Cidade Modelo - UF", out var cidade) ? cidade : createContractModelRequest.City;
+            contract.DataContrato = parameters.TryGetValue("Dia", out var dia) ? dia : createContractModelRequest.Day.ToString(CultureInfo.InvariantCulture);
+            contract.MesContrato = parameters.TryGetValue("Mês-Contrato", out var mes) ? mes : createContractModelRequest.MonthContract.ToString(CultureInfo.InvariantCulture);
+            if (!parameters.TryGetValue("Valor-Contrato", out var valorContrato))
+            {
+                throw new ArgumentException("A chave 'Valor-Contrato' é obrigatória.");
+            }
+            contract.ValorContrato = decimal.Parse(valorContrato.Replace("R$", "").Replace(".", "").Replace(",", ".").Trim(), CultureInfo.InvariantCulture);
 
             string htmlTemplatePath = $"Templates/{contract.TemplateFileName}";
             if (!File.Exists(htmlTemplatePath))
@@ -305,21 +310,27 @@ namespace Pregiato.API.Services
 
             contract.ModelId = model.IdModel;
             contract.CodProposta = await GetNextCodPropostaAsync();
-            contract.LocalContrato = parameters.ContainsKey("Local-Contrato") ? parameters["Local-Contrato"] : DefaultCidadeEmpresa;
-            contract.DataContrato = parameters.ContainsKey("Data-Contrato") ? parameters["Data-Contrato"] : DefaultDataContrato;
-            contract.MesContrato = parameters.ContainsKey("Mês-Contrato") ? parameters["Mês-Contrato"] : DefaultMesContrato;
-            contract.NomeEmpresa = parameters.ContainsKey("Nome-Empresa") ? parameters["Nome-Empresa"] : DefaultNomeEmpresa;
-            contract.CNPJEmpresa = parameters.ContainsKey("CNPJ-Empresa") ? parameters["CNPJ-Empresa"] : DefaultCNPJEmpresa;
-            contract.EnderecoEmpresa = parameters.ContainsKey("Endereço-Empresa") ? parameters["Endereço-Empresa"] : DefaultEnderecoEmpresa;
-            contract.NumeroEmpresa = parameters.ContainsKey("Numero-Empresa") ? parameters["Numero-Empresa"] : DefaultNumeroEmpresa;
-            contract.ComplementoEmpresa = parameters.ContainsKey("Complemento-Empresa") ? parameters["Complemento-Empresa"] : DefaultComplementoEmpresa;
-            contract.BairroEmpresa = parameters.ContainsKey("Bairro-Empresa") ? parameters["Bairro-Empresa"] : DefaultBairroEmpresa;
-            contract.CidadeEmpresa = parameters.ContainsKey("Cidade-Empresa") ? parameters["Cidade-Empresa"] : DefaultCidadeEmpresa;
-            contract.CEPEmpresa = parameters.ContainsKey("CEP-Empresa") ? parameters["CEP-Empresa"] : DefaultCEPEmpresa;
-            contract.VigenciaContrato = parameters.ContainsKey("Vigência-Contrato") ? parameters["Vigência-Contrato"] : DefaultVigenciaContrato;
-            contract.DataAgendamento = parameters.ContainsKey("Data-Agendamento") ? parameters["Data-Agendamento"] : createRequestContractImageRights.DataAgendamento.ToString("dd/MM/yyyy", CultureInfo.InvariantCulture);
-            contract.HorarioAgendamento = parameters.ContainsKey("Horário-Agendamento") ? parameters["Horário-Agendamento"] : createRequestContractImageRights.horaAgendamento;
-            contract.ValorCache = parameters.ContainsKey("Valor-Cache") ? decimal.Parse(parameters["Valor-Cache"].Replace("R$", "").Replace(".", "").Replace(",", ".").Trim(), CultureInfo.InvariantCulture) : throw new ArgumentException("A chave 'Valor-Cache' é obrigatória.");
+
+            // Usar TryGetValue para evitar dupla busca
+            contract.LocalContrato = parameters.TryGetValue("Local-Contrato", out var local) ? local : DefaultCidadeEmpresa;
+            contract.DataContrato = parameters.TryGetValue("Data-Contrato", out var data) ? data : DefaultDataContrato;
+            contract.MesContrato = parameters.TryGetValue("Mês-Contrato", out var mesContrato) ? mesContrato : DefaultMesContrato;
+            contract.NomeEmpresa = parameters.TryGetValue("Nome-Empresa", out var nomeEmpresa) ? nomeEmpresa : DefaultNomeEmpresa;
+            contract.CNPJEmpresa = parameters.TryGetValue("CNPJ-Empresa", out var cnpj) ? cnpj : DefaultCNPJEmpresa;
+            contract.EnderecoEmpresa = parameters.TryGetValue("Endereço-Empresa", out var endereco) ? endereco : DefaultEnderecoEmpresa;
+            contract.NumeroEmpresa = parameters.TryGetValue("Numero-Empresa", out var numero) ? numero : DefaultNumeroEmpresa;
+            contract.ComplementoEmpresa = parameters.TryGetValue("Complemento-Empresa", out var complemento) ? complemento : DefaultComplementoEmpresa;
+            contract.BairroEmpresa = parameters.TryGetValue("Bairro-Empresa", out var bairro) ? bairro : DefaultBairroEmpresa;
+            contract.CidadeEmpresa = parameters.TryGetValue("Cidade-Empresa", out var cidadeEmpresa) ? cidadeEmpresa : DefaultCidadeEmpresa;
+            contract.CEPEmpresa = parameters.TryGetValue("CEP-Empresa", out var cep) ? cep : DefaultCEPEmpresa;
+            contract.VigenciaContrato = parameters.TryGetValue("Vigência-Contrato", out var vigencia) ? vigencia : DefaultVigenciaContrato;
+            contract.DataAgendamento = parameters.TryGetValue("Data-Agendamento", out var dataAgendamento) ? dataAgendamento : createRequestContractImageRights.DataAgendamento.ToString("dd/MM/yyyy", CultureInfo.InvariantCulture);
+            contract.HorarioAgendamento = parameters.TryGetValue("Horário-Agendamento", out var horario) ? horario : createRequestContractImageRights.horaAgendamento;
+            if (!parameters.TryGetValue("Valor-Cache", out var valorCache))
+            {
+                throw new ArgumentException("A chave 'Valor-Cache' é obrigatória.");
+            }
+            contract.ValorCache = decimal.Parse(valorCache.Replace("R$", "").Replace(".", "").Replace(",", ".").Trim(), CultureInfo.InvariantCulture);
 
             string htmlTemplatePath = $"Templates/{contract.TemplateFileName}";
             if (!File.Exists(htmlTemplatePath))
@@ -383,18 +394,20 @@ namespace Pregiato.API.Services
 
             contract.ModelId = model.IdModel;
             contract.CodProposta = await GetNextCodPropostaAsync();
-            contract.LocalContrato = parameters.ContainsKey("Local-Contrato") ? parameters["Local-Contrato"] : DefaultCidadeEmpresa;
-            contract.DataContrato = parameters.ContainsKey("Data-Contrato") ? parameters["Data-Contrato"] : DefaultDataContrato;
-            contract.MesContrato = parameters.ContainsKey("Mês-Contrato") ? parameters["Mês-Contrato"] : DefaultMesContrato;
-            contract.NomeEmpresa = parameters.ContainsKey("Nome-Empresa") ? parameters["Nome-Empresa"] : DefaultNomeEmpresa;
-            contract.CNPJEmpresa = parameters.ContainsKey("CNPJ-Empresa") ? parameters["CNPJ-Empresa"] : DefaultCNPJEmpresa;
-            contract.EnderecoEmpresa = parameters.ContainsKey("Endereço-Empresa") ? parameters["Endereço-Empresa"] : DefaultEnderecoEmpresa;
-            contract.NumeroEmpresa = parameters.ContainsKey("Numero-Empresa") ? parameters["Numero-Empresa"] : DefaultNumeroEmpresa;
-            contract.ComplementoEmpresa = parameters.ContainsKey("Complemento-Empresa") ? parameters["Complemento-Empresa"] : DefaultComplementoEmpresa;
-            contract.BairroEmpresa = parameters.ContainsKey("Bairro-Empresa") ? parameters["Bairro-Empresa"] : DefaultBairroEmpresa;
-            contract.CidadeEmpresa = parameters.ContainsKey("Cidade-Empresa") ? parameters["Cidade-Empresa"] : DefaultCidadeEmpresa;
-            contract.CEPEmpresa = parameters.ContainsKey("CEP-Empresa") ? parameters["CEP-Empresa"] : DefaultCEPEmpresa;
-            contract.VigenciaContrato = parameters.ContainsKey("Vigência-Contrato") ? parameters["Vigência-Contrato"] : DefaultVigenciaContrato;
+
+            // Usar TryGetValue para evitar dupla busca
+            contract.LocalContrato = parameters.TryGetValue("Local-Contrato", out var local) ? local : DefaultCidadeEmpresa;
+            contract.DataContrato = parameters.TryGetValue("Data-Contrato", out var data) ? data : DefaultDataContrato;
+            contract.MesContrato = parameters.TryGetValue("Mês-Contrato", out var mesContrato) ? mesContrato : DefaultMesContrato;
+            contract.NomeEmpresa = parameters.TryGetValue("Nome-Empresa", out var nomeEmpresa) ? nomeEmpresa : DefaultNomeEmpresa;
+            contract.CNPJEmpresa = parameters.TryGetValue("CNPJ-Empresa", out var cnpj) ? cnpj : DefaultCNPJEmpresa;
+            contract.EnderecoEmpresa = parameters.TryGetValue("Endereço-Empresa", out var endereco) ? endereco : DefaultEnderecoEmpresa;
+            contract.NumeroEmpresa = parameters.TryGetValue("Numero-Empresa", out var numero) ? numero : DefaultNumeroEmpresa;
+            contract.ComplementoEmpresa = parameters.TryGetValue("Complemento-Empresa", out var complemento) ? complemento : DefaultComplementoEmpresa;
+            contract.BairroEmpresa = parameters.TryGetValue("Bairro-Empresa", out var bairro) ? bairro : DefaultBairroEmpresa;
+            contract.CidadeEmpresa = parameters.TryGetValue("Cidade-Empresa", out var cidadeEmpresa) ? cidadeEmpresa : DefaultCidadeEmpresa;
+            contract.CEPEmpresa = parameters.TryGetValue("CEP-Empresa", out var cep) ? cep : DefaultCEPEmpresa;
+            contract.VigenciaContrato = parameters.TryGetValue("Vigência-Contrato", out var vigencia) ? vigencia : DefaultVigenciaContrato;
 
             string htmlTemplatePath = $"Templates/{contract.TemplateFileName}";
             if (!File.Exists(htmlTemplatePath))
