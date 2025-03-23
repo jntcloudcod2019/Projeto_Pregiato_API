@@ -22,19 +22,25 @@ ENV SECRETKEY_JWT_TOKEN=${SECRETKEY_JWT_TOKEN}
 ENV ISSUER_JWT=${ISSUER_JWT}
 ENV AUDIENCE_JWT=${AUDIENCE_JWT}
 
-# Copie o .csproj da subpasta Pregiato.API
+# Restaurar dependências
 COPY Pregiato.API/Pregiato.API.csproj ./
 RUN dotnet restore
 
-# Copie o restante do código da subpasta Pregiato.API
+# Copiar o restante do código fonte
 COPY Pregiato.API/ ./
+
+# Publicar a aplicação
 RUN dotnet publish -c Release --no-self-contained -o /app/publish
+
+# Copiar explicitamente a pasta Templates e arquivo Select.Html.dep necessários para SelectPdf
+RUN cp -r /app/Templates /app/publish/Templates && \
+    cp /app/Files/Select.Html.dep /app/publish/
 
 # Etapa 2: Execução da aplicação
 FROM mcr.microsoft.com/dotnet/aspnet:8.0 AS runtime
 WORKDIR /app
 
-# Instalar dependências para PuppeteerSharp (Chromium)
+# Instalar dependências necessárias completas (bibliotecas gráficas, pdf, SSL, criptografia, PuppeteerSharp)
 RUN apt-get update && apt-get install -y \
     chromium \
     libx11-xcb1 \
@@ -49,8 +55,27 @@ RUN apt-get update && apt-get install -y \
     libatk1.0-0 \
     libatk-bridge2.0-0 \
     libgtk-3-0 \
+    libgdiplus \
+    libc6-dev \
+    libssl-dev \
+    libfontconfig1 \
+    libcairo2 \
+    libjpeg-dev \
+    libpango-1.0-0 \
+    libgif-dev \
+    libicu-dev \
+    zlib1g-dev \
+    libharfbuzz0b \
+    libfreetype6-dev \
     && rm -rf /var/lib/apt/lists/*
 
+# Links simbólicos necessários para o correto funcionamento de libgdiplus e libdl
+RUN ln -s /usr/lib/libgdiplus.so /usr/lib/gdiplus.dll && \
+    ln -s /lib/x86_64-linux-gnu/libdl.so.2 /usr/lib/libdl.so
+
+# Copiar arquivos publicados (incluindo Templates e arquivos SelectPdf necessários)
 COPY --from=build /app/publish .
+
+# Expor a porta e iniciar a aplicação
 EXPOSE 8080
 ENTRYPOINT ["dotnet", "Pregiato.API.dll"]

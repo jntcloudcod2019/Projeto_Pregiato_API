@@ -7,7 +7,6 @@
         public List<ContractSummary> Contracts { get; set; }
 
     }
-
     public class ContractSummary
     {
         public int CodProposta { get; set; }

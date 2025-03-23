@@ -57,6 +57,7 @@ builder.Services.AddScoped<IPasswordHasherService, PasswordHasherService>();
 builder.Services.AddScoped<IClientBillingRepository, ClientBillingRepository>();
 builder.Services.AddSingleton<IRabbitMQProducer, RabbitMQProducer>();
 builder.Services.AddScoped<CustomResponse>();
+builder.Services.AddSingleton<IBrowserService, BrowserService>();
 
 builder.Services.AddSwaggerGen(c =>
 {

@@ -7,8 +7,10 @@ using Pregiato.API.Requests;
 using Microsoft.AspNetCore.Mvc;
 using System.Globalization;
 using System.Text.Json;
-using SelectPdf;
 using System.Text;
+using PuppeteerSharp.Media;
+using PuppeteerSharp;
+using Pregiato.API.Interfaces;
 
 namespace Pregiato.API.Services
 {
@@ -20,7 +22,8 @@ namespace Pregiato.API.Services
         private readonly IJwtService _jwtService;
         private readonly IPaymentService _paymentService;
         private readonly IConfiguration _configuration;
-        private readonly IRabbitMQProducer _rabbitmqProducer;   
+        private readonly IRabbitMQProducer _rabbitmqProducer;
+        private readonly IBrowserService _browserService;
         public ContractService
                (IContractRepository contractRepository,
                IModelRepository modelRepository,
@@ -28,7 +31,8 @@ namespace Pregiato.API.Services
                IJwtService jwtService,
                IPaymentService paymentSerice,
                IConfiguration configuration,
-               IRabbitMQProducer rabbitMQProducer)
+               IRabbitMQProducer rabbitMQProducer,
+               IBrowserService browserService)
         {
             _contractRepository = contractRepository ?? throw new ArgumentNullException(nameof(context));
             _modelRepository = modelRepository;
@@ -36,7 +40,8 @@ namespace Pregiato.API.Services
             _jwtService = jwtService;
             _paymentService = paymentSerice;
             _configuration = configuration ?? throw new ArgumentException(nameof(configuration));
-            _rabbitmqProducer = rabbitMQProducer;           
+            _rabbitmqProducer = rabbitMQProducer;
+            _browserService = browserService;
         }
 
         private static readonly string DefaultNomeEmpresa = "Pregiato Management";
@@ -74,25 +79,36 @@ namespace Pregiato.API.Services
         public async Task<byte[]> ConvertHtmlToPdf(string populatedHtml, Dictionary<string, string> parameters)
         {
 
-            HtmlToPdf converter = new HtmlToPdf();
-            converter.Options.PdfPageSize = PdfPageSize.A4;
-            converter.Options.PdfPageOrientation = PdfPageOrientation.Portrait;
-            converter.Options.WebPageWidth = 1024;
-            converter.Options.WebPageHeight = 0;
-            converter.Options.MarginTop = 20;
-            converter.Options.MarginBottom = 40;
-            converter.Options.MarginLeft = 20;
-            converter.Options.MarginRight = 20;
+            var browser = await _browserService.GetBrowserAsync();
 
-            Thread.Sleep(200); 
+            await using var page = await browser.NewPageAsync();
 
-            SelectPdf.PdfDocument doc = converter.ConvertHtmlString(populatedHtml);
+            await page.SetContentAsync(populatedHtml, new NavigationOptions
+            {
+                WaitUntil = new[] { WaitUntilNavigation.Networkidle0 }
+            });
+
+            var pdfOptions = new PdfOptions
+            {
+                Format = PaperFormat.A4,
+                PrintBackground = true,
+                MarginOptions = new PuppeteerSharp.Media.MarginOptions
+                {
+                    Top = "20px",
+                    Bottom = "40px",
+                    Left = "20px",
+                    Right = "20px"
+                }
+            };
+
+            var pdfStream = await page.PdfStreamAsync(pdfOptions);
 
             using var memoryStream = new MemoryStream();
-            doc.Save(memoryStream);
-            doc.Close();
+            await pdfStream.CopyToAsync(memoryStream);
 
-            return await Task.FromResult(memoryStream.ToArray());
+            await page.CloseAsync();
+
+            return memoryStream.ToArray();
         }
         public async Task SaveContractAsync(ContractBase contract, Stream pdfStream, string cpfModelo)
         {
@@ -191,13 +207,13 @@ namespace Pregiato.API.Services
 
             string templatePhotography = model.Age < 18 ? "PhotographyMinority" : "Photography";
 
-            var contracts = new List<ContractBase>
+            var contractTasks = new[]
             {
-                await GenerateContractAsync(createContractModelRequest, model.IdModel, templatePhotography,await AddSignatureToParameters(parameters, templatePhotography)),
-                await GenerateContractAsync(createContractModelRequest, model.IdModel, "Agency", await AddSignatureToParameters(parameters, "Agency"))
+                GenerateContractAsync(createContractModelRequest, model.IdModel, templatePhotography, await AddSignatureToParameters(parameters, templatePhotography)),
+                GenerateContractAsync(createContractModelRequest, model.IdModel, "Agency", await AddSignatureToParameters(parameters, "Agency"))
             };
 
-            await _rabbitmqProducer.SendMensage(contracts, model.CPF);
+            var contracts = (await Task.WhenAll(contractTasks)).ToList();
 
             return contracts;
         }
@@ -205,17 +221,21 @@ namespace Pregiato.API.Services
         {
             var updatedParameters = new Dictionary<string, string>(parameters);
 
-            string ? imageName = _configuration[$"Signatures:{contractType}"];
+            string imageName = _configuration[$"Signatures:{contractType}"];
 
-            string ? imagePath = Path.Combine(Directory.GetCurrentDirectory(), "Templates", imageName);
+            string imagePath = Path.Combine(Directory.GetCurrentDirectory(), "Templates", imageName);
 
             if (!File.Exists(imagePath))
             {
-                //colocar outra coisa
                 throw new FileNotFoundException($"Imagem da assinatura não encontrada para o contrato {contractType}.", imagePath);
             }
 
-            updatedParameters["NameImageSignature"] = imagePath;
+            byte[] imageBytes = await File.ReadAllBytesAsync(imagePath);
+            string imageBase64 = Convert.ToBase64String(imageBytes);
+
+            updatedParameters["NameImageSignature"] = $"data:image/png;base64,{imageBase64}";
+
+            return updatedParameters;
             return await Task.FromResult(updatedParameters);
         }
         public async Task AddMinorModelInfo(Model model, Dictionary<string, string> parameters)
