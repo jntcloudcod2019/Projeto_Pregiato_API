@@ -27,9 +27,9 @@ namespace Pregiato.API.Services
             
             if (string.IsNullOrEmpty(_smtpSettings.Server) || string.IsNullOrEmpty(_smtpSettings.Username) || string.IsNullOrEmpty(_smtpSettings.Password))
             {
-                throw new InvalidOperationException("Configurações do SMTP não foram carregadas corretamente. Verifique as variáveis de ambiente.");
+                Console.WriteLine($"[ERROR] {DateTime.Now:yyyy-MM-dd HH:mm:ss} |  Configurações do SMTP não foram carregadas corretamente. Verifique as variáveis de ambiente.");
             }
-            _logger.LogInformation("Configurações do SMTP carregadas com sucesso.");
+           
         }
 
         public async Task<string> LoadTemplate(Dictionary<string, string> replacements)
@@ -38,15 +38,16 @@ namespace Pregiato.API.Services
 
             if (!File.Exists(templatePath))
             {
-                _logger.LogError($"Template de e-mail não encontrado: {templatePath}");
-                throw new FileNotFoundException("Template de e-mail não encontrado.", templatePath);
+                Console.WriteLine($"[ERROR] {DateTime.Now:yyyy-MM-dd HH:mm:ss} |  Template de e-mail não encontrado: {templatePath}.");
+                //Criar resiliência...
             }
+
+            Console.WriteLine($"[ERROR] {DateTime.Now:yyyy-MM-dd HH:mm:ss} | Populando tamplate do e-mail..: {templatePath}.");
 
             var templateContent = await File.ReadAllTextAsync(templatePath);
             foreach (var replacement in replacements)
             {
                 templateContent = templateContent.Replace($"{{{replacement.Key}}}", replacement.Value);
-                _logger.LogInformation($"Populando tamplate do e-mail P:{replacement.Key}  V:{replacement.Value}");
             }
 
             return templateContent;
@@ -54,14 +55,11 @@ namespace Pregiato.API.Services
 
         public async Task<bool> SendEmailAsync(Dictionary<string, string> replacements, string toEmail, string subject)
         {
-            if (string.IsNullOrEmpty(toEmail))
-            {
-                _logger.LogError("Endereço de e-mail de destino inválido.");
-                throw new ArgumentNullException(nameof(toEmail), "O e-mail de destino não pode ser nulo ou vazio.");
-            }
+            
 
             try
             {
+                Console.WriteLine($"[PROCESS] {DateTime.Now:yyyy-MM-dd HH:mm:ss} | Populando e-mail. ");
                 var templateContent = await LoadTemplate(replacements);
 
                 var message = new MimeMessage();
@@ -80,7 +78,8 @@ namespace Pregiato.API.Services
                 }
                 else
                 {
-                    _logger.LogWarning($"Imagem da logo não encontrada: {imagePath}");
+                    Console.WriteLine($"[ERROR] {DateTime.Now:yyyy-MM-dd HH:mm:ss} | Imagem da logo não encontrada: {imagePath}");
+
                 }
 
                 templateContent = templateContent.Replace("{logo}", "cid:logo");

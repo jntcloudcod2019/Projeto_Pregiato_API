@@ -1,4 +1,5 @@
-﻿using iText.Layout.Element;
+﻿using iText.Kernel.Geom;
+using iText.Layout.Element;
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.EntityFrameworkCore;
@@ -8,6 +9,8 @@ using Pregiato.API.Models;
 using Pregiato.API.Requests;
 using Pregiato.API.Response;
 using Swashbuckle.AspNetCore.Annotations;
+using System.Diagnostics;
+using System.Drawing.Printing;
 using System.IdentityModel.Tokens.Jwt;
 using System.Text.Json;
 namespace Pregiato.API.Controllers
@@ -66,25 +69,30 @@ namespace Pregiato.API.Controllers
         {
             if (!ModelState.IsValid)
             {
+                
                 return BadRequest(new CustomResponse
                 {
                     StatusCode = StatusCodes.Status400BadRequest,
                     Message = "Preenchimento de campos invalidos.",
                     Data = null
-                });
+                });                
             }
+
+            Console.WriteLine($"[PROCESS] {DateTime.Now:yyyy-MM-dd HH:mm:ss} |Validando se model {createModelRequest.Name} | Documento: {createModelRequest.CPF}");
 
             var checkExistence = await _modelRepository.ModelExistsAsync(createModelRequest);
 
             if (checkExistence != null)
             {
+                Console.WriteLine($"[ERROR] {DateTime.Now:yyyy-MM-dd HH:mm:ss} | Modelo: {createModelRequest.Name} já cadastrado.. ");
+
                 return BadRequest(new CustomResponse
                 {
                     StatusCode = StatusCodes.Status304NotModified,
                     Message = $"Modelo {createModelRequest.Name} já cadastrado.",
-                    Data = null
-                }); 
-            } 
+                    Data = null,
+                });               
+            }
 
             var model = new Model
             {
@@ -105,9 +113,11 @@ namespace Pregiato.API.Controllers
                 TelefonePrincipal = createModelRequest.TelefonePrincipal,
                 TelefoneSecundario = createModelRequest.TelefoneSecundario,
             };
-      
+
+            Console.WriteLine($"[PROCESS] {DateTime.Now:yyyy-MM-dd HH:mm:ss} |  Processando cadastro do Moelo: {model.Name} | Documento:{model.CPF}. ");
             await _modelRepository.AddModelAsync(model);
 
+            Console.WriteLine($"[INFO] {DateTime.Now:yyyy-MM-dd HH:mm:ss} |  Modelo cadastro: {model.Name} | Documento:{model.CPF}. ");
             await _userService.RegisterUserModel(createModelRequest.Name, createModelRequest.Email);
 
             return Ok(new ModelResponse
@@ -119,6 +129,7 @@ namespace Pregiato.API.Controllers
                 }
             });
         }
+                 
 
         [Authorize(Policy = "AdminOrManager")]
         [HttpDelete("DeleteModel{id}")]

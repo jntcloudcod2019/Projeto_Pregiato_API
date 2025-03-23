@@ -10,6 +10,6 @@ namespace Pregiato.API.Interface
         Task<string> RegisterUserAsync(string username, string  email);
         Task<string> RegisterUserModel(string username, string email);
         Task <string> AuthenticateUserAsync(LoginUserRequest loginRequest);
-        Task DeleteUserAsync(Guid id);
+      
     }
 }

@@ -12,7 +12,8 @@ namespace Pregiato.API.Services
 
         public async Task<string> GenerateRandomPasswordAsync(int length)
         {
-           
+            Console.WriteLine($"[PROCESS] {DateTime.Now:yyyy-MM-dd HH:mm:ss} | Gerando Senha do usuário... ");
+
             const string chars = "ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789";
           
             var random = new Random();
