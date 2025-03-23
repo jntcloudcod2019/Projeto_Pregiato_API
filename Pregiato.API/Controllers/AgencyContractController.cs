@@ -96,6 +96,8 @@ namespace Pregiato.API.Controllers
         [HttpPost("generate/Agency&PhotographyProductionContracts")]
         public async Task<IActionResult> GenerateAgencyPhotographyProductionContractsAsync(CreateContractModelRequest createContractModelRequest)
         {
+            Console.WriteLine(""); 
+
             if (!ModelState.IsValid)
             {
                 _customResponse.Message = "Dados preechidos incorretamente";

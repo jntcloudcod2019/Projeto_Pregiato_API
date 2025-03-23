@@ -72,7 +72,7 @@ namespace Pregiato.API.Controllers
         {
             try
             {
-                await _userService.DeleteUserAsync(id);
+                await _userRepository.DeleteUserAsync(id);
                 return Ok(new { message = "Usuário deletado com sucesso." });
             }
             catch (Exception ex)

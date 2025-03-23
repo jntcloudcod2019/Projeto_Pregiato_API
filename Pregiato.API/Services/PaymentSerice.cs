@@ -77,7 +77,7 @@ public class PaymentService : IPaymentService
             }
 
             if (payment.StatusPagamento == "Pending" && payment.DataAcordoPagamento == null)
-                throw new ArgumentException("A Data do Acordo de Pagamento é obrigatória para status Pending.");
+                throw new ArgumentException("Data do Acordo de Pagamento é obrigatória para status Pendente.");
 
             await _context.AddAsync(paymentContract);
             await _context.SaveChangesAsync();

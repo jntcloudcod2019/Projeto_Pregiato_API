@@ -4,6 +4,7 @@ using Pregiato.API.Interface;
 using Pregiato.API.Models;
 using Pregiato.API.Requests;
 using Pregiato.API.Response;
+using Pregiato.API.Responses;
 using PuppeteerSharp;
 
 
@@ -109,11 +110,19 @@ namespace Pregiato.API.Services
 
         public async Task<string> RegisterUserModel(string username, string email)
         {
+                         
+            Console.WriteLine($"[PROCESS] {DateTime.Now:yyyy-MM-dd HH:mm:ss} |  Validando se o USER_MODEL: {username}, já está cadastrado... ");
 
-            if (await _userRepository.GetByUsernameAsync(username) != null)
+            var shfUser = await _userRepository.GetByUsernameAsync(username);
+
+            if ( shfUser!= null)
             {
-                _customResponse.Message = $"Usuário: {username} já cadasttrado.";
+                Console.WriteLine($"[INFO] {DateTime.Now:yyyy-MM-dd HH:mm:ss} | USER_MODEL {username}, cadastrado... ");
+
+              ///  _customResponse.Message("Usuário não encontrado. Verifique o nome de usuário e tente novamente.");
             }
+
+            Console.WriteLine($"[PROCESS] {DateTime.Now:yyyy-MM-dd HH:mm:ss} | Gerando cadastro... ");
 
             string nikeName = username.Replace(" ", "").ToLower();
 
@@ -142,7 +151,8 @@ namespace Pregiato.API.Services
             await _userRepository.AddUserAsync(user);
             await _userRepository.SaveChangesAsync();
 
-            return ("Usuário cadastrado com suesso.");
+            Console.WriteLine($"");
+            return($"Usuário {username} cadastrado com sucesso.");
         }  
     }
 }
