@@ -8,6 +8,7 @@
 		<!-- Removido ou ajustado para false -->
 		<PublishSingleFile>false</PublishSingleFile>
 		<AnalysisLevel>preview-recommended</AnalysisLevel>
+		<TreatWarningsAsErrors>false</TreatWarningsAsErrors>
 	</PropertyGroup>
 
 	<ItemGroup>
@@ -30,7 +31,7 @@
 		<PackageReference Include="Npgsql.EntityFrameworkCore.PostgreSQL" Version="9.0.2" />
 		<PackageReference Include="Microsoft.EntityFrameworkCore.Tools" Version="9.0.0" PrivateAssets="all" />
 		<PackageReference Include="Microsoft.AspNetCore.Authentication.JwtBearer" Version="8.0.11" />
-		<PackageReference Include="PuppeteerSharp" Version="20.1.3" />
+		<PackageReference Include="PuppeteerSharp" Version="8.0.0" />
 		<PackageReference Include="RabbitMQ.Client" Version="7.1.2" />
 		<PackageReference Include="SmtpServer" Version="10.0.1" />
 		<PackageReference Include="SwaggerEnrichers" Version="1.0.1" />

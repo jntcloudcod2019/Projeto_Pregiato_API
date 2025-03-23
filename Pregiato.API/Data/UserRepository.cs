@@ -69,13 +69,14 @@ namespace Pregiato.API.Data
 
         public async Task GetByUserAsync(LoginUserRequest loginUserRequest)
         {
-            var loginRequest  =  (from l in  _context.Users
+            var loginRequest  =  (from l in   _context.Users
                                 where l.Name == loginUserRequest.Username
                                 select new LoginUserRequest
                                 {
                                     Username = loginUserRequest.Username,
                                     Password = l.PasswordHash
                                 }).FirstOrDefault();
+           
         }
     }
 }

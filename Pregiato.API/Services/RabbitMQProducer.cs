@@ -1,4 +1,5 @@
-﻿using Microsoft.Extensions.Options;
+﻿using Microsoft.AspNetCore.Http.HttpResults;
+using Microsoft.Extensions.Options;
 using Pregiato.API.Interface;
 using Pregiato.API.Models;
 using Pregiato.API.Services.ServiceModels;
@@ -55,11 +56,12 @@ public class RabbitMQProducer : IRabbitMQProducer
             await channel.CloseAsync();
            await connection.CloseAsync();    
 
-            return ($"[x] Enviado para '{_config.QueueName}': {jsonMessage}");
+           
         }
         catch (Exception ex)
         {
-            throw new Exception($"Erro ao enviar mensagem para fila {_config.QueueName}| Error: {ex.Message}");
+            Console.WriteLine($"Erro ao enviar mensagem para fila {_config.QueueName}| Error: {ex.Message}");
         }
+        return ("Ok");
     }
 }

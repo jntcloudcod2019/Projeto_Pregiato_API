@@ -13,34 +13,55 @@ using System.Globalization;
 using Pregiato.API.Services.ServiceModels;
 using Pregiato.API.Interfaces;
 using Pregiato.API.Response;
+using Microsoft.Extensions.DependencyInjection;
 
 var builder = WebApplication.CreateBuilder(args);
 
-var config = new ConfigurationBuilder()
-    .SetBasePath(Directory.GetCurrentDirectory())
-    .AddJsonFile("appsettings.json", optional: false, reloadOnChange: true)
-    .AddJsonFile($"appsettings.{builder.Environment.EnvironmentName}.json", optional: true, reloadOnChange: true)
-    .AddEnvironmentVariables()
-    .Build();
+var connectionString = Environment.GetEnvironmentVariable("SECRET_KEY_DATABASE");
+
+if (string.IsNullOrWhiteSpace(connectionString))
+    throw new InvalidOperationException("A variável de ambiente 'SECRET_KEY_DATABASE' não foi definida!");
+
+// 1) Registro de DbContext normal (padrão: scoped)
+builder.Services.AddDbContext<ModelAgencyContext>(options =>
+{
+    options.UseNpgsql(connectionString);
+});
+
+// 2) Registro de DbContextFactory como *scoped*, para evitar o conflito
+builder.Services.AddDbContextFactory<ModelAgencyContext>(
+    options =>
+    {
+        options.UseNpgsql(connectionString, npgsqlOptions =>
+        {
+            npgsqlOptions.EnableRetryOnFailure(
+                maxRetryCount: 5,
+                maxRetryDelay: TimeSpan.FromSeconds(10),
+                errorCodesToAdd: null
+            );
+        });
+        options.EnableSensitiveDataLogging(builder.Environment.IsDevelopment());
+        options.LogTo(Console.WriteLine, LogLevel.Information);
+    },
+    ServiceLifetime.Scoped
+);
 
 CultureInfo.DefaultThreadCurrentUICulture = new CultureInfo("pt-BR");
 
-builder.Configuration.AddConfiguration(config);
-
+// Exemplo de config RabbitMQ
 builder.Services.Configure<RabbitMQConfig>(builder.Configuration.GetSection("RabbitMQ"));
 
-var connectionString = Environment.GetEnvironmentVariable("SECRET_KEY_DATABASE");
-
+// Lê PATH_BASE do ambiente, se houver
 var pathBase = Environment.GetEnvironmentVariable("PATH_BASE");
 
-builder.Services.AddDbContext<ModelAgencyContext>(options =>
-    options.UseNpgsql(connectionString)
-           .EnableSensitiveDataLogging(builder.Environment.IsDevelopment())
-           .LogTo(Console.WriteLine, LogLevel.Information));
-
+// HttpContext e Endpoint
 builder.Services.AddHttpContextAccessor();
 builder.Services.AddEndpointsApiExplorer();
+
+// Automapper
 builder.Services.AddAutoMapper(AppDomain.CurrentDomain.GetAssemblies());
+
+// Repositórios e Services
 builder.Services.AddScoped<IJobRepository, JobRepository>();
 builder.Services.AddScoped<IUserRepository, UserRepository>();
 builder.Services.AddScoped<IUserService, UserService>();
@@ -59,6 +80,7 @@ builder.Services.AddSingleton<IRabbitMQProducer, RabbitMQProducer>();
 builder.Services.AddScoped<CustomResponse>();
 builder.Services.AddSingleton<IBrowserService, BrowserService>();
 
+// Swagger
 builder.Services.AddSwaggerGen(c =>
 {
     c.SwaggerDoc("v1", new OpenApiInfo { Title = "Model Agency API", Version = "v1" });
@@ -66,11 +88,11 @@ builder.Services.AddSwaggerGen(c =>
     c.MapType<MetodoPagamento>(() => new OpenApiSchema
     {
         Type = "string",
-        Example = new OpenApiString("CartaoCredito" ),
+        Example = new OpenApiString("CartaoCredito"),
         Description = "Método de pagamento. Valores permitidos: CartaoCredito, CartaoDebito, Pix, Dinheiro, LinkPagamento"
     });
 
-    c.ResolveConflictingActions(apiDescriptions => apiDescriptions.First()); 
+    c.ResolveConflictingActions(apiDescriptions => apiDescriptions.First());
 
     var securityScheme = new OpenApiSecurityScheme
     {
@@ -95,6 +117,7 @@ builder.Services.AddSwaggerGen(c =>
     c.AddSecurityRequirement(securityRequirement);
 });
 
+// JWT
 var secretKey = Environment.GetEnvironmentVariable("SECRETKEY_JWT_TOKEN");
 
 builder.Services.AddAuthentication(JwtBearerDefaults.AuthenticationScheme)
@@ -112,11 +135,12 @@ builder.Services.AddAuthentication(JwtBearerDefaults.AuthenticationScheme)
         };
     });
 
+// RabbitMQ Config
 builder.Services.Configure<RabbitMQConfig>(options =>
 {
     options.RabbitMqUri = Environment.GetEnvironmentVariable("RABBITMQ_URI")
         ?? builder.Configuration["RabbitMQ:Uri"]
-        ?? "amqps://guest:guest@localhost:5672"; 
+        ?? "amqps://guest:guest@localhost:5672";
 
     options.Port = int.TryParse(Environment.GetEnvironmentVariable("RABBITMQ_PORT"), out var port)
         ? port
@@ -126,34 +150,34 @@ builder.Services.Configure<RabbitMQConfig>(options =>
        ?? "sqs-inboud-sendfile";
 });
 
+// Regras de Authorization
 builder.Services.AddAuthorization(options =>
 {
-    options.AddPolicy("AdminOrManager", policy => 
+    options.AddPolicy("AdminOrManager", policy =>
         policy.RequireRole("Administrator", "Manager"));
-});
 
-builder.Services.AddAuthorization(options =>
-{
     options.AddPolicy("AdminOrManagerOrModel", policy =>
         policy.RequireRole("Administrator", "Manager", "Model"));
 });
 
+// CORS
 builder.Services.AddCors(options =>
 {
     options.AddPolicy("AllowAllOrigins",
-        builder =>
+        policyBuilder =>
         {
-            builder.AllowAnyOrigin()
-                   .AllowAnyMethod()
-                   .AllowAnyHeader();
+            policyBuilder.AllowAnyOrigin()
+                         .AllowAnyMethod()
+                         .AllowAnyHeader();
         });
 });
 
+// MVC / Controllers
 builder.Services.AddControllers()
     .AddJsonOptions(options =>
     {
         options.JsonSerializerOptions.WriteIndented = true;
-        options.JsonSerializerOptions.PropertyNamingPolicy = null;              
+        options.JsonSerializerOptions.PropertyNamingPolicy = null;
         options.JsonSerializerOptions.IgnoreReadOnlyProperties = true;
         options.JsonSerializerOptions.Converters.Add(new DecimalJsonConverter());
         options.JsonSerializerOptions.Converters.Add(new JsonStringEnumConverter());
@@ -162,14 +186,16 @@ builder.Services.AddControllers()
         options.JsonSerializerOptions.Converters.Add(new JsonDateTimeConverter("dd-MM-yyyy", "yyyy-MM-dd", "MM/dd/yyyy", "dd/MM/yyyy"));
     });
 
-builder.Services.AddAuthorization();
+// Logging
 builder.Logging.ClearProviders();
 builder.Logging.AddConsole();
 builder.Logging.AddDebug();
 builder.Logging.SetMinimumLevel(LogLevel.Trace);
 
+// Constrói o app
 var app = builder.Build();
 
+// Usa path base, se houver
 if (!string.IsNullOrEmpty(pathBase))
 {
     app.UsePathBase(pathBase);
@@ -180,16 +206,19 @@ if (!string.IsNullOrEmpty(pathBase))
     });
 }
 
+// Configura Swagger
 app.UseSwagger();
 app.UseSwaggerUI(c =>
 {
     c.SwaggerEndpoint("/swagger/v1/swagger.json", "Model Agency API v1");
     c.RoutePrefix = string.Empty;
 });
+
+// CORS / Authentication / Authorization
 app.UseCors("AllowAllOrigins");
-app.UseRouting(); 
+app.UseRouting();
 app.UseAuthentication();
 app.UseAuthorization();
+
 app.MapControllers();
 app.Run();
-
