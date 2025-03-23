@@ -11,6 +11,7 @@ using System.Text;
 using PuppeteerSharp.Media;
 using PuppeteerSharp;
 using Pregiato.API.Interfaces;
+using Microsoft.Extensions.DependencyInjection;
 
 namespace Pregiato.API.Services
 {
@@ -18,30 +19,31 @@ namespace Pregiato.API.Services
     {
         private readonly IContractRepository _contractRepository;
         private readonly IModelRepository _modelRepository;
-        private readonly ModelAgencyContext _modelAgencyContext;
+        private readonly IServiceScopeFactory _scopeFactory;
         private readonly IJwtService _jwtService;
         private readonly IPaymentService _paymentService;
         private readonly IConfiguration _configuration;
         private readonly IRabbitMQProducer _rabbitmqProducer;
         private readonly IBrowserService _browserService;
-        public ContractService
-               (IContractRepository contractRepository,
-               IModelRepository modelRepository,
-               ModelAgencyContext context,
-               IJwtService jwtService,
-               IPaymentService paymentSerice,
-               IConfiguration configuration,
-               IRabbitMQProducer rabbitMQProducer,
-               IBrowserService browserService)
+
+        public ContractService(
+            IContractRepository contractRepository,
+            IModelRepository modelRepository,
+            IServiceScopeFactory scopeFactory,
+            IJwtService jwtService,
+            IPaymentService paymentService,
+            IConfiguration configuration,
+            IRabbitMQProducer rabbitMQProducer,
+            IBrowserService browserService)
         {
-            _contractRepository = contractRepository ?? throw new ArgumentNullException(nameof(context));
-            _modelRepository = modelRepository;
-            _modelAgencyContext = context ?? throw new ArgumentNullException(nameof(context));
-            _jwtService = jwtService;
-            _paymentService = paymentSerice;
+            _contractRepository = contractRepository ?? throw new ArgumentNullException(nameof(contractRepository));
+            _modelRepository = modelRepository ?? throw new ArgumentNullException(nameof(modelRepository));
+            _scopeFactory = scopeFactory ?? throw new ArgumentNullException(nameof(scopeFactory));
+            _jwtService = jwtService ?? throw new ArgumentNullException(nameof(jwtService));
+            _paymentService = paymentService ?? throw new ArgumentNullException(nameof(paymentService));
             _configuration = configuration ?? throw new ArgumentException(nameof(configuration));
-            _rabbitmqProducer = rabbitMQProducer;
-            _browserService = browserService;
+            _rabbitmqProducer = rabbitMQProducer ?? throw new ArgumentNullException(nameof(rabbitMQProducer));
+            _browserService = browserService ?? throw new ArgumentNullException(nameof(browserService));
         }
 
         private static readonly string DefaultNomeEmpresa = "Pregiato Management";
@@ -52,9 +54,9 @@ namespace Pregiato.API.Services
         private static readonly string DefaultBairroEmpresa = "Pinheiros";
         private static readonly string DefaultCidadeEmpresa = "São Paulo";
         private static readonly string DefaultCEPEmpresa = "05424-000";
-        private static readonly string DefaultDataContrato = DateTime.UtcNow.ToString("dd/MM/yyyy");
-        private static readonly string DefaultVigenciaContrato = DateTime.UtcNow.ToString("dd/MM/yyyy");
-        private static readonly string DefaultMesContrato = DateTime.UtcNow.ToString("MMMM");
+        private static readonly string DefaultDataContrato = DateTime.UtcNow.ToString("dd/MM/yyyy", CultureInfo.InvariantCulture);
+        private static readonly string DefaultVigenciaContrato = DateTime.UtcNow.ToString("dd/MM/yyyy", CultureInfo.InvariantCulture);
+        private static readonly string DefaultMesContrato = DateTime.UtcNow.ToString("MMMM", CultureInfo.InvariantCulture);
 
         public async Task<string> PopulateTemplate(string template, Dictionary<string, string> parameters)
         {
@@ -73,12 +75,12 @@ namespace Pregiato.API.Services
                 template = template.Replace($"<span class=\"highlight\">{{{param.Key}}}</span>", param.Value);
                 template = template.Replace($"{{{param.Key}}}", param.Value);
             }
-           
+
             return await Task.FromResult(template);
         }
+
         public async Task<byte[]> ConvertHtmlToPdf(string populatedHtml, Dictionary<string, string> parameters)
         {
-
             var browser = await _browserService.GetBrowserAsync();
 
             await using var page = await browser.NewPageAsync();
@@ -92,7 +94,7 @@ namespace Pregiato.API.Services
             {
                 Format = PaperFormat.A4,
                 PrintBackground = true,
-                MarginOptions = new PuppeteerSharp.Media.MarginOptions
+                MarginOptions = new MarginOptions
                 {
                     Top = "20px",
                     Bottom = "40px",
@@ -110,6 +112,7 @@ namespace Pregiato.API.Services
 
             return memoryStream.ToArray();
         }
+
         public async Task SaveContractAsync(ContractBase contract, Stream pdfStream, string cpfModelo)
         {
             using var memoryStream = new MemoryStream();
@@ -125,14 +128,20 @@ namespace Pregiato.API.Services
             var jsonBytes = JsonSerializer.SerializeToUtf8Bytes(jsonObject);
 
             contract.Content = jsonBytes;
+            contract.ContractFilePath = $"CodigoProposta_{contract.CodProposta}_CPF:{cpfModelo}_{DateTime.UtcNow.ToString("dd-MM-yyyy", CultureInfo.InvariantCulture)}_{contract.TemplateFileName}.pdf";
 
-            contract.ContractFilePath = $"CodigoProposta_{contract.CodProposta}_CPF:{cpfModelo}_{DateTime.UtcNow:dd-MM-yyyy}_{contract.TemplateFileName}.pdf";
-            await _contractRepository.SaveContractAsync(contract);
+            // Usar um novo escopo para salvar o contrato
+            using var scope = _scopeFactory.CreateScope();
+            var context = scope.ServiceProvider.GetRequiredService<ModelAgencyContext>();
+            context.Contracts.Add(contract);
+            await context.SaveChangesAsync();
         }
 
         private async Task<int> GetNextCodPropostaAsync()
         {
-            var maxCodProposta = await _modelAgencyContext.Contracts.MaxAsync(c => (int?)c.CodProposta) ?? 109;
+            using var scope = _scopeFactory.CreateScope();
+            var context = scope.ServiceProvider.GetRequiredService<ModelAgencyContext>();
+            var maxCodProposta = await context.Contracts.MaxAsync(c => (int?)c.CodProposta) ?? 109;
             return maxCodProposta + 1;
         }
 
@@ -143,7 +152,7 @@ namespace Pregiato.API.Services
             ContractBase contract = contractType switch
             {
                 "Agency" => new AgencyContract(),
-                "Photography" => new PhotographyProductionContract(),           
+                "Photography" => new PhotographyProductionContract(),
                 "PhotographyMinority" => new PhotographyProductionContractMinority(),
                 _ => throw new ArgumentException("Invalid contract type.")
             };
@@ -151,16 +160,16 @@ namespace Pregiato.API.Services
             contract.ModelId = modelId;
             contract.CodProposta = await GetNextCodPropostaAsync();
             contract.LocalContrato = parameters.ContainsKey("Cidade Modelo - UF") ? parameters["Cidade Modelo - UF"] : createContractModelRequest.City;
-            contract.DataContrato = parameters.ContainsKey("Dia") ? parameters["Dia"] : createContractModelRequest.Day.ToString();
-            contract.MesContrato = parameters.ContainsKey("Mês-Contrato") ? parameters["Mês-Contrato"] : createContractModelRequest.MonthContract.ToString();
-            contract.ValorContrato = parameters.ContainsKey("Valor-Contrato") ? decimal.Parse(parameters["Valor-Contrato"].Replace("R$", "").Replace(".", "").Replace(",", ".").Trim()) : throw new ArgumentException("A chave 'Valor-Contrato' é obrigatória.");
-           
+            contract.DataContrato = parameters.ContainsKey("Dia") ? parameters["Dia"] : createContractModelRequest.Day.ToString(CultureInfo.InvariantCulture);
+            contract.MesContrato = parameters.ContainsKey("Mês-Contrato") ? parameters["Mês-Contrato"] : createContractModelRequest.MonthContract.ToString(CultureInfo.InvariantCulture);
+            contract.ValorContrato = parameters.ContainsKey("Valor-Contrato") ? decimal.Parse(parameters["Valor-Contrato"].Replace("R$", "").Replace(".", "").Replace(",", ".").Trim(), CultureInfo.InvariantCulture) : throw new ArgumentException("A chave 'Valor-Contrato' é obrigatória.");
+
             string htmlTemplatePath = $"Templates/{contract.TemplateFileName}";
             if (!File.Exists(htmlTemplatePath))
             {
                 throw new FileNotFoundException($"Template não encontrado: {htmlTemplatePath}");
             }
-            
+
             string htmlTemplate = await File.ReadAllTextAsync(htmlTemplatePath);
 
             string populatedHtml = await PopulateTemplate(htmlTemplate, parameters);
@@ -170,22 +179,22 @@ namespace Pregiato.API.Services
             await SaveContractAsync(contract, new MemoryStream(pdfBytes), parameters["CPF-Modelo"]);
 
             if (contractType == "Photography" || contractType == "PhotographyMinority")
-            { var validationResult = await _paymentService.ValidatePayment(createContractModelRequest.Payment, contract); }
-
-            await _modelAgencyContext.SaveChangesAsync();
+            {
+                var validationResult = await _paymentService.ValidatePayment(createContractModelRequest.Payment, contract);
+            }
 
             return contract;
         }
+
         public async Task<List<ContractBase>> GenerateAllContractsAsync(CreateContractModelRequest createContractModelRequest, Model model)
         {
-          
             var parameters = new Dictionary<string, string?>
             {
                 {"Cidade", createContractModelRequest.City},
-                {"Dia", createContractModelRequest.Day.ToString()},
+                {"Dia", createContractModelRequest.Day.ToString(CultureInfo.InvariantCulture)},
                 {"UF-Local", createContractModelRequest.UFContract},
                 {"Mês-Extenso", createContractModelRequest.Month},
-                {"Ano", DateTime.Now.Year.ToString()},
+                {"Ano", DateTime.Now.Year.ToString(CultureInfo.InvariantCulture)},
                 {"Nome-Modelo", model.Name},
                 {"CPF-Modelo", model.CPF},
                 {"RG-Modelo", model.RG},
@@ -198,11 +207,11 @@ namespace Pregiato.API.Services
                 {"CEP-Modelo", model.PostalCode},
                 {"Telefone-Principal", model.TelefonePrincipal},
                 {"Telefone-Secundário", model.TelefoneSecundario},
-                {"Valor-Contrato", createContractModelRequest.Payment.Valor.ToString("N2", new CultureInfo("pt-BR"))},
-                {"Meses-Contrato", createContractModelRequest.MonthContract.ToString()},
+                {"Valor-Contrato", createContractModelRequest.Payment.Valor.ToString("N2", CultureInfo.InvariantCulture)},
+                {"Meses-Contrato", createContractModelRequest.MonthContract.ToString(CultureInfo.InvariantCulture)},
                 {"Nome-Assinatura", model.Name}
             };
-            
+
             await AddMinorModelInfo(model, parameters);
 
             string templatePhotography = model.Age < 18 ? "PhotographyMinority" : "Photography";
@@ -217,7 +226,8 @@ namespace Pregiato.API.Services
 
             return contracts;
         }
-        public async Task< Dictionary<string, string>> AddSignatureToParameters(Dictionary<string, string> parameters, string contractType)
+
+        public async Task<Dictionary<string, string>> AddSignatureToParameters(Dictionary<string, string> parameters, string contractType)
         {
             var updatedParameters = new Dictionary<string, string>(parameters);
 
@@ -235,9 +245,9 @@ namespace Pregiato.API.Services
 
             updatedParameters["NameImageSignature"] = $"data:image/png;base64,{imageBase64}";
 
-            return updatedParameters;
             return await Task.FromResult(updatedParameters);
         }
+
         public async Task AddMinorModelInfo(Model model, Dictionary<string, string> parameters)
         {
             if (model.Age < 18)
@@ -248,7 +258,6 @@ namespace Pregiato.API.Services
             await Task.CompletedTask;
         }
 
-        //Refatorar
         public async Task<ContractBase> GenerateContractCommitmentTerm(CreateRequestCommitmentTerm createRequestContractImageRights, string querymodel)
         {
             var model = await _modelRepository.GetModelByCriteriaAsync(querymodel);
@@ -266,25 +275,25 @@ namespace Pregiato.API.Services
                 {"Nome-Empresa", DefaultNomeEmpresa},
                 {"CNPJ-Empresa", DefaultCNPJEmpresa},
                 {"Endereço-Empresa", DefaultEnderecoEmpresa},
-                {"Numero-Empresa",DefaultNumeroEmpresa},
+                {"Numero-Empresa", DefaultNumeroEmpresa},
                 {"Complemento-Empresa", DefaultComplementoEmpresa},
                 {"Cidade-Empresa", DefaultCidadeEmpresa},
                 {"Bairro-Empresa", DefaultBairroEmpresa},
-                {"CEP-Empresa",DefaultCEPEmpresa},
-                {"Nome-Modelo", model.Name },
-                {"CPF-Modelo", model.CPF },
-                {"RG-Modelo", model.RG },
+                {"CEP-Empresa", DefaultCEPEmpresa},
+                {"Nome-Modelo", model.Name},
+                {"CPF-Modelo", model.CPF},
+                {"RG-Modelo", model.RG},
                 {"Endereço-Modelo", model.Address},
-                {"Numero-Modelo",model.NumberAddress},
+                {"Numero-Modelo", model.NumberAddress},
                 {"Bairro-Modelo", model.Neighborhood},
                 {"Cidade-Modelo", model.City},
                 {"CEP-Modelo", model.PostalCode},
                 {"Complemento-Modelo", model.Complement},
                 {"Telefone-Principal", model.TelefonePrincipal},
                 {"Telefone-Secundário", model.TelefoneSecundario},
-                {"Data-Agendamento",createRequestContractImageRights.DataAgendamento.ToString()},
+                {"Data-Agendamento", createRequestContractImageRights.DataAgendamento.ToString("dd/MM/yyyy", CultureInfo.InvariantCulture)},
                 {"Horário-Agendamento", createRequestContractImageRights.horaAgendamento},
-                { "Valor-Cache", createRequestContractImageRights.ValorCache.ToString("C")}
+                {"Valor-Cache", createRequestContractImageRights.ValorCache.ToString("C", CultureInfo.InvariantCulture)}
             };
 
             string contractType = "Commitment";
@@ -299,7 +308,7 @@ namespace Pregiato.API.Services
             contract.LocalContrato = parameters.ContainsKey("Local-Contrato") ? parameters["Local-Contrato"] : DefaultCidadeEmpresa;
             contract.DataContrato = parameters.ContainsKey("Data-Contrato") ? parameters["Data-Contrato"] : DefaultDataContrato;
             contract.MesContrato = parameters.ContainsKey("Mês-Contrato") ? parameters["Mês-Contrato"] : DefaultMesContrato;
-            contract.NomeEmpresa = parameters.ContainsKey("Nome-Empresa}") ? parameters["Nome-Empresa}"] : DefaultNomeEmpresa;
+            contract.NomeEmpresa = parameters.ContainsKey("Nome-Empresa") ? parameters["Nome-Empresa"] : DefaultNomeEmpresa;
             contract.CNPJEmpresa = parameters.ContainsKey("CNPJ-Empresa") ? parameters["CNPJ-Empresa"] : DefaultCNPJEmpresa;
             contract.EnderecoEmpresa = parameters.ContainsKey("Endereço-Empresa") ? parameters["Endereço-Empresa"] : DefaultEnderecoEmpresa;
             contract.NumeroEmpresa = parameters.ContainsKey("Numero-Empresa") ? parameters["Numero-Empresa"] : DefaultNumeroEmpresa;
@@ -308,11 +317,9 @@ namespace Pregiato.API.Services
             contract.CidadeEmpresa = parameters.ContainsKey("Cidade-Empresa") ? parameters["Cidade-Empresa"] : DefaultCidadeEmpresa;
             contract.CEPEmpresa = parameters.ContainsKey("CEP-Empresa") ? parameters["CEP-Empresa"] : DefaultCEPEmpresa;
             contract.VigenciaContrato = parameters.ContainsKey("Vigência-Contrato") ? parameters["Vigência-Contrato"] : DefaultVigenciaContrato;
-            contract.NomeEmpresa = parameters.ContainsValue("Nome-Empresa") ? parameters["Nome-Empresa"] : "Pregiato management";
-            contract.DataAgendamento = parameters.ContainsKey("Data-Agendamento") ? parameters["Data-Agendamento"] : createRequestContractImageRights.DataAgendamento.ToString();
+            contract.DataAgendamento = parameters.ContainsKey("Data-Agendamento") ? parameters["Data-Agendamento"] : createRequestContractImageRights.DataAgendamento.ToString("dd/MM/yyyy", CultureInfo.InvariantCulture);
             contract.HorarioAgendamento = parameters.ContainsKey("Horário-Agendamento") ? parameters["Horário-Agendamento"] : createRequestContractImageRights.horaAgendamento;
-            contract.ValorCache = parameters.ContainsKey("Valor-Cache") ? decimal.Parse(parameters["Valor-Cache"].Replace("R$", "")
-            .Replace(".", "").Replace(",", ".").Trim()) : throw new ArgumentException("A chave 'Valor-Contrato' é obrigatória.");
+            contract.ValorCache = parameters.ContainsKey("Valor-Cache") ? decimal.Parse(parameters["Valor-Cache"].Replace("R$", "").Replace(".", "").Replace(",", ".").Trim(), CultureInfo.InvariantCulture) : throw new ArgumentException("A chave 'Valor-Cache' é obrigatória.");
 
             string htmlTemplatePath = $"Templates/{contract.TemplateFileName}";
             if (!File.Exists(htmlTemplatePath))
@@ -331,8 +338,7 @@ namespace Pregiato.API.Services
             return contract;
         }
 
-        //Refatorar
-        public async Task<ContractBase> GenetayeContractImageRightsTerm(string querymodel)
+        public async Task<ContractBase> GenerateContractImageRightsTerm(string querymodel)
         {
             var model = await _modelRepository.GetModelByCriteriaAsync(querymodel);
 
@@ -349,16 +355,16 @@ namespace Pregiato.API.Services
                 {"Nome-Empresa", DefaultNomeEmpresa},
                 {"CNPJ-Empresa", DefaultCNPJEmpresa},
                 {"Endereço-Empresa", DefaultEnderecoEmpresa},
-                {"Numero-Empresa",DefaultNumeroEmpresa},
+                {"Numero-Empresa", DefaultNumeroEmpresa},
                 {"Complemento-Empresa", DefaultComplementoEmpresa},
                 {"Cidade-Empresa", DefaultCidadeEmpresa},
                 {"Bairro-Empresa", DefaultBairroEmpresa},
-                {"CEP-Empresa",DefaultCEPEmpresa},
-                {"Nome-Modelo", model.Name },
-                {"CPF-Modelo", model.CPF },
-                {"RG-Modelo", model.RG },
+                {"CEP-Empresa", DefaultCEPEmpresa},
+                {"Nome-Modelo", model.Name},
+                {"CPF-Modelo", model.CPF},
+                {"RG-Modelo", model.RG},
                 {"Endereço-Modelo", model.Address},
-                {"Numero-Modelo",model.NumberAddress},
+                {"Numero-Modelo", model.NumberAddress},
                 {"Bairro-Modelo", model.Neighborhood},
                 {"Cidade-Modelo", model.City},
                 {"CEP-Modelo", model.PostalCode},
@@ -380,7 +386,7 @@ namespace Pregiato.API.Services
             contract.LocalContrato = parameters.ContainsKey("Local-Contrato") ? parameters["Local-Contrato"] : DefaultCidadeEmpresa;
             contract.DataContrato = parameters.ContainsKey("Data-Contrato") ? parameters["Data-Contrato"] : DefaultDataContrato;
             contract.MesContrato = parameters.ContainsKey("Mês-Contrato") ? parameters["Mês-Contrato"] : DefaultMesContrato;
-            contract.NomeEmpresa = parameters.ContainsKey("Nome-Empresa}") ? parameters["Nome-Empresa}"] : DefaultNomeEmpresa;
+            contract.NomeEmpresa = parameters.ContainsKey("Nome-Empresa") ? parameters["Nome-Empresa"] : DefaultNomeEmpresa;
             contract.CNPJEmpresa = parameters.ContainsKey("CNPJ-Empresa") ? parameters["CNPJ-Empresa"] : DefaultCNPJEmpresa;
             contract.EnderecoEmpresa = parameters.ContainsKey("Endereço-Empresa") ? parameters["Endereço-Empresa"] : DefaultEnderecoEmpresa;
             contract.NumeroEmpresa = parameters.ContainsKey("Numero-Empresa") ? parameters["Numero-Empresa"] : DefaultNumeroEmpresa;
@@ -406,6 +412,7 @@ namespace Pregiato.API.Services
 
             return contract;
         }
+
         public async Task<IActionResult> GetMyContracts(string type = "files")
         {
             var username = await _jwtService.GetAuthenticatedUsernameAsync();
@@ -436,19 +443,21 @@ namespace Pregiato.API.Services
                 }).ToList());
         }
 
-        //Testar esse cara 
         public async Task<List<ContractsModels>> GetContractsByModelIdAsync(Guid modelId)
         {
-            return await _modelAgencyContext.Contracts
-           .Where(c => c.ModelId == modelId)
-           .Select(c => new ContractsModels
-           {
-               ModelId = modelId,
-               ContractFilePath = c.ContractFilePath,
-               Content = c.Content
-           })
-           .ToListAsync();
+            using var scope = _scopeFactory.CreateScope();
+            var context = scope.ServiceProvider.GetRequiredService<ModelAgencyContext>();
+            return await context.Contracts
+                .Where(c => c.ModelId == modelId)
+                .Select(c => new ContractsModels
+                {
+                    ModelId = modelId,
+                    ContractFilePath = c.ContractFilePath,
+                    Content = c.Content
+                })
+                .ToListAsync();
         }
+
         public async Task<byte[]> ExtractBytesFromString(string content)
         {
             int startIndex = content.IndexOf('[') + 1;
@@ -457,14 +466,15 @@ namespace Pregiato.API.Services
             string byteString = content.Substring(startIndex, endIndex - startIndex);
 
             byte[] bytes = byteString.Split(',')
-                                     .Select(b => byte.Parse(b.Trim()))
-                                     .ToArray();
+                                    .Select(b => byte.Parse(b.Trim(), CultureInfo.InvariantCulture))
+                                    .ToArray();
 
             return await Task.FromResult(bytes);
         }
+
         public async Task<string> ConvertBytesToString(byte[] bytes)
         {
-            return await Task.FromResult( Encoding.UTF8.GetString(bytes));
+            return await Task.FromResult(Encoding.UTF8.GetString(bytes));
         }
     }
 }

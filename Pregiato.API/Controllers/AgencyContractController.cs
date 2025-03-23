@@ -86,7 +86,7 @@ namespace Pregiato.API.Controllers
                     {"Telefone-Principal", model.TelefonePrincipal},
                     {"Telefone-Secundário", model.TelefoneSecundario},
             };
-            var contract = await _contractService.GenetayeContractImageRightsTerm(queryModel);
+            var contract = await _contractService.GenerateContractImageRightsTerm(queryModel);
             await _context.SaveChangesAsync();
             return Ok($"Termo de Concessão de direito de imagem para: {model.Name}, gerado com sucesso. Código da Proposta: {contract.CodProposta}.");
         }
