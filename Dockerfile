@@ -14,7 +14,7 @@ WORKDIR /publish
 # Depuração: Listar o conteúdo do contexto de build antes do COPY
 RUN echo "Listing build context:" && ls -la /publish
 
-COPY ["Pregiato.API.csproj", "./"]
+COPY ["/.Pregiato.API.csproj", "./"]
 
 # Depuração: Listar o conteúdo após o COPY
 RUN echo "Listing after COPY:" && ls -la /publish
