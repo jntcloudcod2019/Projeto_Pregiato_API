@@ -37,7 +37,7 @@ RUN apt-get update && apt-get install -y \
 
 # Etapa 3: Publicação
 FROM build AS publish
-RUN dotnet publish "Pregiato.API/Pregiato.API.csproj" -c Release -o /publish --no-self-contained
+RUN dotnet publish "./Pregiato.API.csproj" -c Release -o /publish --no-self-contained
 
 # Etapa 4: Imagem final para runtime
 FROM base AS final
