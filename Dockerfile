@@ -36,5 +36,7 @@ COPY --from=publish /publish .
 RUN ln -s /usr/lib/libgdiplus.so /usr/lib/gdiplus.dll && \
     ln -s /lib/x86_64-linux-gnu/libdl.so.2 /usr/lib/libdl.so
 
+
+    
 # Definir o comando de entrada
 ENTRYPOINT ["dotnet", "Pregiato.API.dll"]
