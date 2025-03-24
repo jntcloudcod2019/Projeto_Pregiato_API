@@ -28,8 +28,8 @@ FROM build AS publish
 RUN dotnet publish "./Pregiato.API.csproj" -c Release -o /publish --no-self-contained
 
 # Copiar pastas adicionais (Templates e Files)
-COPY Templates /Templates/
-COPY Files/Select.Html.dep /Files/Select.Html.dep
+COPY Pregiato.API/Templates
+COPY Pregiato.API/Files/Select.Html.dep 
 
 # Etapa 4: Imagem final para runtime
 FROM base AS final
