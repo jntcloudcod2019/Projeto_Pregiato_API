@@ -13,7 +13,7 @@ RUN dotnet restore "./Pregiato.API.csproj"
 COPY . .
 RUN dotnet build "./Pregiato.API.csproj" -c Release -o /publish/build
 
-# Instalar dependências do Chromium
+# Instalar dependências do Chromium  85
 RUN apt-get update && apt-get install -y \
     chromium \
     libx11-xcb1 libxcomposite1 libxdamage1 libxi6 libxtst6 libnss3 \
