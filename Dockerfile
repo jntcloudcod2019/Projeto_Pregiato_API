@@ -1,6 +1,6 @@
 # Etapa 1: Base para runtime
 FROM mcr.microsoft.com/dotnet/aspnet:8.0 AS base
-WORKDIR /publish
+WORKDIR /app
 EXPOSE 8080
 
 # Configurar a porta dinâmica para o Railway
@@ -9,21 +9,22 @@ ENV PORT=8080
 
 # Etapa 2: Construção da aplicação
 FROM mcr.microsoft.com/dotnet/sdk:8.0 AS build
-WORKDIR /publish
+WORKDIR /src
 
 # Depuração: Listar o conteúdo do contexto de build antes do COPY
-RUN echo "Listing build context:" && ls -la /publish
+RUN echo "Listing build context:" && ls -la /src
 
-COPY ["/.Pregiato.API.csproj", "./"]
+COPY ["Pregiato.API/Pregiato.API.csproj", "./"]
 
 # Depuração: Listar o conteúdo após o COPY
-RUN echo "Listing after COPY:" && ls -la /publish
+RUN echo "Listing after COPY:" && ls -la /src
 
 RUN dotnet restore "./Pregiato.API.csproj"
 
 # Copiar o restante do projeto
-COPY . .
-RUN dotnet build "./Pregiato.API.csproj" -c Release -o /publish/build
+COPY Pregiato.API/ .
+WORKDIR "/src/."
+RUN dotnet build "Pregiato.API.csproj" -c Release -o /app/build
 
 # Instalar dependências do Chromium
 RUN apt-get update && apt-get install -y \
@@ -37,12 +38,12 @@ RUN apt-get update && apt-get install -y \
 
 # Etapa 3: Publicação
 FROM build AS publish
-RUN dotnet publish "./Pregiato.API.csproj" -c Release -o /publish --no-self-contained
+RUN dotnet publish "Pregiato.API.csproj" -c Release -o /app/publish /p:UseAppHost=false
 
 # Etapa 4: Imagem final para runtime
 FROM base AS final
-WORKDIR /publish
-COPY --from=publish /publish .
+WORKDIR /app
+COPY --from=publish /app/publish .
 
 # Configurar links simbólicos para dependências
 RUN ln -s /usr/lib/libgdiplus.so /usr/lib/gdiplus.dll && \
