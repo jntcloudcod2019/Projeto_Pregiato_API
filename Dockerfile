@@ -12,6 +12,8 @@ RUN apt-get update && apt-get install -y \
     libicu-dev zlib1g-dev libharfbuzz0b libfreetype6-dev \
     && rm -rf /var/lib/apt/lists/*
 
+
+
 # Copiar e restaurar dependências
 COPY Pregiato.API/Pregiato.API.csproj Pregiato.API/
 WORKDIR /app/Pregiato.API
@@ -47,6 +49,6 @@ RUN ln -s /usr/lib/libgdiplus.so /usr/lib/gdiplus.dll && \
 
 # Copiar os arquivos publicados
 COPY --from=build /app/publish .
-
+RUN ls -la /app
 EXPOSE 8080
 ENTRYPOINT ["dotnet", "Pregiato.API.dll"]

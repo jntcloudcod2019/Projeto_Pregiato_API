@@ -9,6 +9,19 @@
 		<PublishSingleFile>false</PublishSingleFile>
 		<AnalysisLevel>preview-recommended</AnalysisLevel>
 		<TreatWarningsAsErrors>false</TreatWarningsAsErrors>
+		<GenerateWebConfigOnPublish>false</GenerateWebConfigOnPublish>
+		<TargetFramework>net8.0</TargetFramework>
+		<Nullable>enable</Nullable>
+		<InvariantGlobalization>false</InvariantGlobalization>
+		<ImplicitUsings>enable</ImplicitUsings>
+		<UserSecretsId>377337fc-a877-4ceb-a642-97bfebc108ca</UserSecretsId>
+		<PublishSingleFile>false</PublishSingleFile>
+		<AnalysisLevel>preview-recommended</AnalysisLevel>
+		<TreatWarningsAsErrors>false</TreatWarningsAsErrors>
+		<RuntimeIdentifier>linux-x64</RuntimeIdentifier>
+		<!-- Adicionado -->
+		<SelfContained>false</SelfContained>
+		<!-- Adicionado -->
 	</PropertyGroup>
 
 	<ItemGroup>
