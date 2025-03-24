@@ -4,20 +4,28 @@ WORKDIR /publish
 EXPOSE 8080
 
 # Configurar a porta dinâmica para o Railway
-ENV ASPNETCORE_URLS=http://+:8080
+ENV ASPNETCORE_URLS=http://+:${PORT:-8080}
 ENV PORT=8080
 
 # Etapa 2: Construção da aplicação
 FROM mcr.microsoft.com/dotnet/sdk:8.0 AS build
-WORKDIR /src
+WORKDIR /publish
+
+# Depuração: Listar o conteúdo do contexto de build antes do COPY
+RUN echo "Listing build context:" && ls -la /publish
+
 COPY ["Pregiato.API.csproj", "./"]
+
+# Depuração: Listar o conteúdo após o COPY
+RUN echo "Listing after COPY:" && ls -la /publish
+
 RUN dotnet restore "./Pregiato.API.csproj"
 
 # Copiar o restante do projeto
 COPY . .
-RUN dotnet build "./Pregiato.API.csproj" -c Release -o /app/build
+RUN dotnet build "./Pregiato.API.csproj" -c Release -o /publish/build
 
-# Instalar dependências do Chromium para PuppeteerSharp
+# Instalar dependências do Chromium
 RUN apt-get update && apt-get install -y \
     chromium \
     libx11-xcb1 libxcomposite1 libxdamage1 libxi6 libxtst6 libnss3 \
