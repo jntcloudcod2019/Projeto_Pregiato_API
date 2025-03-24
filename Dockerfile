@@ -77,7 +77,7 @@ RUN ln -s /usr/lib/libgdiplus.so /usr/lib/gdiplus.dll && \
 
 # Copiar os arquivos publicados
 COPY --from=build /app/publish .
-
+RUN chmod +x /app/Pregiato.API.dll
 # Adicionar log: listar arquivos no diretório /app na imagem final
 RUN echo "Conteúdo do diretório /app na imagem runtime:" && ls -la /app && \
     echo "Conteúdo do diretório /app/Templates na imagem runtime:" && ls -la /app/Templates && \
