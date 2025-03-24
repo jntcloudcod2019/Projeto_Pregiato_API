@@ -206,24 +206,24 @@ if (!string.IsNullOrEmpty(pathBase))
     });
 }
 
-/// Swagger ? agora estará em /swagger
+builder.Services.AddAuthorization();
+builder.WebHost.UseUrls("http://+:8080");
+builder.Logging.ClearProviders();
+builder.Logging.AddConsole();
+builder.Logging.AddDebug();
+builder.Logging.SetMinimumLevel(LogLevel.Trace);
+
+var app = builder.Build();
+
 app.UseSwagger();
 app.UseSwaggerUI(c =>
 {
     c.SwaggerEndpoint("/swagger/v1/swagger.json", "Model Agency API v1");
-    c.RoutePrefix = "swagger";
+    c.RoutePrefix = string.Empty; // Deixa o Swagger disponível em http://localhost:8080
 });
-
-// Se quiser que o Swagger apareça diretamente na raiz ("/"),
-// é só trocar c.RoutePrefix = string.Empty;
-
- app.UseDefaultFiles();
- app.UseStaticFiles();
-
 app.UseCors("AllowAllOrigins");
 app.UseRouting();
-
 app.UseAuthentication();
 app.UseAuthorization();
-
 app.MapControllers();
+app.Run();
