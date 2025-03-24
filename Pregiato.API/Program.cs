@@ -206,7 +206,7 @@ if (!string.IsNullOrEmpty(pathBase))
     });
 }
 
-// Configura Swagger
+/// Swagger ? agora estará em /swagger
 app.UseSwagger();
 app.UseSwaggerUI(c =>
 {
@@ -214,11 +214,16 @@ app.UseSwaggerUI(c =>
     c.RoutePrefix = "swagger";
 });
 
-// CORS / Authentication / Authorization
+// Se quiser que o Swagger apareça diretamente na raiz ("/"),
+// é só trocar c.RoutePrefix = string.Empty;
+
+ app.UseDefaultFiles();
+ app.UseStaticFiles();
+
 app.UseCors("AllowAllOrigins");
 app.UseRouting();
+
 app.UseAuthentication();
 app.UseAuthorization();
 
 app.MapControllers();
-app.Run();
