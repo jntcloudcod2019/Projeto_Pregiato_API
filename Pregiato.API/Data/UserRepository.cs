@@ -20,7 +20,7 @@ namespace Pregiato.API.Data
 
             try
 {
-                // Tente salvar o usuário
+             
                 _context.Users.Add(user);
                 await _context.SaveChangesAsync();
             }
