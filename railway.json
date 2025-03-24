@@ -1,30 +1,30 @@
 {
-    "$schema": "https://railway.app/railway.schema.json",
-    "build": {
-      "builder": "DOCKERFILE",
-      "args": {
-        "SERVER_EMAIL": "${{SERVER_EMAIL}}",
-        "SERVER_EMAIL_PORT": "${{SERVER_EMAIL_PORT}}",
-        "SECRET_KEY_DATABASE": "${{SECRET_KEY_DATABASE}}",
-        "SERVER_EMAIL_USERNAME": "${{SERVER_EMAIL_USERNAME}}",
-        "SERVER_EMAIL_PASSWORD": "${{SERVER_EMAIL_PASSWORD}}",
-        "SECRETKEY_JWT_TOKEN": "${{SECRETKEY_JWT_TOKEN}}",
-        "ISSUER_JWT": "${{ISSUER_JWT}}",
-        "AUDIENCE_JWT": "${{AUDIENCE_JWT}}"
-      },
-      "deploy": {
-        "runtime": "V2",
-        "numReplicas": 1,
-        "sleepApplication": false,
-        "multiRegionConfig": {
-          "us-west2": {
-            "numReplicas": 1
-          }
-        },
-        "restartPolicyType": "ON_FAILURE",
-        "restartPolicyMaxRetries": 10
-      }
+  "$schema": "https://railway.app/railway.schema.json",
+  "build": {
+    "builder": "DOCKERFILE",
+    "args": {
+      "SERVER_EMAIL": "${{SERVER_EMAIL}}",
+      "SERVER_EMAIL_PORT": "${{SERVER_EMAIL_PORT}}",
+      "SECRET_KEY_DATABASE": "${{SECRET_KEY_DATABASE}}",
+      "SERVER_EMAIL_USERNAME": "${{SERVER_EMAIL_USERNAME}}",
+      "SERVER_EMAIL_PASSWORD": "${{SERVER_EMAIL_PASSWORD}}",
+      "SECRETKEY_JWT_TOKEN": "${{SECRETKEY_JWT_TOKEN}}",
+      "ISSUER_JWT": "${{ISSUER_JWT}}",
+      "AUDIENCE_JWT": "${{AUDIENCE_JWT}}"
     },
-    "start": "dotnet Pregiato.API.dll"
-  }
-  
+    "deploy": {
+      "runtime": "V2",
+      "numReplicas": 1,
+      "sleepApplication": false,
+      "multiRegionConfig": {
+        "us-west2": {
+          "numReplicas": 1
+        }
+      },
+      "restartPolicyType": "ON_FAILURE",
+      "restartPolicyMaxRetries": 10
+    }
+  },
+
+  "start": "dotnet Web.Api.dll"
+}
