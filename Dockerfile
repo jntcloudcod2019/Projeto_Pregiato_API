@@ -42,9 +42,8 @@
     EXPOSE 8080
     
     # Permite que o Railway (ou outro) use a variável PORT, senão usa 8080.
-    ENV ASPNETCORE_URLS=http://+:${PORT}
-    ENV PORT=8080
-    
+    ENV ASPNETCORE_URLS=http://+:${PORT:-8080}
+
     # Executa a aplicação
     ENTRYPOINT ["dotnet", "Web.Api.dll"]
 
