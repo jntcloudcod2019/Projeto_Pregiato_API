@@ -3,17 +3,21 @@ FROM mcr.microsoft.com/dotnet/aspnet:8.0 AS base
 WORKDIR /publish
 EXPOSE 8080
 
+# Configurar a porta dinâmica para o Railway
+ENV ASPNETCORE_URLS=http://+:8080
+ENV PORT=8080
+
 # Etapa 2: Construção da aplicação
 FROM mcr.microsoft.com/dotnet/sdk:8.0 AS build
-WORKDIR /publish
+WORKDIR /src
 COPY ["Pregiato.API.csproj", "./"]
 RUN dotnet restore "./Pregiato.API.csproj"
 
 # Copiar o restante do projeto
 COPY . .
-RUN dotnet build "./Pregiato.API.csproj" -c Release -o /publish/build
+RUN dotnet build "./Pregiato.API.csproj" -c Release -o /app/build
 
-# Instalar dependências do Chromium
+# Instalar dependências do Chromium para PuppeteerSharp
 RUN apt-get update && apt-get install -y \
     chromium \
     libx11-xcb1 libxcomposite1 libxdamage1 libxi6 libxtst6 libnss3 \
@@ -36,7 +40,5 @@ COPY --from=publish /publish .
 RUN ln -s /usr/lib/libgdiplus.so /usr/lib/gdiplus.dll && \
     ln -s /lib/x86_64-linux-gnu/libdl.so.2 /usr/lib/libdl.so
 
-
-    
 # Definir o comando de entrada
 ENTRYPOINT ["dotnet", "Pregiato.API.dll"]
