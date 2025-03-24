@@ -15,12 +15,11 @@ namespace Pregiato.API.Controllers
     {
         private readonly IContractService _contractService;
         private readonly IModelRepository _modelRepository;
-        private readonly IContractRepository _contractRepository;    
+        private readonly IContractRepository _contractRepository;
         private readonly ModelAgencyContext _context;
         private readonly CustomResponse _customResponse;
-        public AgencyContractController
-              (IContractService contractService,
-              IModelRepository modelRepository,          
+        public AgencyContractController (IContractService contractService,
+              IModelRepository modelRepository,
               IPaymentService paymentService,
               IContractRepository contractRepository,
               ModelAgencyContext context,
@@ -31,8 +30,8 @@ namespace Pregiato.API.Controllers
             _context = context ?? throw new ArgumentNullException(nameof(context));
             _contractRepository = contractRepository;
             _customResponse = customResponse;
-            
-        } 
+
+        }
 
         [Authorize(Policy = "AdminOrManager")]
         [SwaggerOperation( Summary = "Gera um contrato Termo de comprometimento", Description = "Este endpoint gera o Termo de comprometimento.")]
@@ -91,18 +90,20 @@ namespace Pregiato.API.Controllers
             return Ok($"Termo de Concessão de direito de imagem para: {model.Name}, gerado com sucesso. Código da Proposta: {contract.CodProposta}.");
         }
 
-       // [Authorize(Policy = "AdminOrManager")]
+        [Authorize(Policy = "AdminOrManager")]
         [SwaggerOperation("Processo de gerar contrato de Agenciamento e Fotoprgrafia.")]
         [HttpPost("generate/Agency&PhotographyProductionContracts")]
         public async Task<IActionResult> GenerateAgencyPhotographyProductionContractsAsync(CreateContractModelRequest createContractModelRequest)
         {
-            Console.WriteLine(""); 
+            Console.WriteLine($"Inciando processo de gerar contratos para gerar contratos de {createContractModelRequest.ModelIdentification}"); 
 
             if (!ModelState.IsValid)
             {
                 _customResponse.Message = "Dados preechidos incorretamente";
                 return BadRequest(ModelState);
             }
+
+            Console.WriteLine($"");
 
             var model = await _modelRepository.GetModelByCriteriaAsync(createContractModelRequest.ModelIdentification);
 
@@ -123,7 +124,7 @@ namespace Pregiato.API.Controllers
                     CodProposta = c.CodProposta
                 }).ToList()
             };
-         
+
             return Ok(response);
         }
 
@@ -170,7 +171,6 @@ namespace Pregiato.API.Controllers
             using var memoryStream = new MemoryStream();
             await request.File.CopyToAsync(memoryStream);
             payment.Comprovante = memoryStream.ToArray();
-           
             _context.Entry(payment).Property(p => p.Comprovante).IsModified = true;
 
             await _context.SaveChangesAsync();

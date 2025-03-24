@@ -14,6 +14,8 @@ using Pregiato.API.Services.ServiceModels;
 using Pregiato.API.Interfaces;
 using Pregiato.API.Response;
 using Microsoft.Extensions.DependencyInjection;
+using System.Reflection;
+using Microsoft.AspNetCore.Mvc;
 
 var builder = WebApplication.CreateBuilder(args);
 
