@@ -20,7 +20,6 @@
 		<AssemblyName>Web.Api</AssemblyName>
 		<OutputType>Exe</OutputType>
 		<TreatWarningsAsErrors>false</TreatWarningsAsErrors>
-		<RuntimeIdentifier>linux-x64</RuntimeIdentifier>
 		<!-- Adicionado -->
 		<SelfContained>false</SelfContained>
 		<!-- Adicionado -->

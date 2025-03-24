@@ -6,6 +6,7 @@
     
     # Copia o csproj para restaurar dependências
     COPY Pregiato.API/Pregiato.API.csproj Pregiato.API/
+    COPY Pregiato.API/Templates/ /app/out/Templates/
     WORKDIR /app/Pregiato.API
     RUN dotnet restore "Pregiato.API.csproj"
     
@@ -37,7 +38,7 @@
     
     # Copia os arquivos publicados da etapa de build
     COPY --from=build /app/out ./
-    
+
     # Define a porta de exposição
     EXPOSE 8080
     
