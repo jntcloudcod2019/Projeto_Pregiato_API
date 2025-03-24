@@ -46,5 +46,6 @@
     ENV PORT=8080
     
     # Executa a aplicação
-    ENTRYPOINT ["dotnet", "Pregiato.API.dll"]
+    ENTRYPOINT ["dotnet", "Web.Api.dll"]
+
     

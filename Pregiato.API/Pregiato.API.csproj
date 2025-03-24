@@ -17,6 +17,8 @@
 		<UserSecretsId>377337fc-a877-4ceb-a642-97bfebc108ca</UserSecretsId>
 		<PublishSingleFile>false</PublishSingleFile>
 		<AnalysisLevel>preview-recommended</AnalysisLevel>
+		<AssemblyName>Web.Api</AssemblyName>
+		<OutputType>Exe</OutputType>
 		<TreatWarningsAsErrors>false</TreatWarningsAsErrors>
 		<RuntimeIdentifier>linux-x64</RuntimeIdentifier>
 		<!-- Adicionado -->
