@@ -1,17 +1,17 @@
 # Etapa 1: Base para runtime
 FROM mcr.microsoft.com/dotnet/aspnet:8.0 AS base
-WORKDIR /publish 
+WORKDIR /app
 EXPOSE 8080
 
 # Etapa 2: Construção da aplicação
 FROM mcr.microsoft.com/dotnet/sdk:8.0 AS build
-WORKDIR /publish 
+WORKDIR /app
 COPY ["Pregiato.API.csproj", "./"]
 RUN dotnet restore "./Pregiato.API.csproj"
 
 # Copiar o restante do projeto
 COPY . .
-RUN dotnet build "./Pregiato.API.csproj" -c Release -o /build
+RUN dotnet build "./Pregiato.API.csproj" -c Release -o /app/build
 
 # Instalar dependências do Chromium
 RUN apt-get update && apt-get install -y \
@@ -25,16 +25,12 @@ RUN apt-get update && apt-get install -y \
 
 # Etapa 3: Publicação
 FROM build AS publish
-RUN dotnet publish "./Pregiato.API.csproj" -c Release -o /publish --no-self-contained
-
-# Copiar pastas adicionais (Templates e Files)
-COPY Pregiato.API/Templates
-COPY Pregiato.API/Files/Select.Html.dep 
+RUN dotnet publish "./Pregiato.API.csproj" -c Release -o /app/publish --no-self-contained
 
 # Etapa 4: Imagem final para runtime
 FROM base AS final
-WORKDIR /publish 
-COPY --from=publish /publish .
+WORKDIR /app
+COPY --from=publish /app/publish .
 
 # Configurar links simbólicos para dependências
 RUN ln -s /usr/lib/libgdiplus.so /usr/lib/gdiplus.dll && \
