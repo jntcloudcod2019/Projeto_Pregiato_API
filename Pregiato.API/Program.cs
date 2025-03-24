@@ -1,4 +1,4 @@
-using Microsoft.EntityFrameworkCore;
+ï»¿using Microsoft.EntityFrameworkCore;
 using Microsoft.OpenApi.Models;
 using Pregiato.API.Data;
 using Microsoft.IdentityModel.Tokens;
@@ -17,12 +17,12 @@ using Microsoft.Extensions.DependencyInjection;
 
 var builder = WebApplication.CreateBuilder(args);
 
-var connectionString = Environment.GetEnvironmentVariable("SECRET_KEY_DATABASE");
+var connectionString = Environment.GetEnvironmentVariable("SECRET_KEY_DATABASE")?? "Host=191.101.235.250;Port=5432;Database=pregiato;Username=pregiato;Password=pregiato123";
 
 if (string.IsNullOrWhiteSpace(connectionString))
-    throw new InvalidOperationException("A variável de ambiente 'SECRET_KEY_DATABASE' não foi definida!");
+    throw new InvalidOperationException("A variÃ¡vel de ambiente 'SECRET_KEY_DATABASE' nÃ£o foi definida!");
 
-// 1) Registro de DbContext normal (padrão: scoped)
+// 1) Registro de DbContext normal (padrÃ£o: scoped)
 builder.Services.AddDbContext<ModelAgencyContext>(options =>
 {
     options.UseNpgsql(connectionString);
@@ -51,7 +51,7 @@ CultureInfo.DefaultThreadCurrentUICulture = new CultureInfo("pt-BR");
 // Exemplo de config RabbitMQ
 builder.Services.Configure<RabbitMQConfig>(builder.Configuration.GetSection("RabbitMQ"));
 
-// Lê PATH_BASE do ambiente, se houver
+// LÃª PATH_BASE do ambiente, se houver
 var pathBase = Environment.GetEnvironmentVariable("PATH_BASE");
 
 // HttpContext e Endpoint
@@ -61,7 +61,7 @@ builder.Services.AddEndpointsApiExplorer();
 // Automapper
 builder.Services.AddAutoMapper(AppDomain.CurrentDomain.GetAssemblies());
 
-// Repositórios e Services
+// RepositÃ³rios e Services
 builder.Services.AddScoped<IJobRepository, JobRepository>();
 builder.Services.AddScoped<IUserRepository, UserRepository>();
 builder.Services.AddScoped<IUserService, UserService>();
@@ -89,7 +89,7 @@ builder.Services.AddSwaggerGen(c =>
     {
         Type = "string",
         Example = new OpenApiString("CartaoCredito"),
-        Description = "Método de pagamento. Valores permitidos: CartaoCredito, CartaoDebito, Pix, Dinheiro, LinkPagamento"
+        Description = "MÃ©todo de pagamento. Valores permitidos: CartaoCredito, CartaoDebito, Pix, Dinheiro, LinkPagamento"
     });
 
     c.ResolveConflictingActions(apiDescriptions => apiDescriptions.First());
@@ -118,7 +118,7 @@ builder.Services.AddSwaggerGen(c =>
 });
 
 // JWT
-var secretKey = Environment.GetEnvironmentVariable("SECRETKEY_JWT_TOKEN");
+var secretKey = Environment.GetEnvironmentVariable("SECRETKEY_JWT_TOKEN")?? "3+XcgYxev9TcGXECMBq0ilANarHN68wsDsrhG60icMaACkw9ajU97IYT+cv9IDepqrQjPaj4WUQS3VqOvpmtDw==";
 
 builder.Services.AddAuthentication(JwtBearerDefaults.AuthenticationScheme)
     .AddJwtBearer(options =>
@@ -129,8 +129,8 @@ builder.Services.AddAuthentication(JwtBearerDefaults.AuthenticationScheme)
             ValidateAudience = true,
             ValidateLifetime = true,
             ValidateIssuerSigningKey = true,
-            ValidIssuer = Environment.GetEnvironmentVariable("ISSUER_JWT"),
-            ValidAudience = Environment.GetEnvironmentVariable("AUDIENCE_JWT"),
+            ValidIssuer = Environment.GetEnvironmentVariable("ISSUER_JWT") ?? "PregiatoAPI",
+            ValidAudience = Environment.GetEnvironmentVariable("AUDIENCE_JWT") ?? "PregiatoAPIToken",
             IssuerSigningKey = new SymmetricSecurityKey(Encoding.UTF8.GetBytes(secretKey))
         };
     });
@@ -192,7 +192,7 @@ builder.Logging.AddConsole();
 builder.Logging.AddDebug();
 builder.Logging.SetMinimumLevel(LogLevel.Trace);
 
-// Constrói o app
+// ConstrÃ³i o app
 var app = builder.Build();
 
 // Usa path base, se houver
@@ -205,25 +205,17 @@ if (!string.IsNullOrEmpty(pathBase))
         return next();
     });
 }
-
-builder.Services.AddAuthorization();
-builder.WebHost.UseUrls("http://+:8080");
-builder.Logging.ClearProviders();
-builder.Logging.AddConsole();
-builder.Logging.AddDebug();
-builder.Logging.SetMinimumLevel(LogLevel.Trace);
-
-var app = builder.Build();
-
 app.UseSwagger();
 app.UseSwaggerUI(c =>
 {
     c.SwaggerEndpoint("/swagger/v1/swagger.json", "Model Agency API v1");
-    c.RoutePrefix = string.Empty; // Deixa o Swagger disponível em http://localhost:8080
+    c.RoutePrefix = "swagger";
 });
+
 app.UseCors("AllowAllOrigins");
 app.UseRouting();
 app.UseAuthentication();
 app.UseAuthorization();
+
 app.MapControllers();
 app.Run();
