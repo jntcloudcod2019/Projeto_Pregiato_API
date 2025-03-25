@@ -86,20 +86,19 @@ namespace Pregiato.API.Services
                 if (user == null)
                 {
                     _customResponse.Message = "Usuário não encontrado. Verifique o nome de usuário e tente novamente.";
-                    throw new Exception(_customResponse.Message);
                 }
 
                 if (string.IsNullOrWhiteSpace(loginUserRequest.Password) || !BCrypt.Net.BCrypt.Verify(loginUserRequest.Password, user.PasswordHash))
                 {
                     _customResponse.Message = "Senha inválida. Verifique a senha digitada e tente novamente.";
-                    throw new Exception(_customResponse.Message);
                 }
 
                 loginUserRequest.UserType = user.UserType;
                 loginUserRequest.IdUser = user.UserId;
                 loginUserRequest.Email = user.Email;
 
-                return _jwtService.GenerateToken(loginUserRequest);
+                // Retorna diretamente a string do token
+                return await _jwtService.GenerateToken(loginUserRequest);
             }
             catch (Exception ex)
             {

@@ -4,8 +4,8 @@
    {
         public Guid ContractId { get; set; }
         public Guid ModelId { get; set; }
-        public string DataContrato { get; set; } // Alterado de DateTime? para string
-        public string VigenciaContrato { get; set; } // Alterado de DateTime? para string
+        public string DataContrato { get; set; } 
+        public string VigenciaContrato { get; set; } 
         public decimal ValorContrato { get; set; }
         public string? FormaPagamento { get; set; }
         public string? StatusPagamento { get; set; }

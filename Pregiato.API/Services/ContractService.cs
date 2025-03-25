@@ -137,7 +137,6 @@ namespace Pregiato.API.Services
             var jsonBytes = JsonSerializer.SerializeToUtf8Bytes(jsonObject);
 
             contract.Content = jsonBytes;
-
             contract.ContractFilePath = $"Model_CPF:{cpfModelo}_{DateTime.UtcNow:dd-MM-yyyy}.pdf";
             await _contractRepository.SaveContractAsync(contract);         
         }
@@ -169,11 +168,13 @@ namespace Pregiato.API.Services
             {
                 throw new ArgumentException("A chave 'Valor-Contrato' é obrigatória.");
             }
+           
             contract.ValorContrato = decimal.Parse(valorContrato.Replace("R$", "").Replace(".", "").Replace(",", ".").Trim(), CultureInfo.InvariantCulture);
             contract.FormaPagamento = createContractModelRequest.Payment.MetodoPagamento;
             contract.StatusPagamento = createContractModelRequest.Payment.StatusPagamento;
 
             string htmlTemplatePath = $"Templates/{contract.TemplateFileName}";
+            
             if (!File.Exists(htmlTemplatePath))
             {
                 throw new FileNotFoundException($"Template não encontrado: {htmlTemplatePath}");
@@ -285,7 +286,6 @@ namespace Pregiato.API.Services
             }
             await Task.CompletedTask;
         }
-
         public async Task<ContractBase> GenerateContractCommitmentTerm(CreateRequestCommitmentTerm createRequestContractImageRights, string querymodel)
         {
             var model = await _modelRepository.GetModelByCriteriaAsync(querymodel);
@@ -367,7 +367,6 @@ namespace Pregiato.API.Services
 
             return contract;
         }
-
         public async Task<ContractBase> GenetayeContractImageRightsTerm(string querymodel)
         {
             var model = await _modelRepository.GetModelByCriteriaAsync(querymodel);
@@ -471,7 +470,6 @@ namespace Pregiato.API.Services
                     ContentBase64 = c.Content != null ? Convert.ToBase64String(c.Content) : null
                 }).ToList());
         }
-
         public async Task<List<ContractsModels>> GetContractsByModelIdAsync(Guid modelId)
         {
 
