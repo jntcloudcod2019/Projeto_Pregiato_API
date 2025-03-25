@@ -1,5 +1,7 @@
-﻿using Microsoft.IdentityModel.Tokens;
+﻿using Microsoft.Extensions.Caching.Memory;
+using Microsoft.IdentityModel.Tokens;
 using Pregiato.API.Interface;
+using Pregiato.API.Models;
 using Pregiato.API.Requests;
 using System.IdentityModel.Tokens.Jwt;
 using System.Security.Claims;
@@ -9,44 +11,117 @@ namespace Pregiato.API.Services
 {
     public class JwtService : IJwtService
     {
+        private readonly string _secretKey;
+        private readonly string _issuer;
+        private readonly string _audience;
         private readonly IConfiguration _configuration;
-        private readonly IModelRepository _modelRepository;
+        private readonly IMemoryCache _memoryCache;
         private readonly IHttpContextAccessor _httpContextAccessor;
+        private readonly TimeSpan _tokenExpiry = TimeSpan.FromHours(4);
 
         private readonly string SECRETKEY_JWT_TOKEN = Environment.GetEnvironmentVariable("SECRETKEY_JWT_TOKEN")?? "3+XcgYxev9TcGXECMBq0ilANarHN68wsDsrhG60icMaACkw9ajU97IYT+cv9IDepqrQjPaj4WUQS3VqOvpmtDw==";
         private readonly string ISSUER_JWT = Environment.GetEnvironmentVariable("ISSUER_JWT") ?? "PregiatoAPI";
         private readonly string AUDIENCE_JWT = Environment.GetEnvironmentVariable("AUDIENCE_JWT") ?? "PregiatoAPIToken";
-        public JwtService(IConfiguration configuration, IModelRepository modelRepository, IHttpContextAccessor httpContextAccessor)
+        public JwtService(IMemoryCache memoryCache, IConfiguration configuration, IHttpContextAccessor httpContextAccessor)
         {
+           
+            _memoryCache = memoryCache;
             _configuration = configuration;
-            _modelRepository = modelRepository;
-            _modelRepository = _modelRepository ?? throw new ArgumentNullException(nameof(modelRepository));
             _httpContextAccessor = httpContextAccessor;
+            _secretKey = Environment.GetEnvironmentVariable("SECRETKEY_JWT_TOKEN") ??
+                         "3+XcgYxev9TcGXECMBq0ilANarHN68wsDsrhG60icMaACkw9ajU97IYT+cv9IDepqrQjPaj4WUQS3VqOvpmtDw==";
+            _issuer = Environment.GetEnvironmentVariable("ISSUER_JWT") ?? "PregiatoAPI";
+            _audience = Environment.GetEnvironmentVariable("AUDIENCE_JWT") ?? "PregiatoAPIToken";
         }
-        public string GenerateToken(LoginUserRequest loginUserRequest)
+        public async Task<string> GenerateToken(LoginUserRequest user)
         {
-            var user = loginUserRequest;
-            var claims = new[]
+            var tokenHandler = new JwtSecurityTokenHandler();
+            var key = Encoding.ASCII.GetBytes(_secretKey);
+
+            var tokenDescriptor = new SecurityTokenDescriptor
             {
-              new Claim(ClaimTypes.Name, loginUserRequest.Username),
-              new Claim(ClaimTypes.Role, loginUserRequest.UserType.ToString())
+                Subject = new ClaimsIdentity(new[]
+                {
+                    new Claim(ClaimTypes.Name, user.Username),
+                    new Claim(ClaimTypes.Email, user.Email),
+                    new Claim(ClaimTypes.NameIdentifier, user.IdUser.ToString()),
+                    new Claim(ClaimTypes.Role, user.UserType),
+                    new Claim(JwtRegisteredClaimNames.Jti, Guid.NewGuid().ToString())
+                }),
+                Expires = DateTime.UtcNow.Add(_tokenExpiry),
+                SigningCredentials = new SigningCredentials(
+                    new SymmetricSecurityKey(key),
+                    SecurityAlgorithms.HmacSha256Signature),
+                Issuer = _issuer,
+                Audience = _audience
             };
 
-            var secretKey = Encoding.ASCII.GetBytes(SECRETKEY_JWT_TOKEN);
-            var key = new SymmetricSecurityKey(secretKey);
-            var credentials = new SigningCredentials(key, SecurityAlgorithms.HmacSha256);
-
-            var token = new JwtSecurityToken(
-                issuer: ISSUER_JWT,
-                audience: AUDIENCE_JWT,
-                claims: claims,
-                expires: DateTime.Now.AddHours(4),
-                signingCredentials: credentials
-            );
-
-            var jwt = new JwtSecurityTokenHandler().WriteToken(token);
-            return jwt;
+            var token = tokenHandler.CreateToken(tokenDescriptor);
+            return tokenHandler.WriteToken(token);
         }
+
+        public async Task<bool> IsTokenValidAsync(string token)
+        {
+            return await Task.Run(() =>
+            {
+                if (_memoryCache.TryGetValue($"blacklisted_{token}", out _))
+                    return false;
+
+                try
+                {
+                    var tokenHandler = new JwtSecurityTokenHandler();
+                    var key = Encoding.ASCII.GetBytes(_secretKey);
+
+                    tokenHandler.ValidateToken(token, new TokenValidationParameters
+                    {
+                        ValidateIssuerSigningKey = true,
+                        IssuerSigningKey = new SymmetricSecurityKey(key),
+                        ValidateIssuer = true,
+                        ValidIssuer = _issuer,
+                        ValidateAudience = true,
+                        ValidAudience = _audience,
+                        ValidateLifetime = true,
+                        ClockSkew = TimeSpan.Zero
+                    }, out _);
+
+                    return true;
+                }
+                catch
+                {
+                    return false;
+                }
+            });
+        }
+
+        public async Task<bool> InvalidateTokenAsync(string token)
+        {
+            return await Task.Run(() =>
+            {
+                var tokenHandler = new JwtSecurityTokenHandler();
+                if (!tokenHandler.CanReadToken(token))
+                    return false;
+
+                var jwtToken = tokenHandler.ReadJwtToken(token);
+                var remainingLife = jwtToken.ValidTo - DateTime.UtcNow;
+
+                if (remainingLife <= TimeSpan.Zero)
+                    return false;
+
+                _memoryCache.Set($"blacklisted_{token}", true, remainingLife);
+                return true;
+            });
+        }
+
+        public async Task<string> GetUserIdFromTokenAsync(string token)
+        {
+            return await Task.Run(() =>
+            {
+                var tokenHandler = new JwtSecurityTokenHandler();
+                var jwtToken = tokenHandler.ReadJwtToken(token);
+                return jwtToken.Claims.First(c => c.Type == ClaimTypes.NameIdentifier).Value;
+            });
+        }
+
         public async Task<string> GetUsernameFromTokenAsync(string token)
         {
             var handler = new JwtSecurityTokenHandler();

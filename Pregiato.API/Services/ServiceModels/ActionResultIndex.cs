@@ -25,7 +25,6 @@ namespace Pregiato.API.Services.ServiceModels
             response.ContentType = "application/json";
             response.StatusCode = IsCompletedSuccessfully ? StatusCodes.Status200OK : StatusCodes.Status400BadRequest;
 
-            // Cria o objeto de resposta
             var result = new
             {
                 success = IsCompletedSuccessfully,

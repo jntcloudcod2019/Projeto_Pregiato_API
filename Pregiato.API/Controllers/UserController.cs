@@ -9,6 +9,7 @@ using Pregiato.API.DTO;
 using System.IdentityModel.Tokens.Jwt;
 using System.Security.Claims;
 using Pregiato.API.Services.ServiceModels;
+using Pregiato.API.Services;
 
 namespace Pregiato.API.Controllers
 {
@@ -18,13 +19,15 @@ namespace Pregiato.API.Controllers
     {
         private readonly IUserService _userService;
         private readonly IUserRepository _userRepository;
+        private readonly IJwtService _jwtService;
         private readonly CustomResponse _customResponse;
 
-        public UserController(IUserService userService, IUserRepository userRepository, CustomResponse customResponse)
+        public UserController(IJwtService jwtService, IUserService userService, IUserRepository userRepository, CustomResponse customResponse)
         {
             _userService = userService;
             _userRepository = userRepository;
             _customResponse = customResponse;
+            _jwtService = jwtService;
         }
 
         [AllowAnonymous]
@@ -67,6 +70,40 @@ namespace Pregiato.API.Controllers
                     Details = ex.Message
                 });
             }
+        }
+
+        [AllowAnonymous]
+        [HttpPost("register/logout")]
+        public async Task<IActionResult> Logout()
+        {
+            var token = HttpContext.Request.Headers["Authorization"]
+                .ToString()
+                .Replace("Bearer ", "");
+
+            if (await _jwtService.InvalidateTokenAsync(token))
+            {
+                return Ok(new { Message = "Logout realizado com sucesso" });
+            }
+
+            return BadRequest(new { Message = "Token já expirado ou inválido" });
+        }
+
+        [AllowAnonymous]
+        [HttpGet("register/validate")]
+        public async Task<IActionResult> ValidateToken()
+        {
+            var token = HttpContext.Request.Headers["Authorization"]
+                .ToString()
+                .Replace("Bearer ", "");
+
+
+            if (await _jwtService.IsTokenValidAsync(token))
+            {
+                var userId = await _jwtService.GetUserIdFromTokenAsync(token);
+                return Ok(new { IsValid = true, UserId = userId });
+            }
+
+            return Unauthorized(new { IsValid = false });
         }
 
         [Authorize(Policy = "AdminOrManager")]
@@ -147,46 +184,6 @@ namespace Pregiato.API.Controllers
             return Ok(_customResponse.Message = $"Usuario {user} cadastrado com sucessp.");
         }
 
-        [Authorize (Policy = "AdminOrManagerOrModel")]
-        [HttpGet("returnTokenUser")]
-         public async Task<IActionResult> ReturnTokenUser()
-         {
-            var authorizationHeader = HttpContext.Request.Headers["Authorization"].ToString();
-
-            if (string.IsNullOrEmpty(authorizationHeader) || !authorizationHeader.StartsWith("Bearer "))
-            {
-                return ActionResultIndex.Failure("Token de autenticação não fornecido ou inválido.");
-            }
-
-            var token = authorizationHeader.Substring("Bearer ".Length).Trim();
-
-            JwtSecurityToken jwtToken;
-            try
-            {
-                jwtToken = new JwtSecurityTokenHandler().ReadJwtToken(token);
-            }
-            catch (Exception ex)
-            {
-                return ActionResultIndex.Failure($"Token inválido: {ex.Message}");
-            }
-
-            var username = jwtToken.Claims.FirstOrDefault(c => c.Type == ClaimTypes.Name)?.Value;
-            if (string.IsNullOrEmpty(username))
-            {
-                return ActionResultIndex.Failure("Usuário não autenticado.");
-            }
-
-            var user = await _userRepository.GetByUsernameAsync(username);
-            if (user == null)
-            {
-                return ActionResultIndex.Failure("Usuário não encontrado na base de dados.");
-            }
-
-            return ActionResultIndex.Success(
-                data: user.Email,
-                message: $"usuário autenticado ID: {user.UserId}!"
-            );
-         }
     }
     
 }

@@ -113,14 +113,18 @@ builder.Services.AddAuthentication(JwtBearerDefaults.AuthenticationScheme)
         options.TokenValidationParameters = new TokenValidationParameters
         {
             ValidateIssuer = true,
+            ValidIssuer = Environment.GetEnvironmentVariable("ISSUER_JWT") ?? "PregiatoAPI",
             ValidateAudience = true,
+            ValidAudience = Environment.GetEnvironmentVariable("AUDIENCE_JWT") ?? "PregiatoAPIToken",
             ValidateLifetime = true,
             ValidateIssuerSigningKey = true,
-            ValidIssuer = Environment.GetEnvironmentVariable("ISSUER_JWT") ?? "PregiatoAPI",
-            ValidAudience = Environment.GetEnvironmentVariable("AUDIENCE_JWT") ?? "PregiatoAPIToken",
-            IssuerSigningKey = new SymmetricSecurityKey(Encoding.UTF8.GetBytes(secretKey))
+            IssuerSigningKey = new SymmetricSecurityKey(
+                  Encoding.UTF8.GetBytes(
+                  Environment.GetEnvironmentVariable("SECRETKEY_JWT_TOKEN") ??
+                  "3+XcgYxev9TcGXECMBq0ilANarHN68wsDsrhG60icMaACkw9ajU97IYT+cv9IDepqrQjPaj4WUQS3VqOvpmtDw=="))
         };
     });
+
 
 builder.Services.Configure<RabbitMQConfig>(options =>
 {
@@ -200,6 +204,5 @@ app.UseSwaggerUI(c =>
     c.RoutePrefix = "swagger";
 });
 app.UseAuthentication();
-app.UseAuthorization();
 app.MapControllers();
 app.Run();
