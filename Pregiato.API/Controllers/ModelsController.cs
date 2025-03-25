@@ -1,17 +1,23 @@
-﻿using iText.Kernel.Geom;
+﻿using iText.Commons.Actions.Contexts;
+using iText.Kernel.Geom;
 using iText.Layout.Element;
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.EntityFrameworkCore;
+using Microsoft.EntityFrameworkCore.Internal;
 using Pregiato.API.Data;
 using Pregiato.API.Interface;
 using Pregiato.API.Models;
 using Pregiato.API.Requests;
 using Pregiato.API.Response;
+using Pregiato.API.Services;
 using Swashbuckle.AspNetCore.Annotations;
+using System.Data;
+using Npgsql;
 using System.Diagnostics;
 using System.Drawing.Printing;
 using System.IdentityModel.Tokens.Jwt;
+using System.Security.Claims;
 using System.Text.Json;
 namespace Pregiato.API.Controllers
 {
@@ -21,12 +27,13 @@ namespace Pregiato.API.Controllers
     {
         private readonly IModelRepository _modelRepository;
         private readonly IContractService _contractService;
-        private readonly IJwtService _jwtService;   
-        private readonly IUserService _userService; 
+        private readonly IJwtService _jwtService;
+        private readonly IUserService _userService;
         private readonly IServiceUtilites _serviceUtilites;
         private readonly IUserRepository _userRepository;
         private readonly ModelAgencyContext _agencyContext;
         private readonly CustomResponse _customResponse;
+        private readonly IDbContextFactory<ModelAgencyContext> _contextFactory;
 
         public ModelsController
               (CustomResponse customResponse,
@@ -36,17 +43,18 @@ namespace Pregiato.API.Controllers
                IJwtService jwtService,
                IUserService userService,
                IServiceUtilites serviceUtilites,
-               IUserRepository userRepository)
+               IUserRepository userRepository,
+               IDbContextFactory<ModelAgencyContext> contextFactory)
         {
             _modelRepository = modelRepository ?? throw new ArgumentNullException(nameof(modelRepository));
             _agencyContext = agencyContext ?? throw new ArgumentNullException(nameof(agencyContext));
-            _contractService = contractService; 
+            _contractService = contractService;
             _jwtService = jwtService; ;
-            _userService = userService; 
+            _userService = userService;
             _serviceUtilites = serviceUtilites;
             _userRepository = userRepository;
             _customResponse = customResponse;
-
+            _contextFactory = contextFactory;
         }
 
         [Authorize(Policy = "AdminOrManager")]
@@ -69,13 +77,13 @@ namespace Pregiato.API.Controllers
         {
             if (!ModelState.IsValid)
             {
-                
+
                 return BadRequest(new CustomResponse
                 {
                     StatusCode = StatusCodes.Status400BadRequest,
                     Message = "Preenchimento de campos invalidos.",
                     Data = null
-                });                
+                });
             }
 
             Console.WriteLine($"[PROCESS] {DateTime.Now:yyyy-MM-dd HH:mm:ss} |Validando se model {createModelRequest.Name} | Documento: {createModelRequest.CPF}");
@@ -91,7 +99,7 @@ namespace Pregiato.API.Controllers
                     StatusCode = StatusCodes.Status304NotModified,
                     Message = $"Modelo {createModelRequest.Name} já cadastrado.",
                     Data = null,
-                });               
+                });
             }
 
             var model = new Model
@@ -129,7 +137,7 @@ namespace Pregiato.API.Controllers
                 }
             });
         }
-                 
+
 
         [Authorize(Policy = "AdminOrManager")]
         [HttpDelete("DeleteModel{id}")]
@@ -154,7 +162,7 @@ namespace Pregiato.API.Controllers
             {
                 return new UnauthorizedResult();
             }
-        
+
             var model = await _agencyContext.Model
                 .FirstOrDefaultAsync(m => m.Name == username);
 
@@ -210,63 +218,6 @@ namespace Pregiato.API.Controllers
             });
         }
 
-        [Authorize(Policy = "AdminOrManagerOrModel")]
-        [HttpGet("downloadContract/{id}")]
-        public async Task<IActionResult> DownloadContract(int id)
-        {
-            var contract = await _agencyContext.Contracts.FindAsync(id);
-            if (contract == null)
-            {
-                return NotFound("Contrato não encontrado.");
-            }
-
-            return File(contract.ContractFilePath, "application/pdf", $"{contract.Content}.pdf");
-        }
-
-        [Authorize(Policy = "AdminOrManagerOrModel")]
-        [HttpPut("updateResgiterModel/{query}")]
-        public async Task<IActionResult> UpdateRegisterModel(string query, [FromBody] UpdateModelRequest updateModelRequest)
-        {
-            var model = await _modelRepository.GetModelByCriteriaAsync(query);
-            if (model == null)
-            {
-                return NotFound("Modelo não encontrado.");
-            }
-
-            var dnaJson = JsonDocument.Parse(System.Text.Json.JsonSerializer.Serialize(new
-            {
-                appearance = updateModelRequest.Appearance,
-                eyeAttributes = updateModelRequest.EyeAttributes,
-                hairAttributes = updateModelRequest.HairAttributes ,
-                physicalCharacteristics = updateModelRequest.PhysicalCharacteristics,
-                additionalAttributes = updateModelRequest.AdditionalAttributes,
-
-
-            }));
-
-             model = new Model
-             {
-                Name = updateModelRequest.Name,
-                CPF = updateModelRequest.CPF,
-                RG = updateModelRequest.RG,
-                DateOfBirth = updateModelRequest.DateOfBirth,
-                Email =updateModelRequest.Email,
-                PostalCode = updateModelRequest.PostalCode,
-                Address = updateModelRequest.Address,
-                NumberAddress =updateModelRequest.NumberAddress,
-                Complement = updateModelRequest.Complement,
-                BankAccount = updateModelRequest.BankAccount,
-                Neighborhood = updateModelRequest.Neighborhood,
-                City = updateModelRequest.City,
-                TelefonePrincipal = updateModelRequest.TelefonePrincipal,
-                TelefoneSecundario = updateModelRequest.TelefoneSecundario,
-                DNA = dnaJson,
-            };
-                               
-            await _modelRepository.UpdateModelAsync(model);
-
-            return NoContent();
-        }
 
         [Authorize(Policy = "AdminOrManagerOrModel")]
         [HttpGet("my-contracts")]
@@ -308,18 +259,18 @@ namespace Pregiato.API.Controllers
             {
                 return Forbid("Permissão insuficiente.");
             }
-            
+
             var contracts = await _agencyContext.Contracts
-                 .Where(c => c.ModelId == model.IdModel) 
+                 .Where(c => c.ModelId == model.IdModel)
                  .Select(c => new
                  {
                      c.ModelId,
                      c.ContractFilePath,
-                     c.Content 
+                     c.Content
                  })
                  .ToListAsync();
 
-            if (contracts != null )
+            if (contracts != null)
             {
                 var listContracts = contracts.Select(c =>
                 {
@@ -333,9 +284,77 @@ namespace Pregiato.API.Controllers
                 }).ToList();
                 return Ok(listContracts);
             }
-            return BadRequest( _customResponse.Message = "Desculpe, mas não encontramos contratos relacionados ao seu usuário. ");
+            return BadRequest(_customResponse.Message = "Desculpe, mas não encontramos contratos relacionados ao seu usuário. ");
         }
 
+
+
+        [HttpPut("update-dna-property")]
+        [ProducesResponseType(StatusCodes.Status204NoContent)]
+        [ProducesResponseType(StatusCodes.Status401Unauthorized)]
+        [ProducesResponseType(StatusCodes.Status400BadRequest)]
+        [ProducesResponseType(StatusCodes.Status500InternalServerError)]
+        public async Task<IActionResult> UpdateDnaData([FromBody] UpdateDnaPropertyRequest request)
+        {
+            if (string.IsNullOrEmpty(request?.PropertyName) || request.Values == null || !request.Values.Any())
+                return BadRequest("Nome da propriedade ou valores inválidos.");
+
+            try
+            {
+                var token = HttpContext.Request.Headers["Authorization"]
+                    .FirstOrDefault()?.Split("Bearer ").Last();
+
+                if (string.IsNullOrEmpty(token))
+                    return Unauthorized("Token não fornecido");
+
+                var username = new JwtSecurityTokenHandler()
+                    .ReadJwtToken(token)
+                    .Claims
+                    .FirstOrDefault(c => c.Type == ClaimTypes.Name)?
+                    .Value;
+
+                if (string.IsNullOrEmpty(username))
+                    return Unauthorized("Token inválido");
+
+                await using var context = await _contextFactory.CreateDbContextAsync();
+
+                var user = await context.Users
+                    .AsNoTracking()
+                    .FirstOrDefaultAsync(u => u.Name == username);
+
+                if (user == null)
+                    return Unauthorized("Usuário não encontrado");
+
+                var model = await context.Model
+                    .FirstOrDefaultAsync(m => m.Email == user.Email);
+
+                if (model == null)
+                    return Unauthorized("Modelo não encontrado");
+
+                var propertyJson = JsonSerializer.Serialize(request.Values);
+
+                var sql = @"
+                    UPDATE ""Model"" m 
+                    SET ""DNA"" = jsonb_set(m.""DNA"", ARRAY[@propertyName], @propertyJson::jsonb, true),
+                        ""UpdatedAt"" = @updatedAt
+                    WHERE m.""Email"" = @email"
+                ;
+
+                await context.Database.ExecuteSqlRawAsync(
+                    sql,
+                    new NpgsqlParameter("@propertyName", request.PropertyName),
+                    new NpgsqlParameter("@propertyJson", propertyJson),
+                    new NpgsqlParameter("@updatedAt", DateTime.UtcNow),
+                    new NpgsqlParameter("@email", user.Email)
+                 );
+
+                return NoContent();
+            }
+            catch (Exception ex)
+            {
+                return StatusCode(500, $"Erro interno: {ex.Message}");
+            }
+        }
     }
 }
 

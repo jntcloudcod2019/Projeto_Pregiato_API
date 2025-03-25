@@ -45,6 +45,7 @@ namespace Pregiato.API.Services
             _contextFactory = contextFactory;
         }
 
+
         private static readonly string DefaultNomeEmpresa = "Pregiato Management";
         private static readonly string DefaultCNPJEmpresa = "34871424/0001-43";
         private static readonly string DefaultEnderecoEmpresa = "Rua Butantã";
@@ -56,17 +57,20 @@ namespace Pregiato.API.Services
         private static readonly string DefaultDataContrato = DateTime.UtcNow.ToString("dd/MM/yyyy");
         private static readonly string DefaultVigenciaContrato = DateTime.UtcNow.ToString("dd/MM/yyyy");
         private static readonly string DefaultMesContrato = DateTime.UtcNow.ToString("MMMM");
+        private static readonly string DefaulTemplatePhotographyMinority = "PhotographyMinority";
+        private static readonly string DefaulTemplatePhotography = "Photography";
+        private static readonly string DefaulTemplateAgency = "Agency";
 
         public async Task<string> PopulateTemplate(string template, Dictionary<string, string> parameters)
         {
             if (string.IsNullOrWhiteSpace(template))
             {
-                throw new ArgumentException("O template está vazio ou inválido.");
+                return ("O template está vazio ou inválido.");
             }
 
             if (parameters == null || !parameters.Any())
             {
-                throw new ArgumentException("Os parâmetros para preenchimento do template estão vazios ou nulos.");
+               return ("Os parâmetros para preenchimento do template estão vazios ou nulos.");
             }
 
             foreach (var param in parameters)
@@ -134,7 +138,7 @@ namespace Pregiato.API.Services
 
             contract.Content = jsonBytes;
 
-            contract.ContractFilePath = $"CodigoProposta_{contract.CodProposta}_CPF:{cpfModelo}_{DateTime.UtcNow:dd-MM-yyyy}_{contract.TemplateFileName}.pdf";
+            contract.ContractFilePath = $"Model_CPF:{cpfModelo}_{DateTime.UtcNow:dd-MM-yyyy}.pdf";
             await _contractRepository.SaveContractAsync(contract);         
         }
 
@@ -143,8 +147,6 @@ namespace Pregiato.API.Services
             var maxCodProposta = await _contextFactory.CreateDbContext().Contracts.MaxAsync(c => (int?)c.CodProposta) ?? 109;
             return maxCodProposta + 1;
         }
-
-
 
         public async Task<ContractBase> GenerateContractAsync(CreateContractModelRequest createContractModelRequest, Guid modelId, string contractType, Dictionary<string, string> parameters)
         {
@@ -160,8 +162,6 @@ namespace Pregiato.API.Services
 
             contract.ModelId = modelId;
             contract.CodProposta = await GetNextCodPropostaAsync();
-
-            // Usar TryGetValue para evitar dupla busca no dicionário
             contract.LocalContrato = parameters.TryGetValue("Cidade Modelo - UF", out var cidade) ? cidade : createContractModelRequest.City;
             contract.DataContrato = parameters.TryGetValue("Dia", out var dia) ? dia : createContractModelRequest.Day.ToString(CultureInfo.InvariantCulture);
             contract.MesContrato = parameters.TryGetValue("Mês-Contrato", out var mes) ? mes : createContractModelRequest.MonthContract.ToString(CultureInfo.InvariantCulture);
@@ -170,6 +170,8 @@ namespace Pregiato.API.Services
                 throw new ArgumentException("A chave 'Valor-Contrato' é obrigatória.");
             }
             contract.ValorContrato = decimal.Parse(valorContrato.Replace("R$", "").Replace(".", "").Replace(",", ".").Trim(), CultureInfo.InvariantCulture);
+            contract.FormaPagamento = createContractModelRequest.Payment.MetodoPagamento;
+            contract.StatusPagamento = createContractModelRequest.Payment.StatusPagamento;
 
             string htmlTemplatePath = $"Templates/{contract.TemplateFileName}";
             if (!File.Exists(htmlTemplatePath))
@@ -185,7 +187,7 @@ namespace Pregiato.API.Services
 
             await SaveContractAsync(contract, new MemoryStream(pdfBytes), parameters["CPF-Modelo"]);
 
-            if (contractType == "Photography" || contractType == "PhotographyMinority")
+            if (contractType == DefaulTemplatePhotography || contractType == DefaulTemplatePhotographyMinority )
             {
                 var validationResult = await _paymentService.ValidatePayment(createContractModelRequest.Payment, contract);
             }
@@ -196,7 +198,6 @@ namespace Pregiato.API.Services
         public async Task<List<ContractBase>> GenerateAllContractsAsync(CreateContractModelRequest createContractModelRequest, Model model)
         {
 
-            // Monta dicionário de parâmetros básicos
             var parameters = new Dictionary<string, string?>
             {
                 {"Cidade", createContractModelRequest.City},
@@ -216,49 +217,43 @@ namespace Pregiato.API.Services
                 {"CEP-Modelo", model.PostalCode},
                 {"Telefone-Principal", model.TelefonePrincipal},
                 {"Telefone-Secundário", model.TelefoneSecundario},
-                {
-                    "Valor-Contrato",
-                    createContractModelRequest
-                        .Payment
-                        .Valor
-                        .ToString("N2", new CultureInfo("pt-BR"))
-                },
+                {"Valor-Contrato",createContractModelRequest.Payment.Valor.ToString("N2", new CultureInfo("pt-BR"))},
                 {"Meses-Contrato", createContractModelRequest.MonthContract.ToString()},
                 {"Nome-Assinatura", model.Name}
             };
 
-            // Se for menor de idade, adiciona parâmetros extras
             await AddMinorModelInfo(model, parameters);
 
             var listContracts = new List<ContractBase>();
-            // Define qual template de fotografia usar
-            var templatePhotography = model.Age < 18 ? "PhotographyMinority" : "Photography";
 
-            // 1) Gerar contrato de Fotografia (ou Fotografia Menor)
-            var signaturePhotographyParams = await AddSignatureToParameters(parameters, templatePhotography);
+            var template = model.Age < 18 ? DefaulTemplatePhotographyMinority : DefaulTemplatePhotography;
+                                  
+            var signaturePhotographyParams = await AddSignatureToParameters(parameters, template);
+            
             var photographyContract = await GenerateContractAsync(
                 createContractModelRequest,
                 model.IdModel,
-                templatePhotography,
+                template,
                 signaturePhotographyParams
             );
-
+           
             listContracts.Add(photographyContract);
-            // 2) Gerar contrato de Agência
-            var signatureAgencyParams = await AddSignatureToParameters(parameters, "Agency");
+            var signatureAgencyParams = await AddSignatureToParameters(parameters,  DefaulTemplateAgency);
             var agencyContract = await GenerateContractAsync(
                 createContractModelRequest,
                 model.IdModel,
-                "Agency",
+                DefaulTemplateAgency,
                 signatureAgencyParams
             );
-            listContracts.Add(agencyContract);
-               
-                await _rabbitmqProducer.SendMensage(listContracts, model.CPF);
-            // Retorna ambos os contratos
-               return listContracts;
 
-           
+            if (template == DefaulTemplateAgency)
+            {
+                await _rabbitmqProducer.SendMensage(listContracts, model.CPF);
+            }
+            
+            listContracts.Add(agencyContract);
+        
+            return listContracts;       
         }
         public async Task<Dictionary<string, string>> AddSignatureToParameters(Dictionary<string, string> parameters, string contractType)
         {

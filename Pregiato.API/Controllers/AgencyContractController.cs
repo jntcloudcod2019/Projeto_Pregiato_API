@@ -11,6 +11,9 @@ using PuppeteerSharp;
 using Pregiato.API.Responses;
 using static iText.StyledXmlParser.Jsoup.Select.Evaluator;
 using Pregiato.API.Services.ServiceModels;
+using System.Diagnostics.Contracts;
+using System.Text;
+using Newtonsoft.Json;
 namespace Pregiato.API.Controllers
 {
     [ApiController]
@@ -127,20 +130,29 @@ namespace Pregiato.API.Controllers
                     return ActionResultIndex.Failure("Nenhum contrato foi gerado.");
                 }
 
-                var response = new ContractGenerationResponse
+                string contentString = await _contractService.ConvertBytesToString(
+                contracts.FirstOrDefault(c => c.TemplateFileName == "PhotographyProductionContractMinority.html" || 
+                c.TemplateFileName == "PhotographyProductionContract.html")?.Content);
+
+                byte[] pdfBytes = await _contractService.ExtractBytesFromString(contentString);
+
+                var message = $"Contrato para {model.Name}, emitidos com sucesso!";
+                var contractsSummary = contracts.Select(c => new ContractSummary
                 {
-                    ContractName = "Contrato de Agenciamento & Photography Production",
-                    Message = $"Contrato para {model.Name}, emitidos com sucesso!",
-                    Contracts = contracts.Select(c => new ContractSummary
-                    {
-                        CodProposta = c.CodProposta
-                    }).ToList()
+                    CodProposta = c.CodProposta
+                }).ToList();
+
+                var metadata = new
+                {
+                    Message = message,
+                    Contracts = contractsSummary
                 };
 
-                return ActionResultIndex.Success(
-                    data: response,
-                    message: "Contratos gerados com sucesso!"
-                );
+                string metadataJson = System.Text.Json.JsonSerializer.Serialize(metadata);
+
+                Response.Headers.Add("X-Contract-Metadata", metadataJson);
+
+                return File(pdfBytes, "application/pdf", "contract.pdf");
             }
             catch (Exception ex)
             {
@@ -199,6 +211,7 @@ namespace Pregiato.API.Controllers
             return Ok("Receipt uploaded successfully.");
         }
 
+
         [Authorize(Policy = "AdminOrManager")]
         [HttpGet("payment-receipt/{paymentId}")]
         public async Task<IActionResult> GetPaymentReceipt(Guid paymentId)
@@ -215,20 +228,17 @@ namespace Pregiato.API.Controllers
         }
 
         [HttpGet("all-contracts")]
-        //[Authorize(Policy = "AdminOrManagerOrModel")]
+        [Authorize(Policy = "AdminOrManagerOrModel")]
         public async Task<IActionResult> GetAllContractsForAgencyAsync()
         {
             try
             {
-                // Obtém todos os contratos com apenas os campos especificados
                 var contracts = await _contractRepository.GetAllContractsAsync();
 
                 if (contracts == null || !contracts.Any())
                 {
                     return ActionResultIndex.Failure("Nenhum contrato encontrado na base de dados.");
                 }
-
-                // Retorna a lista estruturada
                 return ActionResultIndex.Success(
                     data: new
                     {

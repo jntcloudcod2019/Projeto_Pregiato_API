@@ -6,6 +6,8 @@
         public string Message { get; set; }
         public List<ContractSummary> Contracts { get; set; }
 
+        public byte[] ? PdfBytes { get; set; }
+
     }
     public class ContractSummary
     {

@@ -114,8 +114,8 @@ namespace Pregiato.API.Data
                 {
                     ContractId = c.ContractId,
                     ModelId = c.ModelId,
-                    DataContrato = c.DataContrato, // Agora é string, sem conversão
-                    VigenciaContrato = c.VigenciaContrato, // Agora é string, sem conversão
+                    DataContrato = c.DataContrato,
+                    VigenciaContrato = c.VigenciaContrato, 
                     ValorContrato = c.ValorContrato,
                     FormaPagamento = c.FormaPagamento ?? "Não informado",
                     StatusPagamento = c.StatusPagamento,
