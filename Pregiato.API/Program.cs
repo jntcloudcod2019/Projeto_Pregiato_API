@@ -19,7 +19,7 @@ using Microsoft.AspNetCore.Mvc;
 using FluentValidation.AspNetCore;
 
 var builder = WebApplication.CreateBuilder(args);
-var connectionString = Environment.GetEnvironmentVariable("SECRET_KEY_DATABASE")?? "Host=191.101.235.250;Port=5432;Database=pregiato;Username=pregiato;Password=pregiato123";
+var connectionString = Environment.GetEnvironmentVariable("SECRET_KEY_DATABASE") ?? "Host=191.101.235.250;Port=5432;Database=pregiato;Username=pregiato;Password=pregiato123";
 var secretKey = Environment.GetEnvironmentVariable("SECRETKEY_JWT_TOKEN") ?? "3+XcgYxev9TcGXECMBq0ilANarHN68wsDsrhG60icMaACkw9ajU97IYT+cv9IDepqrQjPaj4WUQS3VqOvpmtDw==";
 var pathBase = Environment.GetEnvironmentVariable("PATH_BASE");
 
@@ -37,7 +37,7 @@ builder.Services.AddDbContextFactory<ModelAgencyContext>(
         {
             npgsqlOptions.EnableRetryOnFailure(
                 maxRetryCount: 5,
-                maxRetryDelay: TimeSpan.FromSeconds(10),
+                maxRetryDelay: TimeSpan.FromSeconds(30),
                 errorCodesToAdd: null
             );
         });
@@ -46,7 +46,6 @@ builder.Services.AddDbContextFactory<ModelAgencyContext>(
     },
     ServiceLifetime.Scoped
 );
-
 
 builder.Services.AddMemoryCache();
 builder.Services.Configure<RabbitMQConfig>(builder.Configuration.GetSection("RabbitMQ"));
@@ -108,8 +107,6 @@ builder.Services.AddSwaggerGen(c =>
     c.AddSecurityRequirement(securityRequirement);
 });
 
-
-
 builder.Services.AddAuthentication(JwtBearerDefaults.AuthenticationScheme)
     .AddJwtBearer(options =>
     {
@@ -170,9 +167,6 @@ builder.Services.AddControllers()
         options.JsonSerializerOptions.Converters.Add(new MetodoPagamentoConverter());
         options.JsonSerializerOptions.DefaultIgnoreCondition = JsonIgnoreCondition.WhenWritingNull;
         options.JsonSerializerOptions.Converters.Add(new JsonDateTimeConverter("dd-MM-yyyy", "yyyy-MM-dd", "MM/dd/yyyy", "dd/MM/yyyy"));
-        options.JsonSerializerOptions.DefaultIgnoreCondition = System.Text.Json.Serialization.JsonIgnoreCondition.WhenWritingNull; 
-        options.JsonSerializerOptions.Converters.Add(new System.Text.Json.Serialization.JsonStringEnumConverter());
-        options.JsonSerializerOptions.PropertyNamingPolicy = System.Text.Json.JsonNamingPolicy.CamelCase; 
     });
 
 builder.Logging.ClearProviders();
@@ -181,6 +175,11 @@ builder.Logging.AddDebug();
 builder.Logging.SetMinimumLevel(LogLevel.Trace);
 
 var app = builder.Build();
+
+if (app.Environment.IsDevelopment())
+{
+    app.UseDeveloperExceptionPage();
+}
 
 if (!string.IsNullOrEmpty(pathBase))
 {
@@ -191,15 +190,15 @@ if (!string.IsNullOrEmpty(pathBase))
         return next();
     });
 }
+
+app.UseRouting();
+app.UseCors("AllowAllOrigins");
 app.UseSwagger();
 app.UseSwaggerUI(c =>
 {
     c.SwaggerEndpoint("/swagger/v1/swagger.json", "Model Agency API v1");
     c.RoutePrefix = "swagger";
 });
-builder.Services.AddEndpointsApiExplorer();
-app.UseCors("AllowAllOrigins");
-app.UseRouting();
 app.UseAuthentication();
 app.UseAuthorization();
 app.MapControllers();

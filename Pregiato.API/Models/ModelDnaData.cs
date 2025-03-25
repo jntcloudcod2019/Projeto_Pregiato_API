@@ -1,35 +1,41 @@
-﻿using Pregiato.API.Models;
-using System.Text.Json;
+﻿using System.Text.Json.Serialization;
 
-namespace Pregiato.API.Requests
+namespace Pregiato.API.Models
 {
-    public class UpdateModelRequest : Model
+    // Classe principal que representa o JSON inteiro
+    public class ModelDnaData
     {
-        public JsonDocument? DNA { get; set; }
-        public Appearance? Appearance { get; set; }
-        public EyeAttributes? EyeAttributes { get; set; }
-        public HairAttributes? HairAttributes { get; set; }
-        public SkinAttributes? SkinAttributes { get; set; }
-        public FaceAttributes? FaceAttributesm { get; set; }
-        public SmileAttributes? SmileAttributes { get; set; }
-        public BodyAttributes? BodyAttributes { get; set; }
-        public AdditionalAttributes? AdditionalAttributes { get; set; }
-        public PhysicalCharacteristics? PhysicalCharacteristics { get; set; }
+        [JsonPropertyName("dna")]
+        public string Dna { get; set; } = "InfoModel";
 
+        [JsonPropertyName("appearance")]
+        public Appearance Appearance { get; set; }
+
+        [JsonPropertyName("eyeAttributes")]
+        public EyeAttributes EyeAttributes { get; set; }
+
+        [JsonPropertyName("hairAttributes")]
+        public HairAttributes HairAttributes { get; set; }
+
+        [JsonPropertyName("skinAttributes")]
+        public SkinAttributes SkinAttributes { get; set; }
+
+        [JsonPropertyName("faceAttributesm")]
+        public FaceAttributes FaceAttributesm { get; set; }
+
+        [JsonPropertyName("smileAttributes")]
+        public SmileAttributes SmileAttributes { get; set; }
+
+        [JsonPropertyName("bodyAttributes")]
+        public BodyAttributes BodyAttributes { get; set; }
+
+        [JsonPropertyName("additionalAttributes")]
+        public AdditionalAttributes AdditionalAttributes { get; set; }
+
+        [JsonPropertyName("physicalCharacteristics")]
+        public PhysicalCharacteristics PhysicalCharacteristics { get; set; }
     }
 
-    public class PhysicalCharacteristics
-    {
-        public string ? Height { get; set; }
-        public string ? BustOrChest { get; set; }
-        public string ? Waist { get; set; }
-        public string Hips { get; set; }
-        public int ShoeSize { get; set; }
-        public int ClothingSize { get; set; }
-        public string LegLength { get; set; }
-        public string ArmLength { get; set; }
-        public string Neck { get; set; }
-    }
     public class Appearance
     {
         public EyeAttributes Eyes { get; set; }
@@ -39,12 +45,14 @@ namespace Pregiato.API.Requests
         public SmileAttributes Smile { get; set; }
         public BodyAttributes Body { get; set; }
     }
+
     public class EyeAttributes
     {
         public string Color { get; set; }
         public string Shape { get; set; }
         public string Spacing { get; set; }
     }
+
     public class HairAttributes
     {
         public string Color { get; set; }
@@ -66,17 +74,20 @@ namespace Pregiato.API.Requests
         public string Lips { get; set; }
         public string Nose { get; set; }
     }
+
     public class SmileAttributes
     {
         public string Type { get; set; }
         public string Teeth { get; set; }
     }
+
     public class BodyAttributes
     {
         public string Structure { get; set; }
         public string Proportions { get; set; }
         public string Posture { get; set; }
     }
+
     public class AdditionalAttributes
     {
         public string Ethnicity { get; set; }
@@ -86,4 +97,16 @@ namespace Pregiato.API.Requests
         public bool TravelAvailability { get; set; }
     }
 
+    public class PhysicalCharacteristics
+    {
+        public string Height { get; set; }
+        public string BustOrChest { get; set; }
+        public string Waist { get; set; }
+        public string Hips { get; set; }
+        public int ShoeSize { get; set; }
+        public int ClothingSize { get; set; }
+        public string LegLength { get; set; }
+        public string ArmLength { get; set; }
+        public string Neck { get; set; }
+    }
 }
