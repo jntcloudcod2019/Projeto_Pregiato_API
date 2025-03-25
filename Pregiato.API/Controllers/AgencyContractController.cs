@@ -7,6 +7,10 @@ using Pregiato.API.Data;
 using Microsoft.AspNetCore.Authorization;
 using Pregiato.API.Response;
 using Pregiato.API.Models;
+using PuppeteerSharp;
+using Pregiato.API.Responses;
+using static iText.StyledXmlParser.Jsoup.Select.Evaluator;
+using Pregiato.API.Services.ServiceModels;
 namespace Pregiato.API.Controllers
 {
     [ApiController]
@@ -18,7 +22,7 @@ namespace Pregiato.API.Controllers
         private readonly IContractRepository _contractRepository;
         private readonly ModelAgencyContext _context;
         private readonly CustomResponse _customResponse;
-        public AgencyContractController (IContractService contractService,
+        public AgencyContractController(IContractService contractService,
               IModelRepository modelRepository,
               IPaymentService paymentService,
               IContractRepository contractRepository,
@@ -30,22 +34,21 @@ namespace Pregiato.API.Controllers
             _context = context ?? throw new ArgumentNullException(nameof(context));
             _contractRepository = contractRepository;
             _customResponse = customResponse;
-
         }
 
         [Authorize(Policy = "AdminOrManager")]
-        [SwaggerOperation( Summary = "Gera um contrato Termo de comprometimento", Description = "Este endpoint gera o Termo de comprometimento.")]
+        [SwaggerOperation(Summary = "Gera um contrato Termo de comprometimento", Description = "Este endpoint gera o Termo de comprometimento.")]
         [SwaggerResponse(200, "Contrato gerado com sucesso", typeof(string))]
         [SwaggerResponse(400, "Requisição inválida")]
         [SwaggerResponse(404, "Modelo não encontrado")]
         [HttpPost("generate/commitmentTerm")]
         public async Task<IActionResult> GenerateCommitmentTermContract
-        ([FromBody]CreateRequestCommitmentTerm createRequestCommitmentTerm,[FromQuery] string queryModel)
+        ([FromBody] CreateRequestCommitmentTerm createRequestCommitmentTerm, [FromQuery] string queryModel)
         {
-           if(createRequestCommitmentTerm == null || queryModel == null)
-           {
+            if (createRequestCommitmentTerm == null || queryModel == null)
+            {
                 throw new Exception("Campos de parametros vazio.");
-           }
+            }
 
             var contract = await _contractService.GenerateContractCommitmentTerm(createRequestCommitmentTerm, queryModel);
 
@@ -57,7 +60,7 @@ namespace Pregiato.API.Controllers
 
         [Authorize(Policy = "AdminOrManager")]
         [SwaggerResponse(200, "Contrato gerado com sucesso", typeof(string))]
-        [SwaggerResponse(400, "Requisição inválida")]
+        [SwaggerResponse(400, "Requisição inválida.")]
         [SwaggerResponse(404, "Modelo não encontrado")]
         [SwaggerOperation("Processo de gerar o contrato: Termo de Concessão de direito de imagem.")]
         [HttpPost("generate/imageRightsTerm")]
@@ -92,40 +95,58 @@ namespace Pregiato.API.Controllers
 
         [Authorize(Policy = "AdminOrManager")]
         [SwaggerOperation("Processo de gerar contrato de Agenciamento e Fotoprgrafia.")]
+        [ProducesResponseType(typeof(ApiResponse<object>), StatusCodes.Status200OK)]
+        [ProducesResponseType(typeof(ApiResponse<object>), StatusCodes.Status404NotFound)]
         [HttpPost("generate/Agency&PhotographyProductionContracts")]
         public async Task<IActionResult> GenerateAgencyPhotographyProductionContractsAsync(CreateContractModelRequest createContractModelRequest)
         {
-            Console.WriteLine($"Inciando processo de gerar contratos para gerar contratos de {createContractModelRequest.ModelIdentification}"); 
 
-            if (!ModelState.IsValid)
+            try
             {
-                _customResponse.Message = "Dados preechidos incorretamente";
-                return BadRequest(ModelState);
-            }
-
-            Console.WriteLine($"");
-
-            var model = await _modelRepository.GetModelByCriteriaAsync(createContractModelRequest.ModelIdentification);
-
-            if (model == null)
-            {
-                _customResponse.Message = "Modelo não encontrado";
-                return NotFound("Modelo não encontrado.");
-            }
-
-            List<ContractBase> contracts = await _contractService.GenerateAllContractsAsync(createContractModelRequest, model);
-
-            var response = new ContractGenerationResponse
-            {
-                ContractName = $"Contrato de Agenciamento & Photography Production.",
-                Message = $"Contrato para {model.Name}, emitidos com sucesso!",
-                Contracts = contracts.Select(c => new ContractSummary
+                if (createContractModelRequest == null || !ModelState.IsValid)
                 {
-                    CodProposta = c.CodProposta
-                }).ToList()
-            };
+                    var erros = ModelState.Values.SelectMany(v => v.Errors)
+                                         .Select(e => e.ErrorMessage)
+                                         .ToList();
+                    return ActionResultIndex.Failure($"Os dados fornecidos são inválidos: {string.Join(", ", erros)}");
+                }
 
-            return Ok(response);
+                Console.WriteLine($"Buscando dados do modelo {createContractModelRequest.ModelIdentification}");
+
+                var model = await _modelRepository.GetModelByCriteriaAsync(createContractModelRequest.ModelIdentification);
+
+                if (model == null)
+                {
+                    return ActionResultIndex.Failure("Modelo não encontrado com os critérios fornecidos.");
+                }
+
+                List<ContractBase> contracts = await _contractService.GenerateAllContractsAsync(createContractModelRequest, model);
+
+                if (contracts == null || !contracts.Any())
+                {
+                    return ActionResultIndex.Failure("Nenhum contrato foi gerado.");
+                }
+
+                var response = new ContractGenerationResponse
+                {
+                    ContractName = "Contrato de Agenciamento & Photography Production",
+                    Message = $"Contrato para {model.Name}, emitidos com sucesso!",
+                    Contracts = contracts.Select(c => new ContractSummary
+                    {
+                        CodProposta = c.CodProposta
+                    }).ToList()
+                };
+
+                return ActionResultIndex.Success(
+                    data: response,
+                    message: "Contratos gerados com sucesso!"
+                );
+            }
+            catch (Exception ex)
+            {
+                Console.WriteLine($"Erro ao gerar contratos: {ex.Message}");
+                return ActionResultIndex.Failure($"Ocorreu um erro na operação: {ex.Message}", isSpeakOnOperation: true);
+            }
         }
 
         [Authorize(Policy = "AdminOrManagerOrModel")]
@@ -140,13 +161,13 @@ namespace Pregiato.API.Controllers
                 return NotFound("Contrato não encontrado.");
             }
 
-            string contentString = await _contractService.ConvertBytesToString(contract.Content );
+            string contentString = await _contractService.ConvertBytesToString(contract.Content);
 
             byte[] pdfBytes;
 
             try
             {
-                pdfBytes =  await _contractService.ExtractBytesFromString(contentString);
+                pdfBytes = await _contractService.ExtractBytesFromString(contentString);
             }
             catch (Exception ex)
             {
@@ -191,6 +212,37 @@ namespace Pregiato.API.Controllers
                 return NotFound("Receipt not found.");
 
             return File(payment.Comprovante, "application/pdf", "payment_receipt.pdf");
+        }
+
+        [HttpGet("all-contracts")]
+        //[Authorize(Policy = "AdminOrManagerOrModel")]
+        public async Task<IActionResult> GetAllContractsForAgencyAsync()
+        {
+            try
+            {
+                // Obtém todos os contratos com apenas os campos especificados
+                var contracts = await _contractRepository.GetAllContractsAsync();
+
+                if (contracts == null || !contracts.Any())
+                {
+                    return ActionResultIndex.Failure("Nenhum contrato encontrado na base de dados.");
+                }
+
+                // Retorna a lista estruturada
+                return ActionResultIndex.Success(
+                    data: new
+                    {
+                        TotalContracts = contracts.Count,
+                        Contracts = contracts
+                    },
+                    message: "Todos os contratos foram recuperados com sucesso!"
+                );
+            }
+            catch (Exception ex)
+            {
+                Console.WriteLine($"Erro ao recuperar contratos: {ex.Message}");
+                return ActionResultIndex.Failure($"Erro ao recuperar os contratos: {ex.Message}", isSpeakOnOperation: true);
+            }
         }
     }
 }

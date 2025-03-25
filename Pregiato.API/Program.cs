@@ -16,21 +16,20 @@ using Pregiato.API.Response;
 using Microsoft.Extensions.DependencyInjection;
 using System.Reflection;
 using Microsoft.AspNetCore.Mvc;
+using FluentValidation.AspNetCore;
 
 var builder = WebApplication.CreateBuilder(args);
-
 var connectionString = Environment.GetEnvironmentVariable("SECRET_KEY_DATABASE")?? "Host=191.101.235.250;Port=5432;Database=pregiato;Username=pregiato;Password=pregiato123";
+var secretKey = Environment.GetEnvironmentVariable("SECRETKEY_JWT_TOKEN") ?? "3+XcgYxev9TcGXECMBq0ilANarHN68wsDsrhG60icMaACkw9ajU97IYT+cv9IDepqrQjPaj4WUQS3VqOvpmtDw==";
+var pathBase = Environment.GetEnvironmentVariable("PATH_BASE");
 
-if (string.IsNullOrWhiteSpace(connectionString))
-    throw new InvalidOperationException("A variável de ambiente 'SECRET_KEY_DATABASE' não foi definida!");
+CultureInfo.DefaultThreadCurrentUICulture = new CultureInfo("pt-BR");
 
-// 1) Registro de DbContext normal (padrão: scoped)
 builder.Services.AddDbContext<ModelAgencyContext>(options =>
 {
     options.UseNpgsql(connectionString);
 });
 
-// 2) Registro de DbContextFactory como *scoped*, para evitar o conflito
 builder.Services.AddDbContextFactory<ModelAgencyContext>(
     options =>
     {
@@ -48,22 +47,13 @@ builder.Services.AddDbContextFactory<ModelAgencyContext>(
     ServiceLifetime.Scoped
 );
 
-CultureInfo.DefaultThreadCurrentUICulture = new CultureInfo("pt-BR");
 
-// Exemplo de config RabbitMQ
+builder.Services.AddMemoryCache();
 builder.Services.Configure<RabbitMQConfig>(builder.Configuration.GetSection("RabbitMQ"));
-
-// Lê PATH_BASE do ambiente, se houver
-var pathBase = Environment.GetEnvironmentVariable("PATH_BASE");
-
-// HttpContext e Endpoint
+builder.Services.AddFluentValidationAutoValidation().AddFluentValidationClientsideAdapters();
 builder.Services.AddHttpContextAccessor();
 builder.Services.AddEndpointsApiExplorer();
-
-// Automapper
 builder.Services.AddAutoMapper(AppDomain.CurrentDomain.GetAssemblies());
-
-// Repositórios e Services
 builder.Services.AddScoped<IJobRepository, JobRepository>();
 builder.Services.AddScoped<IUserRepository, UserRepository>();
 builder.Services.AddScoped<IUserService, UserService>();
@@ -82,7 +72,6 @@ builder.Services.AddSingleton<IRabbitMQProducer, RabbitMQProducer>();
 builder.Services.AddScoped<CustomResponse>();
 builder.Services.AddSingleton<IBrowserService, BrowserService>();
 
-// Swagger
 builder.Services.AddSwaggerGen(c =>
 {
     c.SwaggerDoc("v1", new OpenApiInfo { Title = "Model Agency API", Version = "v1" });
@@ -119,8 +108,7 @@ builder.Services.AddSwaggerGen(c =>
     c.AddSecurityRequirement(securityRequirement);
 });
 
-// JWT
-var secretKey = Environment.GetEnvironmentVariable("SECRETKEY_JWT_TOKEN")?? "3+XcgYxev9TcGXECMBq0ilANarHN68wsDsrhG60icMaACkw9ajU97IYT+cv9IDepqrQjPaj4WUQS3VqOvpmtDw==";
+
 
 builder.Services.AddAuthentication(JwtBearerDefaults.AuthenticationScheme)
     .AddJwtBearer(options =>
@@ -137,7 +125,6 @@ builder.Services.AddAuthentication(JwtBearerDefaults.AuthenticationScheme)
         };
     });
 
-// RabbitMQ Config
 builder.Services.Configure<RabbitMQConfig>(options =>
 {
     options.RabbitMqUri = Environment.GetEnvironmentVariable("RABBITMQ_URI")
@@ -152,7 +139,6 @@ builder.Services.Configure<RabbitMQConfig>(options =>
        ?? "sqs-inboud-sendfile";
 });
 
-// Regras de Authorization
 builder.Services.AddAuthorization(options =>
 {
     options.AddPolicy("AdminOrManager", policy =>
@@ -162,7 +148,6 @@ builder.Services.AddAuthorization(options =>
         policy.RequireRole("Administrator", "Manager", "Model"));
 });
 
-// CORS
 builder.Services.AddCors(options =>
 {
     options.AddPolicy("AllowAllOrigins",
@@ -174,7 +159,6 @@ builder.Services.AddCors(options =>
         });
 });
 
-// MVC / Controllers
 builder.Services.AddControllers()
     .AddJsonOptions(options =>
     {
@@ -186,18 +170,18 @@ builder.Services.AddControllers()
         options.JsonSerializerOptions.Converters.Add(new MetodoPagamentoConverter());
         options.JsonSerializerOptions.DefaultIgnoreCondition = JsonIgnoreCondition.WhenWritingNull;
         options.JsonSerializerOptions.Converters.Add(new JsonDateTimeConverter("dd-MM-yyyy", "yyyy-MM-dd", "MM/dd/yyyy", "dd/MM/yyyy"));
+        options.JsonSerializerOptions.DefaultIgnoreCondition = System.Text.Json.Serialization.JsonIgnoreCondition.WhenWritingNull; 
+        options.JsonSerializerOptions.Converters.Add(new System.Text.Json.Serialization.JsonStringEnumConverter());
+        options.JsonSerializerOptions.PropertyNamingPolicy = System.Text.Json.JsonNamingPolicy.CamelCase; 
     });
 
-// Logging
 builder.Logging.ClearProviders();
 builder.Logging.AddConsole();
 builder.Logging.AddDebug();
 builder.Logging.SetMinimumLevel(LogLevel.Trace);
 
-// Constrói o app
 var app = builder.Build();
 
-// Usa path base, se houver
 if (!string.IsNullOrEmpty(pathBase))
 {
     app.UsePathBase(pathBase);
@@ -213,11 +197,10 @@ app.UseSwaggerUI(c =>
     c.SwaggerEndpoint("/swagger/v1/swagger.json", "Model Agency API v1");
     c.RoutePrefix = "swagger";
 });
-
+builder.Services.AddEndpointsApiExplorer();
 app.UseCors("AllowAllOrigins");
 app.UseRouting();
 app.UseAuthentication();
 app.UseAuthorization();
-
 app.MapControllers();
 app.Run();
