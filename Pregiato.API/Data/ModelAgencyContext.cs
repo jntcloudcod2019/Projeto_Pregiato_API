@@ -1,5 +1,6 @@
 ﻿using Microsoft.EntityFrameworkCore;
 using Microsoft.EntityFrameworkCore.Storage.ValueConversion;
+using Pregiato.API.DTO;
 using Pregiato.API.Enums;
 using Pregiato.API.Models;
 using Pregiato.API.Requests;
@@ -20,12 +21,14 @@ namespace Pregiato.API.Data
         public DbSet<ContractBase> Contracts { get; set; }
         public DbSet<Payment> Payments { get; set; }
         public DbSet<ModelJob> ModelJob { get; set; }
+        
 
         protected override void OnModelCreating(ModelBuilder modelBuilder)
         {
             base.OnModelCreating(modelBuilder);
             
             modelBuilder.Ignore<LoginUserRequest>();
+            modelBuilder.Entity<ContractDTO>().HasNoKey();
 
             // Configuração para a tabela Payment
             modelBuilder.Entity<Payment>(entity =>

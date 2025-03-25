@@ -1,6 +1,8 @@
-﻿namespace Pregiato.API.DTO
+﻿using Pregiato.API.Models;
+
+namespace Pregiato.API.DTO
 {
-    public class ContractDTO
+    public class ContractDTO 
     {
         public Guid? ContractId { get; set; }
         public Guid? ModelId { get; set; }

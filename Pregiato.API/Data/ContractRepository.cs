@@ -4,67 +4,79 @@ using Pregiato.API.Interface;
 using Pregiato.API.Models;
 using Pregiato.API.Requests;
 using Pregiato.API.DTO;
+using System;
+using System.Collections.Generic;
+using System.Linq;
+using System.Threading.Tasks;
 using System.Diagnostics.Contracts;
+using iText.Kernel.Geom;
+using Pregiato.API.Services.ServiceModels;
 
 namespace Pregiato.API.Data
 {
     public class ContractRepository : IContractRepository
     {
-        private readonly ModelAgencyContext _context;
+        private readonly IDbContextFactory<ModelAgencyContext> _contextFactory;
 
-        public ContractRepository(ModelAgencyContext context)
+        public ContractRepository(IDbContextFactory<ModelAgencyContext> contextFactory)
         {
-            _context = context;
+            _contextFactory = contextFactory;
         }
 
         public async Task AddAsync(ContractsModels contract)
         {
-            _context.ContractsModels.Add(contract);
-            await _context.SaveChangesAsync();
+            using var context = _contextFactory.CreateDbContext();
+            context.ContractsModels.Add(contract);
+            await context.SaveChangesAsync();
         }
 
         public async Task UpdateAsync(ContractsModels contract)
         {
-            _context.ContractsModels.Update(contract);
-            await _context.SaveChangesAsync();
+            using var context = _contextFactory.CreateDbContext();
+            context.ContractsModels.Update(contract);
+            await context.SaveChangesAsync();
         }
 
         public async Task DeleteAsync(ContractsModels contract)
         {
-            _context.ContractsModels.Remove(contract);
-            await _context.SaveChangesAsync();
+            using var context = _contextFactory.CreateDbContext();
+            context.ContractsModels.Remove(contract);
+            await context.SaveChangesAsync();
         }
 
         public async Task<ContractsModels> GetByIdContractAsync(Guid id)
         {
-            return await _context.ContractsModels.FindAsync(id);
+            using var context = _contextFactory.CreateDbContext();
+            return await context.ContractsModels.FindAsync(id);
         }
 
         public async Task SaveContractAsync(ContractBase contract)
         {
-
-            _context.Add(contract);
-          await  _context.SaveChangesAsync();
+            using var context = _contextFactory.CreateDbContext();
+            context.Add(contract);
+            await context.SaveChangesAsync();
         }
 
-        Task<ContractBase?> IContractRepository.GetContractByIdAsync(int? codProposta, Guid? contractId)
+        public Task<ContractBase?> GetContractByIdAsync(int? codProposta, Guid? contractId)
         {
-            throw new NotImplementedException();
+            throw new NotImplementedException(); // Mantido como estava
         }
 
         public async Task<List<ContractBase>> GetContractsByModelId(Guid modelId)
         {
-            return await _context.Contracts
-             .Where(c => c.ModelId == modelId)
-             .ToListAsync();
+            using var context = _contextFactory.CreateDbContext();
+            return await context.Contracts
+                .Where(c => c.ModelId == modelId)
+                .ToListAsync();
         }
 
         public async Task<ContractBase> GetContractByCriteriaAsync(string? contractId, string? modelId, int? codProposta)
         {
-           var contract = await _context.Contracts.FirstOrDefaultAsync(m =>
-           (modelId != null && m.ModelId.ToString() == modelId) ||
-           (contractId != null && m.ContractId.ToString() == contractId) ||
-           (codProposta != null && m.CodProposta == codProposta));
+            using var context = _contextFactory.CreateDbContext();
+            var contract = await context.Contracts.FirstOrDefaultAsync(m =>
+                (modelId != null && m.ModelId.ToString() == modelId) ||
+                (contractId != null && m.ContractId.ToString() == contractId) ||
+                (codProposta != null && m.CodProposta == codProposta));
 
             if (contract == null)
             {
@@ -72,26 +84,45 @@ namespace Pregiato.API.Data
             }
 
             return contract;
-
         }
 
         public async Task<ContractDTO?> DownloadContractAsync(int proposalCode)
         {
-           var contract = await _context.Contracts
-          .Where(c =>             
-              (c.CodProposta == proposalCode))
-          .Select(c => new ContractDTO 
-          {
-              ContractId = c.ContractId,
-              ModelId = c.ModelId,
-              ProposalCode = c.CodProposta,
-              ContractFilePath = c.ContractFilePath,
-              Content = c.Content
-          })
-          .FirstOrDefaultAsync();
+            using var context = _contextFactory.CreateDbContext();
+            var contract = await context.Contracts
+                .Where(c => c.CodProposta == proposalCode)
+                .Select(c => new ContractDTO
+                {
+                    ContractId = c.ContractId,
+                    ModelId = c.ModelId,
+                    ProposalCode = c.CodProposta,
+                    ContractFilePath = c.ContractFilePath,
+                    Content = c.Content
+                })
+                .FirstOrDefaultAsync();
 
-          return await Task.FromResult(contract);
+            return contract;
+        }
 
+       public async Task<List<ContractSummaryDTO>> GetAllContractsAsync()
+        {
+            using var context = _contextFactory.CreateDbContext();
+            return await context.Contracts
+                .AsNoTracking()
+                .OrderBy(c => c.ContractId)
+                .Select(c => new ContractSummaryDTO
+                {
+                    ContractId = c.ContractId,
+                    ModelId = c.ModelId,
+                    DataContrato = c.DataContrato, // Agora é string, sem conversão
+                    VigenciaContrato = c.VigenciaContrato, // Agora é string, sem conversão
+                    ValorContrato = c.ValorContrato,
+                    FormaPagamento = c.FormaPagamento ?? "Não informado",
+                    StatusPagamento = c.StatusPagamento,
+                    ContractFilePath = c.ContractFilePath,
+                    CodProposta = c.CodProposta
+                })
+                .ToListAsync();
         }
     }
- }
+}
