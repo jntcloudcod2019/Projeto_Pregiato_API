@@ -10,6 +10,7 @@ using System.IdentityModel.Tokens.Jwt;
 using System.Security.Claims;
 using Pregiato.API.Services.ServiceModels;
 using Pregiato.API.Services;
+using Microsoft.IdentityModel.Tokens;
 
 namespace Pregiato.API.Controllers
 {
@@ -21,7 +22,7 @@ namespace Pregiato.API.Controllers
         private readonly IUserRepository _userRepository;
         private readonly IJwtService _jwtService;
         private readonly CustomResponse _customResponse;
-
+        private readonly GetTokenExpiration _getTokenExpiration; 
         public UserController(IJwtService jwtService, IUserService userService, IUserRepository userRepository, CustomResponse customResponse)
         {
             _userService = userService;
@@ -92,18 +93,41 @@ namespace Pregiato.API.Controllers
         [HttpGet("register/validate")]
         public async Task<IActionResult> ValidateToken()
         {
-            var token = HttpContext.Request.Headers["Authorization"]
-                .ToString()
-                .Replace("Bearer ", "");
-
-
-            if (await _jwtService.IsTokenValidAsync(token))
+            try
             {
-                var userId = await _jwtService.GetUserIdFromTokenAsync(token);
-                return Ok(new { IsValid = true, UserId = userId });
-            }
+                var token = HttpContext.Request.Headers["Authorization"]
+                    .ToString()
+                    .Replace("Bearer ", "");
 
-            return Unauthorized(new { IsValid = false });
+                if (string.IsNullOrEmpty(token))
+                {
+                    return Unauthorized(new { IsValid = false, Error = "Token não fornecido" });
+                }
+
+                if (!await _jwtService.IsTokenValidAsync(token))
+                {
+                    return Unauthorized(new { IsValid = false, Error = "Token inválido" });
+                }
+
+                var userId = await _jwtService.GetUserIdFromTokenAsync(token);
+
+
+                return Ok(new
+                {
+                    IsValid = true,
+                    UserId = userId,
+                    Expires =  _getTokenExpiration.GetExpirationToken(token)
+                });
+            }
+            catch (SecurityTokenException ex)
+            {
+                return Unauthorized(new { IsValid = false, Error = ex.Message });
+            }
+            catch (Exception ex)
+            {
+                Console.WriteLine( $"Erro ao validar token {ex}");
+                return StatusCode(500, new { Error = "Erro interno ao validar token" });
+            }
         }
 
         [Authorize(Policy = "AdminOrManager")]

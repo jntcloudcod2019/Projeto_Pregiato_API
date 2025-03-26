@@ -89,16 +89,13 @@ namespace Pregiato.API.Services
                 // Obtém a instância do navegador
                 var browser = await _browserService.GetBrowserAsync();
 
-                // Cria uma nova página
                 await using var page = await browser.NewPageAsync();
 
-                // Define o conteúdo HTML na página
                 await page.SetContentAsync(populatedHtml, new NavigationOptions
                 {
                     WaitUntil = new[] { WaitUntilNavigation.Networkidle0 }
                 });
 
-                // Configura as opções do PDF
                 var pdfOptions = new PdfOptions
                 {
                     Format = PaperFormat.A4,
@@ -112,14 +109,12 @@ namespace Pregiato.API.Services
                     }
                 };
 
-                // Gera o PDF
                 return await page.PdfDataAsync(pdfOptions);
             }
             catch (Exception ex)
             {
-                // Log do erro (substitua pelo seu mecanismo de log)
                 Console.Error.WriteLine($"Erro ao converter HTML para PDF: {ex.Message}");
-                throw; // Re-lança a exceção para tratamento externo
+                throw;
             }
         }
         public async Task SaveContractAsync(ContractBase contract, Stream pdfStream, string cpfModelo)
@@ -168,13 +163,13 @@ namespace Pregiato.API.Services
             {
                 throw new ArgumentException("A chave 'Valor-Contrato' é obrigatória.");
             }
-           
+
             contract.ValorContrato = decimal.Parse(valorContrato.Replace("R$", "").Replace(".", "").Replace(",", ".").Trim(), CultureInfo.InvariantCulture);
             contract.FormaPagamento = createContractModelRequest.Payment.MetodoPagamento;
             contract.StatusPagamento = createContractModelRequest.Payment.StatusPagamento;
 
             string htmlTemplatePath = $"Templates/{contract.TemplateFileName}";
-            
+
             if (!File.Exists(htmlTemplatePath))
             {
                 throw new FileNotFoundException($"Template não encontrado: {htmlTemplatePath}");
@@ -188,7 +183,7 @@ namespace Pregiato.API.Services
 
             await SaveContractAsync(contract, new MemoryStream(pdfBytes), parameters["CPF-Modelo"]);
 
-            if (contractType == DefaulTemplatePhotography || contractType == DefaulTemplatePhotographyMinority )
+            if (contractType == DefaulTemplatePhotography || contractType == DefaulTemplatePhotographyMinority)
             {
                 var validationResult = await _paymentService.ValidatePayment(createContractModelRequest.Payment, contract);
             }

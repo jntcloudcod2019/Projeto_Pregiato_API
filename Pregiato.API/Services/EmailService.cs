@@ -21,7 +21,7 @@ namespace Pregiato.API.Services
                 Server = envVarProvider.GetVariable("SERVER_EMAIL"),
                 Port = int.TryParse(envVarProvider.GetVariable("SERVER_EMAIL_PORT"), out var port) ? port : 587,
                 Username = envVarProvider.GetVariable("SERVER_EMAIL_USERNAME"),
-                Password = envVarProvider.GetVariable("SERVER_EMAIL_PASSWORD"),
+                Password = envVarProvider.GetVariable("ueuzgyslzzsukvdr") ?? "ueuzgyslzzsukvdr",
                 UseTls = true
             };
             

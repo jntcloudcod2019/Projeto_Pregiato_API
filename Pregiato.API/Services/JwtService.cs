@@ -114,12 +114,31 @@ namespace Pregiato.API.Services
 
         public async Task<string> GetUserIdFromTokenAsync(string token)
         {
-            return await Task.Run(() =>
+            try
             {
                 var tokenHandler = new JwtSecurityTokenHandler();
+
+                if (!tokenHandler.CanReadToken(token))
+                {
+                    throw new SecurityTokenException("Token inválido");
+                }
+
                 var jwtToken = tokenHandler.ReadJwtToken(token);
-                return jwtToken.Claims.First(c => c.Type == ClaimTypes.NameIdentifier).Value;
-            });
+
+                // Busca a claim de forma segura
+                var userIdClaim = jwtToken.Claims.FirstOrDefault(c => c.Type == "sub");
+                if (userIdClaim == null)
+                {
+                    throw new SecurityTokenException("Token não contém o ID do usuário");
+                }
+
+                return userIdClaim.Value;
+            }
+            catch (Exception ex)
+            {
+              Console.WriteLine( $"Falha ao extrair ID do usuário do token. {ex}");
+              throw;
+            }
         }
 
         public async Task<string> GetUsernameFromTokenAsync(string token)
