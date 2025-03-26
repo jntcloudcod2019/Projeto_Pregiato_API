@@ -25,6 +25,7 @@ var pathBase = Environment.GetEnvironmentVariable("PATH_BASE");
 
 CultureInfo.DefaultThreadCurrentUICulture = new CultureInfo("pt-BR");
 
+// Configuração do DbContext
 builder.Services.AddDbContext<ModelAgencyContext>(options =>
 {
     options.UseNpgsql(connectionString);
@@ -47,30 +48,36 @@ builder.Services.AddDbContextFactory<ModelAgencyContext>(
     ServiceLifetime.Scoped
 );
 
+// Configuração de serviços
 builder.Services.AddMemoryCache();
-builder.Services.Configure<RabbitMQConfig>(builder.Configuration.GetSection("RabbitMQ"));
-builder.Services.AddFluentValidationAutoValidation().AddFluentValidationClientsideAdapters();
 builder.Services.AddHttpContextAccessor();
 builder.Services.AddEndpointsApiExplorer();
-builder.Services.AddAutoMapper(AppDomain.CurrentDomain.GetAssemblies());
-builder.Services.AddScoped<IJobRepository, JobRepository>();
-builder.Services.AddScoped<IUserRepository, UserRepository>();
-builder.Services.AddScoped<IUserService, UserService>();
+
+// Injeção de dependências
+builder.Services.AddScoped<CustomResponse>();
 builder.Services.AddScoped<IJwtService, JwtService>();
-builder.Services.AddScoped<IPaymentService, PaymentService>();
-builder.Services.AddScoped<IClientRepository, ClientRepository>();
-builder.Services.AddScoped<IModelRepository, ModelsRepository>();
-builder.Services.AddScoped<IContractService, ContractService>();
-builder.Services.AddScoped<IContractRepository, ContractRepository>();
-builder.Services.AddSingleton<IEnvironmentVariableProviderEmail, EnvironmentVariableProviderEmail>();
+builder.Services.AddScoped<IUserService, UserService>();
+builder.Services.AddScoped<IJobRepository, JobRepository>();
 builder.Services.AddTransient<IEmailService, EmailService>();
+builder.Services.AddScoped<IPaymentService, PaymentService>();
+builder.Services.AddScoped<IUserRepository, UserRepository>();
+builder.Services.AddScoped<IContractService, ContractService>();
 builder.Services.AddScoped<IServiceUtilites, ServiceUtilites>();
+builder.Services.AddSingleton<IBrowserService, BrowserService>();
+builder.Services.AddScoped<IModelRepository, ModelsRepository>();
+builder.Services.AddScoped<IClientRepository, ClientRepository>();
+builder.Services.AddSingleton<IRabbitMQProducer, RabbitMQProducer>();
+builder.Services.AddScoped<IContractRepository, ContractRepository>();
 builder.Services.AddScoped<IPasswordHasherService, PasswordHasherService>();
 builder.Services.AddScoped<IClientBillingRepository, ClientBillingRepository>();
-builder.Services.AddSingleton<IRabbitMQProducer, RabbitMQProducer>();
-builder.Services.AddScoped<CustomResponse>();
-builder.Services.AddSingleton<IBrowserService, BrowserService>();
+builder.Services.AddSingleton<IEnvironmentVariableProviderEmail, EnvironmentVariableProviderEmail>();
 
+// Configurações adicionais
+builder.Services.AddAutoMapper(AppDomain.CurrentDomain.GetAssemblies());
+builder.Services.AddFluentValidationAutoValidation().AddFluentValidationClientsideAdapters();
+builder.Services.Configure<RabbitMQConfig>(builder.Configuration.GetSection("RabbitMQ"));
+
+// Configuração do Swagger
 builder.Services.AddSwaggerGen(c =>
 {
     c.SwaggerDoc("v1", new OpenApiInfo { Title = "Model Agency API", Version = "v1" });
@@ -107,6 +114,7 @@ builder.Services.AddSwaggerGen(c =>
     c.AddSecurityRequirement(securityRequirement);
 });
 
+// Configuração de Autenticação JWT
 builder.Services.AddAuthentication(JwtBearerDefaults.AuthenticationScheme)
     .AddJwtBearer(options =>
     {
@@ -125,7 +133,7 @@ builder.Services.AddAuthentication(JwtBearerDefaults.AuthenticationScheme)
         };
     });
 
-
+// Configuração do RabbitMQ
 builder.Services.Configure<RabbitMQConfig>(options =>
 {
     options.RabbitMqUri = Environment.GetEnvironmentVariable("RABBITMQ_URI")
@@ -140,6 +148,7 @@ builder.Services.Configure<RabbitMQConfig>(options =>
        ?? "sqs-inboud-sendfile";
 });
 
+// Configuração de Autorização
 builder.Services.AddAuthorization(options =>
 {
     options.AddPolicy("AdminOrManager", policy =>
@@ -149,6 +158,7 @@ builder.Services.AddAuthorization(options =>
         policy.RequireRole("Administrator", "Manager", "Model"));
 });
 
+// Configuração de CORS
 builder.Services.AddCors(options =>
 {
     options.AddPolicy("AllowAllOrigins",
@@ -160,6 +170,7 @@ builder.Services.AddCors(options =>
         });
 });
 
+// Configuração de Controllers
 builder.Services.AddControllers()
     .AddJsonOptions(options =>
     {
@@ -173,6 +184,7 @@ builder.Services.AddControllers()
         options.JsonSerializerOptions.Converters.Add(new JsonDateTimeConverter("dd-MM-yyyy", "yyyy-MM-dd", "MM/dd/yyyy", "dd/MM/yyyy"));
     });
 
+// Configuração de Logging
 builder.Logging.ClearProviders();
 builder.Logging.AddConsole();
 builder.Logging.AddDebug();
@@ -180,6 +192,7 @@ builder.Logging.SetMinimumLevel(LogLevel.Trace);
 
 var app = builder.Build();
 
+// Configuração do Pipeline de Requisições
 if (app.Environment.IsDevelopment())
 {
     app.UseDeveloperExceptionPage();
@@ -195,14 +208,21 @@ if (!string.IsNullOrEmpty(pathBase))
     });
 }
 
+// Ordem CORRETA dos middlewares:
 app.UseRouting();
 app.UseCors("AllowAllOrigins");
+
+// Middlewares de segurança adicionados aqui:
+app.UseAuthentication();
+app.UseAuthorization();
+
 app.UseSwagger();
 app.UseSwaggerUI(c =>
 {
     c.SwaggerEndpoint("/swagger/v1/swagger.json", "Model Agency API v1");
     c.RoutePrefix = "swagger";
 });
-app.UseAuthentication();
+
 app.MapControllers();
+
 app.Run();

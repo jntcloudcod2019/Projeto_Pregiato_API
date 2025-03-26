@@ -9,11 +9,16 @@ using System.Globalization;
 
 public class PaymentService : IPaymentService
 {
-    private readonly ModelAgencyContext _context;
-    public PaymentService(ModelAgencyContext context) {_context = context ?? throw new ArgumentNullException(nameof(context)); }
+    private readonly IDbContextFactory<ModelAgencyContext> _contextFactory;
+
+    public PaymentService(IDbContextFactory<ModelAgencyContext> contextFactory)
+    {
+        _contextFactory = contextFactory ?? throw new ArgumentNullException(nameof(contextFactory));
+    }
 
     public async Task<string> ValidatePayment(PaymentRequest payment, ContractBase contract)
     {
+        await using var context = await _contextFactory.CreateDbContextAsync();
         try
         {
             if (!MetodoPagamento.IsValid(payment.MetodoPagamento))
@@ -79,9 +84,9 @@ public class PaymentService : IPaymentService
             if (payment.StatusPagamento == "Pending" && payment.DataAcordoPagamento == null)
                 throw new ArgumentException("Data do Acordo de Pagamento é obrigatória para status Pendente.");
 
-            await _context.AddAsync(paymentContract);
-            await _context.SaveChangesAsync();
-            
+            await context.AddAsync(paymentContract);
+            await context.SaveChangesAsync();
+
             return $"validação de pagamento  para o contrato: {contract.ContractId} ok";
         }
         catch (Exception ex)

@@ -66,7 +66,6 @@ namespace Pregiato.API.Controllers
             return Ok(modelsExists);
         }
 
-
         [Authorize(Policy = "AdminOrManager")]
         [HttpPost("AddModels")]
         [SwaggerOperation("Criar novo modelo.")]
@@ -138,7 +137,6 @@ namespace Pregiato.API.Controllers
             });
         }
 
-
         [Authorize(Policy = "AdminOrManager")]
         [HttpDelete("DeleteModel{id}")]
         [SwaggerOperation("Deletar cadastro de modelos.")]
@@ -165,6 +163,7 @@ namespace Pregiato.API.Controllers
 
             var model = await _agencyContext.Model
                 .FirstOrDefaultAsync(m => m.Name == username);
+
 
             if (model == null)
             {
@@ -286,8 +285,6 @@ namespace Pregiato.API.Controllers
             }
             return BadRequest(_customResponse.Message = "Desculpe, mas não encontramos contratos relacionados ao seu usuário. ");
         }
-
-
 
         [HttpPut("update-dna-property")]
         [ProducesResponseType(StatusCodes.Status204NoContent)]

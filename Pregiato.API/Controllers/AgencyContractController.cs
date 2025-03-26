@@ -25,7 +25,8 @@ namespace Pregiato.API.Controllers
         private readonly IContractRepository _contractRepository;
         private readonly ModelAgencyContext _context;
         private readonly CustomResponse _customResponse;
-        public AgencyContractController(IContractService contractService,
+        public AgencyContractController(
+              IContractService contractService,
               IModelRepository modelRepository,
               IPaymentService paymentService,
               IContractRepository contractRepository,
@@ -151,7 +152,6 @@ namespace Pregiato.API.Controllers
                 string metadataJson = System.Text.Json.JsonSerializer.Serialize(metadata);
 
                 Response.Headers.Add("X-Contract-Metadata", metadataJson);
-
                 return File(pdfBytes, "application/pdf", "contract.pdf");
             }
             catch (Exception ex)
@@ -217,6 +217,7 @@ namespace Pregiato.API.Controllers
         public async Task<IActionResult> GetPaymentReceipt(Guid paymentId)
         {
             var payment = await _context.Payments
+                .AsNoTracking()
                 .Where(p => p.Id == paymentId)
                 .Select(p => new { p.Comprovante })
                 .FirstOrDefaultAsync();

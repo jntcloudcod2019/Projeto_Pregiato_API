@@ -22,59 +22,49 @@ namespace Pregiato.API.Data
         {
             _contextFactory = contextFactory;
         }
-
         public async Task AddAsync(ContractsModels contract)
         {
             using var context = _contextFactory.CreateDbContext();
             context.ContractsModels.Add(contract);
             await context.SaveChangesAsync();
         }
-
         public async Task UpdateAsync(ContractsModels contract)
         {
             using var context = _contextFactory.CreateDbContext();
             context.ContractsModels.Update(contract);
             await context.SaveChangesAsync();
         }
-
         public async Task DeleteAsync(ContractsModels contract)
         {
             using var context = _contextFactory.CreateDbContext();
             context.ContractsModels.Remove(contract);
             await context.SaveChangesAsync();
         }
-
         public async Task<ContractsModels> GetByIdContractAsync(Guid id)
         {
             using var context = _contextFactory.CreateDbContext();
             return await context.ContractsModels.FindAsync(id);
         }
-
         public async Task SaveContractAsync(ContractBase contract)
         {
             using var context = _contextFactory.CreateDbContext();
             context.Add(contract);
             await context.SaveChangesAsync();
         }
-
-        public Task<ContractBase?> GetContractByIdAsync(int? codProposta, Guid? contractId)
-        {
-            throw new NotImplementedException(); // Mantido como estava
-        }
-
         public async Task<List<ContractBase>> GetContractsByModelId(Guid modelId)
         {
             using var context = _contextFactory.CreateDbContext();
             return await context.Contracts
+                .AsNoTracking()
                 .Where(c => c.ModelId == modelId)
                 .ToListAsync();
         }
-
         public async Task<ContractBase> GetContractByCriteriaAsync(string? contractId, string? modelId, int? codProposta)
         {
             using var context = _contextFactory.CreateDbContext();
-            var contract = await context.Contracts.FirstOrDefaultAsync(m =>
-                (modelId != null && m.ModelId.ToString() == modelId) ||
+
+            var contract = await context.Contracts.FirstOrDefaultAsync
+                (m => (modelId != null && m.ModelId.ToString() == modelId) ||
                 (contractId != null && m.ContractId.ToString() == contractId) ||
                 (codProposta != null && m.CodProposta == codProposta));
 
@@ -85,11 +75,11 @@ namespace Pregiato.API.Data
 
             return contract;
         }
-
         public async Task<ContractDTO?> DownloadContractAsync(int proposalCode)
         {
             using var context = _contextFactory.CreateDbContext();
             var contract = await context.Contracts
+                .AsNoTracking()
                 .Where(c => c.CodProposta == proposalCode)
                 .Select(c => new ContractDTO
                 {
@@ -103,7 +93,6 @@ namespace Pregiato.API.Data
 
             return contract;
         }
-
        public async Task<List<ContractSummaryDTO>> GetAllContractsAsync()
         {
             using var context = _contextFactory.CreateDbContext();
