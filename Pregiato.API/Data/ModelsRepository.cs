@@ -1,4 +1,5 @@
 ﻿using Microsoft.EntityFrameworkCore;
+using Pregiato.API.DTO;
 using Pregiato.API.Interface;
 using Pregiato.API.Models;
 using Pregiato.API.Requests;
@@ -20,49 +21,57 @@ namespace Pregiato.API.Data
                 model.DateOfBirth = DateTime.SpecifyKind(model.DateOfBirth.Value, DateTimeKind.Utc);
             }
 
-            _context.Model.Add(model);  
+            _context.Models.Add(model);  
             await _context.SaveChangesAsync();  
         }
 
         public async Task DeleteModelAsync(Guid id)
         {
-           var idModel = await _context.Model.FindAsync(id);
-            if (idModel != null) 
+           var idModel = await _context.Models.FindAsync(id);
+            if (idModel != null)
             { 
-                _context.Model.Remove(idModel);    
+                _context.Models.Remove(idModel);    
                 await _context.SaveChangesAsync();  
             }
         }
 
         public async Task<IEnumerable<Model>> GetAllModelAsync()
         {
-           return await _context.Model.ToListAsync();  
+           return await _context.Models.ToListAsync();  
         }
 
         public async Task<Model> GetByIdModelAsync(Guid id)
         {
 
-            return await _context.Model.FindAsync(id);
+            return await _context.Models.FindAsync(id);
         }
 
         public async Task UpdateModelAsync(Model model)
         {
-           _context.Model.Update(model);
-            await _context.SaveChangesAsync();        
+           _context.Models.Update(model);
+            await _context.SaveChangesAsync();
         }
 
         public async Task<Model?> GetModelByCriteriaAsync(string query)
         {
-            return await _context.Model.FirstOrDefaultAsync(m =>
-                m.CPF == query ||
-                m.RG == query ||
-                m.Name.Contains(query) ||
-                m.IdModel.ToString() == query);
+            return await _context.Models
+           .Where(m => m.CPF == query ||
+                      m.RG == query ||
+                      m.Name.Contains(query) ||
+                      m.IdModel.ToString() == query)
+           .Select(m => new Model
+           {
+               IdModel = m.IdModel,
+               CPF = m.CPF,
+               RG = m.RG,
+               Name = m.Name
+           })
+           .FirstOrDefaultAsync();
         }
 
         public async Task<Model> GetModelAllAsync(string? idModel, string? cpf, string? rg)
         {
-            return await _context.Model.FirstOrDefaultAsync(m =>
+            return await _context.Models.FirstOrDefaultAsync(m =>
                 (idModel != null && m.IdModel.ToString() == idModel) ||
                 (cpf != null && m.CPF == cpf) ||
                 (rg != null && m.RG == rg));       
@@ -70,12 +79,32 @@ namespace Pregiato.API.Data
         public async Task<Model> ModelExistsAsync(CreateModelRequest inputModel)
         {
 
-            var existingModel = await _context.Model
+            var existingModel = await _context.Models
                 .FirstOrDefaultAsync(m =>
                     m.CPF == inputModel.CPF &&
                     m.Name == inputModel.Name &&
                     m.RG == inputModel.RG &&
-                    m.Email == inputModel.Email);       
+                    m.Email == inputModel.Email);
+            return existingModel;
+        }
+
+        public async Task<ModelCheckDto> GetModelCheck(CreateModelRequest inputModel)
+        {
+             var existingModel = await _context.Models
+              .Where(m => m.CPF == inputModel.CPF &&
+                         m.Name == inputModel.Name &&
+                         m.RG == inputModel.RG &&
+                         m.Email == inputModel.Email)
+              .Select(m => new ModelCheckDto
+              {
+                  IdModel = m.IdModel,
+                  CPF = m.CPF,
+                  Name = m.Name,
+                  RG = m.RG,
+                  Email = m.Email
+              })
+              .AsNoTracking()
+              .FirstOrDefaultAsync();
             return existingModel;
         }
     }

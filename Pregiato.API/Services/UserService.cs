@@ -1,33 +1,26 @@
-﻿using Microsoft.AspNetCore.Http.HttpResults;
+﻿using System.Text.Json;
+using Microsoft.AspNetCore.Http.HttpResults;
 using Microsoft.AspNetCore.Identity.Data;
 using Pregiato.API.Interface;
 using Pregiato.API.Models;
 using Pregiato.API.Requests;
 using Pregiato.API.Response;
 using Pregiato.API.Responses;
+using Pregiato.API.Services.ServiceModels;
 using PuppeteerSharp;
 
 
 namespace Pregiato.API.Services
 {
-    public class UserService : IUserService
+    public class UserService(IUserRepository userRepository, IJwtService jwtService,
+                       IPasswordHasherService passwordHasherService,
+                       IEmailService emailService) : IUserService
     {
-        private readonly IUserRepository _userRepository;
-        private readonly IJwtService _jwtService; 
-        private readonly IEmailService _emailService;   
-        private readonly IPasswordHasherService _passwordHasherService;
-        private readonly CustomResponse _customResponse;
-    
-        public UserService(IUserRepository userRepository, IJwtService jwtService, 
-                           IPasswordHasherService passwordHasherService,
-                           IEmailService emailService)
-        {
-            _userRepository = userRepository;
-            _jwtService = jwtService;  
-            _passwordHasherService = passwordHasherService; 
-            _emailService = emailService;
-            _customResponse = new CustomResponse();
-        }
+        private readonly IUserRepository _userRepository = userRepository;
+        private readonly IJwtService _jwtService = jwtService;
+        private readonly IEmailService _emailService = emailService;
+        private readonly IPasswordHasherService _passwordHasherService = passwordHasherService;
+        private readonly CustomResponse _customResponse = new CustomResponse();
 
         public async Task DeleteUserAsync(Guid id)
         {
@@ -76,28 +69,35 @@ namespace Pregiato.API.Services
         {
             try
             {
-                if (loginUserRequest == null || string.IsNullOrWhiteSpace(loginUserRequest.Username))
+                if (loginUserRequest == null || string.IsNullOrWhiteSpace(loginUserRequest.NickName))
                 {
                     throw new ArgumentException("Nome de usuário não pode ser nulo ou vazio.");
                 }
 
-                var user = await _userRepository.GetByUsernameAsync(loginUserRequest.Username);
+                var user = await _userRepository.GetByUsernameAsync(loginUserRequest.NickName);
 
                 if (user == null)
                 {
-                    _customResponse.Message = "Usuário não encontrado. Verifique o nome de usuário e tente novamente.";
+                    throw new UnauthorizedAccessException(JsonSerializer.Serialize(new ErrorResponse
+                    {
+                        Message = "Usuário ou senha inválidos.",
+                        Details = "O NickName fornecido não foi encontrado na base de dados."
+                    }));
                 }
 
                 if (string.IsNullOrWhiteSpace(loginUserRequest.Password) || !BCrypt.Net.BCrypt.Verify(loginUserRequest.Password, user.PasswordHash))
                 {
-                    _customResponse.Message = "Senha inválida. Verifique a senha digitada e tente novamente.";
+                    throw new UnauthorizedAccessException(JsonSerializer.Serialize(new ErrorResponse
+                    {
+                        Message = "Usuário ou senha inválidos.",
+                        Details = "A senha fornecida não corresponde ao usuário."
+                    }));
                 }
 
                 loginUserRequest.UserType = user.UserType;
                 loginUserRequest.IdUser = user.UserId;
                 loginUserRequest.Email = user.Email;
 
-                // Retorna diretamente a string do token
                 return await _jwtService.GenerateToken(loginUserRequest);
             }
             catch (Exception ex)
@@ -107,18 +107,19 @@ namespace Pregiato.API.Services
             }
         }
 
-        public async Task<string> RegisterUserModel(string username, string email)
+        public async Task<string> RegisterUserModelAsync(string username, string email)
         {
-                         
+
             Console.WriteLine($"[PROCESS] {DateTime.Now:yyyy-MM-dd HH:mm:ss} |  Validando se o USER_MODEL: {username}, já está cadastrado... ");
 
             var shfUser = await _userRepository.GetByUsernameAsync(username);
 
-            if ( shfUser!= null)
+            if (shfUser != null)
             {
-                Console.WriteLine($"[INFO] {DateTime.Now:yyyy-MM-dd HH:mm:ss} | USER_MODEL {username}, cadastrado... ");
-
-              ///  _customResponse.Message("Usuário não encontrado. Verifique o nome de usuário e tente novamente.");
+                throw new UnauthorizedAccessException(JsonSerializer.Serialize(new ErrorResponse
+                {
+                    Message = $"Este usuário {username} já posseui cadastrao.",
+                })); ;
             }
 
             Console.WriteLine($"[PROCESS] {DateTime.Now:yyyy-MM-dd HH:mm:ss} | Gerando cadastro... ");
@@ -132,7 +133,56 @@ namespace Pregiato.API.Services
                 {"Nome",username},
                 {"User",nikeName },
                 {"Password", password}
-            };     
+            };
+
+             await _emailService.SendEmailAsync(replacements, email, "Bem-vindo à Plataforma My Pregiato");
+
+            string passwordHash = await _passwordHasherService.CreatePasswordHashAsync(password);
+
+            var user = new User
+            {
+                UserId = new Guid(),
+                Name = username,
+                Email = email,
+                NickName = nikeName,
+                PasswordHash = passwordHash,
+                CodProducers = await GenerateProducerCodeAsync(),
+                UserType = UserType.Model.ToString(),
+            };
+
+            await _userRepository.AddUserAsync(user);
+            await _userRepository.SaveChangesAsync();
+
+            Console.WriteLine($"");
+            return ($"Usuário {username} cadastrado com sucesso.");
+        }
+
+        public async Task<string> RegisterUserProducersAsync(string username, string email)
+        {
+            Console.WriteLine($"[PROCESS] {DateTime.Now:yyyy-MM-dd HH:mm:ss} |  Validando se o USER_MODEL: {username}, já está cadastrado... ");
+
+            var shfUser = await _userRepository.GetByUsernameAsync(username);
+
+            if (shfUser != null)
+            {
+                throw new UnauthorizedAccessException(JsonSerializer.Serialize(new ErrorResponse
+                {
+                    Message = $"Este usuário {username}já posseui cadastrao.",
+                })); ;
+            }
+
+            Console.WriteLine($"[PROCESS] {DateTime.Now:yyyy-MM-dd HH:mm:ss} | Gerando cadastro... ");
+
+            string nikeName = username.Replace(" ", "").ToLower();
+
+            string password = await _passwordHasherService.GenerateRandomPasswordAsync(12);
+
+            var replacements = new Dictionary<string, string>
+            {
+                {"Nome",username},
+                {"User",nikeName },
+                {"Password", password}
+            };
 
             await _emailService.SendEmailAsync(replacements, email, "Bem-vindo à Plataforma My Pregiato");
 
@@ -141,17 +191,316 @@ namespace Pregiato.API.Services
             var user = new User
             {
                 UserId = new Guid(),
-                Name =nikeName,
+                Name = username,
                 Email = email,
+                NickName = nikeName,
                 PasswordHash = passwordHash,
-                UserType = UserType.Model.ToString(),
+                CodProducers = await GenerateProducerCodeAsync(),
+                UserType = UserType.Producers.ToString(),
             };
 
             await _userRepository.AddUserAsync(user);
             await _userRepository.SaveChangesAsync();
 
             Console.WriteLine($"");
-            return($"Usuário {username} cadastrado com sucesso.");
-        }  
+            return ($"Usuário {username} cadastrado com sucesso.");
+        }
+
+        public async Task<string> RegisterUserAdministratorAsync(string username, string email)
+        {
+            Console.WriteLine($"[PROCESS] {DateTime.Now:yyyy-MM-dd HH:mm:ss} |  Validando se o USER_MODEL: {username}, já está cadastrado... ");
+
+            var shfUser = await _userRepository.GetByUsernameAsync(username);
+
+            if (shfUser != null)
+            {
+                throw new UnauthorizedAccessException(JsonSerializer.Serialize(new ErrorResponse
+                {
+                    Message = $"Este usuário {username}já posseui cadastrao.",
+                })); ;
+            }
+
+            Console.WriteLine($"[PROCESS] {DateTime.Now:yyyy-MM-dd HH:mm:ss} | Gerando cadastro... ");
+
+            string nikeName = username.Replace(" ", "").ToLower();
+
+            string password = await _passwordHasherService.GenerateRandomPasswordAsync(12);
+
+            var replacements = new Dictionary<string, string>
+            {
+                {"Nome",username},
+                {"User",nikeName },
+                {"Password", password}
+            };
+
+            await _emailService.SendEmailAsync(replacements, email, "Bem-vindo à Plataforma My Pregiato");
+
+            string passwordHash = await _passwordHasherService.CreatePasswordHashAsync(password);
+
+            var user = new User
+            {
+                UserId = new Guid(),
+                Name = username,
+                Email = email,
+                NickName = nikeName,
+                PasswordHash = passwordHash,
+                CodProducers = await GenerateProducerCodeAsync(),
+                UserType = UserType.Administrator.ToString(),
+            };
+
+            await _userRepository.AddUserAsync(user);
+            await _userRepository.SaveChangesAsync();
+
+            Console.WriteLine($"");
+            return ($"Usuário {username} cadastrado com sucesso.");
+        }
+
+        public async Task<string> RegisterUserCoordinationAsync(string username, string email)
+        {
+            Console.WriteLine($"[PROCESS] {DateTime.Now:yyyy-MM-dd HH:mm:ss} |  Validando se o USER_MODEL: {username}, já está cadastrado... ");
+
+            var shfUser = await _userRepository.GetByUsernameAsync(username);
+
+            if (shfUser != null)
+            {
+                throw new UnauthorizedAccessException(JsonSerializer.Serialize(new ErrorResponse
+                {
+                    Message = $"Este usuário {username}já posseui cadastrao.",
+                })); ;
+            }
+
+            Console.WriteLine($"[PROCESS] {DateTime.Now:yyyy-MM-dd HH:mm:ss} | Gerando cadastro... ");
+
+            string nikeName = username.Replace(" ", "").ToLower();
+
+            string password = await _passwordHasherService.GenerateRandomPasswordAsync(12);
+
+            var replacements = new Dictionary<string, string>
+            {
+                {"Nome",username},
+                {"User",nikeName },
+                {"Password", password}
+            };
+
+            await _emailService.SendEmailAsync(replacements, email, "Bem-vindo à Plataforma My Pregiato");
+
+            string passwordHash = await _passwordHasherService.CreatePasswordHashAsync(password);
+
+            var user = new User
+            {
+                UserId = new Guid(),
+                Name = username,
+                Email = email,
+                NickName = nikeName,
+                PasswordHash = passwordHash,
+                CodProducers = await GenerateProducerCodeAsync(),
+                UserType = UserType.Coordination.ToString(),
+            };
+
+            await _userRepository.AddUserAsync(user);
+            await _userRepository.SaveChangesAsync();
+
+            Console.WriteLine($"");
+            return ($"Usuário {username} cadastrado com sucesso.");
+        }
+
+        public async Task<string> RegisterManagerAsync(string username, string email)
+        {
+            Console.WriteLine($"[PROCESS] {DateTime.Now:yyyy-MM-dd HH:mm:ss} |  Validando se o USER_MODEL: {username}, já está cadastrado... ");
+
+            var shfUser = await _userRepository.GetByUsernameAsync(username);
+
+            if (shfUser != null)
+            {
+                throw new UnauthorizedAccessException(JsonSerializer.Serialize(new ErrorResponse
+                {
+                    Message = $"Este usuário {username}já posseui cadastrao.",
+                })); ;
+            }
+
+            Console.WriteLine($"[PROCESS] {DateTime.Now:yyyy-MM-dd HH:mm:ss} | Gerando cadastro... ");
+
+            string nikeName = username.Replace(" ", "").ToLower();
+
+            string password = await _passwordHasherService.GenerateRandomPasswordAsync(12);
+
+            var replacements = new Dictionary<string, string>
+            {
+                {"Nome",username},
+                {"User",nikeName },
+                {"Password", password}
+            };
+
+            await _emailService.SendEmailAsync(replacements, email, "Bem-vindo à Plataforma My Pregiato");
+            string passwordHash = await _passwordHasherService.CreatePasswordHashAsync(password);
+
+            var user = new User
+            {
+                UserId = new Guid(),
+                Name = username,
+                Email = email,
+                NickName = nikeName,
+                PasswordHash = passwordHash,
+                CodProducers = await GenerateProducerCodeAsync(),
+                UserType = UserType.Manager.ToString(),
+            };
+
+            await _userRepository.AddUserAsync(user);
+            await _userRepository.SaveChangesAsync();
+
+            Console.WriteLine($"");
+            return ($"Usuário {username} cadastrado com sucesso.");
+        }
+
+        public async Task<string> RegisterTelemarketingAsync(string username, string email)
+        {
+            Console.WriteLine($"[PROCESS] {DateTime.Now:yyyy-MM-dd HH:mm:ss} |  Validando se o USER_MODEL: {username}, já está cadastrado... ");
+
+            var shfUser = await _userRepository.GetByUsernameAsync(username);
+
+            if (shfUser != null)
+            {
+                throw new UnauthorizedAccessException(JsonSerializer.Serialize(new ErrorResponse
+                {
+                    Message = $"Este usuário {username}já posseui cadastrao.",
+                })); ;
+            }
+
+            Console.WriteLine($"[PROCESS] {DateTime.Now:yyyy-MM-dd HH:mm:ss} | Gerando cadastro... ");
+
+            string nikeName = username.Replace(" ", "").ToLower();
+
+            string password = await _passwordHasherService.GenerateRandomPasswordAsync(12);
+
+            var replacements = new Dictionary<string, string>
+            {
+                {"Nome",username},
+                {"User",nikeName },
+                {"Password", password}
+            };
+
+            await _emailService.SendEmailAsync(replacements, email, "Bem-vindo à Plataforma My Pregiato");
+            string passwordHash = await _passwordHasherService.CreatePasswordHashAsync(password);
+
+            var user = new User
+            {
+                UserId = new Guid(),
+                Name = username,
+                Email = email,
+                NickName = nikeName,
+                PasswordHash = passwordHash,
+                CodProducers = await GenerateProducerCodeAsync(),
+                UserType = UserType.Telemarketing.ToString(),
+            };
+
+            await _userRepository.AddUserAsync(user);
+            await _userRepository.SaveChangesAsync();
+
+            Console.WriteLine($"");
+            return ($"Usuário {username} cadastrado com sucesso.");
+        }
+        public async Task<string> RegisterCEOAsync(string username, string email)
+        {
+            Console.WriteLine($"[PROCESS] {DateTime.Now:yyyy-MM-dd HH:mm:ss} | Validando se o USER_MODEL: {username}, já está cadastrado... ");
+
+            var shfUser = await _userRepository.GetByUsernameAsync(username);
+
+            if (shfUser != null)
+            {
+                throw new UnauthorizedAccessException(JsonSerializer.Serialize(new ErrorResponse
+                {
+                    Message = $"Este usuário {username}já posseui cadastrao.",
+                })); ;
+            }
+
+            Console.WriteLine($"[PROCESS] {DateTime.Now:yyyy-MM-dd HH:mm:ss} | Gerando cadastro... ");
+
+            string nikeName = username.Replace(" ", "").ToLower();
+
+            string password = await _passwordHasherService.GenerateRandomPasswordAsync(12);
+
+            var replacements = new Dictionary<string, string>
+            {
+                {"Nome",username},
+                {"User",nikeName },
+                {"Password", password}
+            };
+
+            await _emailService.SendEmailAsync(replacements, email, "Bem-vindo à Plataforma My Pregiato");
+            string passwordHash = await _passwordHasherService.CreatePasswordHashAsync(password);
+
+            var user = new User
+            {
+                UserId = new Guid(),
+                Name = username,
+                Email = email,
+                NickName = nikeName,
+                PasswordHash = passwordHash,
+                CodProducers = await GenerateProducerCodeAsync(),
+                UserType = UserType.CEO.ToString(),
+            };
+
+            await _userRepository.AddUserAsync(user);
+            await _userRepository.SaveChangesAsync();
+
+            Console.WriteLine($"");
+            return ($"Usuário {username} cadastrado com sucesso.");
+        }
+        public async Task<string> RegisterProductionAsync(string username, string email)
+        {
+            Console.WriteLine($"[PROCESS] {DateTime.Now:yyyy-MM-dd HH:mm:ss} | Validando se o USER_MODEL: {username}, já está cadastrado... ");
+
+            var shfUser = await _userRepository.GetByUsernameAsync(username);
+
+            if (shfUser != null)
+            {
+                throw new UnauthorizedAccessException(JsonSerializer.Serialize(new ErrorResponse
+                {
+                    Message = $"Este usuário {username}já posseui cadastrao.",
+                })); ;
+            }
+
+            Console.WriteLine($"[PROCESS] {DateTime.Now:yyyy-MM-dd HH:mm:ss} | Gerando cadastro... ");
+
+            string nikeName = username.Replace(" ", "").ToLower();
+
+            string password = await _passwordHasherService.GenerateRandomPasswordAsync(12);
+
+            var replacements = new Dictionary<string, string>
+            {
+                {"Nome",username},
+                {"User",nikeName },
+                {"Password", password}
+            };
+
+            await _emailService.SendEmailAsync(replacements, email, "Bem-vindo à Plataforma My Pregiato");
+            string passwordHash = await _passwordHasherService.CreatePasswordHashAsync(password);
+
+            var user = new User
+            {
+                UserId = new Guid(),
+                Name = username,
+                Email = email,
+                NickName = nikeName,
+                PasswordHash = passwordHash,
+                CodProducers = await GenerateProducerCodeAsync(),
+                UserType = UserType.Production.ToString(),
+            };
+
+            await _userRepository.AddUserAsync(user);
+            await _userRepository.SaveChangesAsync();
+
+            Console.WriteLine($"");
+            return ($"Usuário {username} cadastrado com sucesso.");
+        }
+        public Task<string> GenerateProducerCodeAsync()
+        {
+            const string prefix = "PM";
+            const int randomNumberLength = 6;
+            Random random = new Random();
+            int randomNumber = random.Next(0, 999999);
+            string code = $"{prefix}{randomNumber:000000}";
+            return Task.FromResult(code);
+        }
     }
 }

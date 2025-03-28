@@ -1,7 +1,9 @@
-﻿using Pregiato.API.Models;
+﻿using System.ComponentModel.DataAnnotations.Schema;
+using Pregiato.API.Models;
 
 namespace Pregiato.API.DTO
 {
+    [NotMapped]
     public class ContractDTO 
     {
         public Guid? ContractId { get; set; }

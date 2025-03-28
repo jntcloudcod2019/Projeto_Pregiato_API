@@ -8,9 +8,9 @@ using System.Text.Json.Serialization;
 
 namespace Pregiato.API.Requests
 {
-    public class PaymentRequest 
+    public class PaymentRequest
     {
-        [Required]  
+        [Required]
         public MetodoPagamento MetodoPagamento { get; set; }
 
         [Required]
@@ -33,7 +33,7 @@ namespace Pregiato.API.Requests
         public DateTime? DataAcordoPagamento { get; set; } = null;
 
         [JsonIgnore]
-        public new Guid ContractId { get; set; }
+        public Guid ContractId { get; set; }
         public ProviderEnum? Provider { get; set; }
         public string? AutorizationNumber { get; set; }
     }

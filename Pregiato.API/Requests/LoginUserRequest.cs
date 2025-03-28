@@ -4,23 +4,23 @@ using System.Text.Json.Serialization;
 
 namespace Pregiato.API.Requests
 {
-    public class LoginUserRequest 
+    public class LoginUserRequest
     {
         [Required]
-        public string ? Username { get; set; }
+        public string? NickName { get; set; }
 
         [Required]
-        public string ? Password { get; set; }
+        public string? Password { get; set; }
 
         [JsonIgnore]
-        public string ?UserType { get; set; }
+        public string? UserType { get; set; }
 
         [JsonIgnore]
         [EmailAddress]
-        public string ? Email { get; set; }   
+        public string? Email { get; set; }
 
         [JsonIgnore]
-        public Guid ? IdUser { get; set; }
+        public Guid? IdUser { get; set; }
 
     }
 }

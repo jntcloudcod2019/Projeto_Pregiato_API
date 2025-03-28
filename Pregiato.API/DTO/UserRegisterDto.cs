@@ -4,7 +4,9 @@ namespace Pregiato.API.DTO
 {
     public class UserRegisterDto
     {
+        [JsonPropertyName("FullName")]
         public string? Username { get; set; }
+
         public string? Email { get; set; }
 
         [JsonIgnore]

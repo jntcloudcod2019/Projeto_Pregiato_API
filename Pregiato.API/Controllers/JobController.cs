@@ -37,7 +37,7 @@ namespace Pregiato.API.Controllers
             var jobModel = new Job
             {
               Status = "Pending",
-              IdJob = new Guid(),
+             IdModel = new Guid(),
               JobDate = jobRequest.JobDate,
               Location = jobRequest.Location,
               Description = jobRequest.Description,                      
@@ -62,7 +62,7 @@ namespace Pregiato.API.Controllers
                 return BadRequest("ModelId ou JobId são obrigatórios.");
             }
 
-            var model = await _agencyContext.Model.FindAsync(request.ModelId);
+            var model = await _agencyContext.Models.FindAsync(request.ModelId);
             if (model == null)
             {
                 return NotFound($"Modelo com ID {request.ModelId} não encontrado.");
@@ -77,17 +77,15 @@ namespace Pregiato.API.Controllers
 
             var modelJob = new ModelJob
             {
-                ModelJobId = Guid.NewGuid(),
-                ModelId = request.ModelId,
-                JobId = request.JobId,
+               
+                IdModel= request.ModelId,
                 JobDate = request.JobDate,
                 Location = request.Location,
                 Time = request.Time,
                 AdditionalDescription = request.AdditionalDescription,
-                Status = "Pending"
             };
 
-            await _agencyContext.ModelJob.AddAsync(modelJob);
+            await _agencyContext.ModelJobs.AddAsync(modelJob);
             await _agencyContext.SaveChangesAsync();
 
             return Ok("Job atribuído ao modelo com sucesso.");

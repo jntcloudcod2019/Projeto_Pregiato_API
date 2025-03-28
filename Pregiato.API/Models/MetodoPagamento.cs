@@ -1,5 +1,8 @@
-﻿namespace Pregiato.API.Models
+﻿using System.ComponentModel.DataAnnotations.Schema;
+
+namespace Pregiato.API.Models
 {
+    [NotMapped]
     public class MetodoPagamento
     {
         public const string CartaoCredito = "CartaoCredito";

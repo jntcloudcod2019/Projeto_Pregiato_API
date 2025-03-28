@@ -57,7 +57,7 @@ namespace Pregiato.API.Controllers
             _contextFactory = contextFactory;
         }
 
-        [Authorize(Policy = "AdminOrManager")]
+        [Authorize(Policy = "GlobalPolitic")]
         [HttpGet("GetAllModels")]
         [SwaggerOperation("Retorna todos os modelos cadastrados.")]
         public async Task<IActionResult> GetAllModels()
@@ -66,7 +66,7 @@ namespace Pregiato.API.Controllers
             return Ok(modelsExists);
         }
 
-        [Authorize(Policy = "AdminOrManager")]
+        [Authorize(Policy = "GlobalPolitic")]
         [HttpPost("AddModels")]
         [SwaggerOperation("Criar novo modelo.")]
         [ProducesResponseType(typeof(CustomResponse), StatusCodes.Status200OK)]
@@ -74,20 +74,10 @@ namespace Pregiato.API.Controllers
         [ProducesResponseType(typeof(CustomResponse), StatusCodes.Status400BadRequest)]
         public async Task<IActionResult> AddNewModel([FromBody] CreateModelRequest createModelRequest)
         {
-            if (!ModelState.IsValid)
-            {
-
-                return BadRequest(new CustomResponse
-                {
-                    StatusCode = StatusCodes.Status400BadRequest,
-                    Message = "Preenchimento de campos invalidos.",
-                    Data = null
-                });
-            }
-
+           
             Console.WriteLine($"[PROCESS] {DateTime.Now:yyyy-MM-dd HH:mm:ss} |Validando se model {createModelRequest.Name} | Documento: {createModelRequest.CPF}");
 
-            var checkExistence = await _modelRepository.ModelExistsAsync(createModelRequest);
+            var checkExistence = await _modelRepository.GetModelCheck(createModelRequest);
 
             if (checkExistence != null)
             {
@@ -100,9 +90,11 @@ namespace Pregiato.API.Controllers
                     Data = null,
                 });
             }
-
+                  var producer = await _userRepository.GetByProducersAsync(createModelRequest.Nameproducers); 
+          
             var model = new Model
             {
+                CodProducers = createModelRequest.Nameproducers ?? "PMSYSAPI01",
                 Name = createModelRequest.Name,
                 CPF = createModelRequest.CPF,
                 RG = createModelRequest.RG,
@@ -125,7 +117,7 @@ namespace Pregiato.API.Controllers
             await _modelRepository.AddModelAsync(model);
 
             Console.WriteLine($"[INFO] {DateTime.Now:yyyy-MM-dd HH:mm:ss} |  Modelo cadastro: {model.Name} | Documento:{model.CPF}. ");
-            await _userService.RegisterUserModel(createModelRequest.Name, createModelRequest.Email);
+            await _userService.RegisterUserModelAsync(createModelRequest.Name, createModelRequest.Email);
 
             return Ok(new ModelResponse
             {
@@ -137,7 +129,7 @@ namespace Pregiato.API.Controllers
             });
         }
 
-        [Authorize(Policy = "AdminOrManager")]
+        [Authorize(Policy = "GlobalPolitic")]
         [HttpDelete("DeleteModel{id}")]
         [SwaggerOperation("Deletar cadastro de modelos.")]
         public async Task<IActionResult> DeleteModel(Guid id)
@@ -151,46 +143,46 @@ namespace Pregiato.API.Controllers
             return NoContent();
         }
 
-        [Authorize(Policy = "AdminOrManagerOrModel")]
-        [HttpGet("modelFeedJobs")]
-        public async Task<IActionResult> GetModelFeed()
-        {
-            var username = await _jwtService.GetAuthenticatedUsernameAsync();
-            if (string.IsNullOrEmpty(username))
-            {
-                return new UnauthorizedResult();
-            }
+        //[Authorize(Policy = "AdminOrManagerOrModel")]
+        //[HttpGet("modelFeedJobs")]
+        //public async Task<IActionResult> GetModelFeed()
+        //{
+        //    var username = await _jwtService.GetAuthenticatedUsernameAsync();
+        //    if (string.IsNullOrEmpty(username))
+        //    {
+        //        return new UnauthorizedResult();
+        //    }
 
-            var model = await _agencyContext.Model
-                .FirstOrDefaultAsync(m => m.Name == username);
+        //    var model = await _agencyContext.Models
+        //        .FirstOrDefaultAsync(m => m.Name == username);
 
 
-            if (model == null)
-            {
-                return Unauthorized("Usuário não encontrado na base de dados.");
-            }
+        //    if (model == null)
+        //    {
+        //        return Unauthorized("Usuário não encontrado na base de dados.");
+        //    }
 
-            var feed = await _agencyContext.ModelJob
-           .Where(mj => mj.ModelId == model.IdModel && mj.Status == "Pending")
-           .Select(mj => new
-           {
-               mj.ModelId,
-               mj.JobId,
-               mj.JobDate,
-               mj.Location,
-               mj.Time,
-               mj.AdditionalDescription,
-               mj.Status
-           })
-           .ToListAsync();
+        //    var feed = await _agencyContext.ModelJobs
+        //   .Where(mj => mj.IdModel == model.IdModel && mj.Status == "Pending")
+        //   .Select(mj => new
+        //   {
+        //       mj.IdModel,
+        //       mj.JobId,
+        //       mj.JobDate,
+        //       mj.Location,
+        //       mj.Time,
+        //       mj.AdditionalDescription,
+        //       mj.Status
+        //   })
+        //   .ToListAsync();
 
-            return Ok(new
-            {
-                Feed = feed
-            });
-        }
+        //    return Ok(new
+        //    {
+        //        Feed = feed
+        //    });
+        //}
 
-        [Authorize(Policy = "AdminOrManagerOrModel")]
+        [Authorize(Policy = "GlobalPolitic")]
         [HttpGet("findModel")]
         public async Task<IActionResult> FindModel([FromQuery] string query)
         {
@@ -218,7 +210,7 @@ namespace Pregiato.API.Controllers
         }
 
 
-        [Authorize(Policy = "AdminOrManagerOrModel")]
+        [Authorize(Policy = "GlobalPoliticsAgency")]
         [HttpGet("my-contracts")]
         public async Task<IActionResult> GetMyContracts()
         {
@@ -247,7 +239,7 @@ namespace Pregiato.API.Controllers
 
             var schforModel = await _userRepository.GetByUsernameAsync(username);
 
-            var model = await _agencyContext.Model
+            var model = await _agencyContext.Models
                 .FirstOrDefaultAsync(m => m.Email == schforModel.Email);
             if (model == null)
             {
@@ -286,6 +278,8 @@ namespace Pregiato.API.Controllers
             return BadRequest(_customResponse.Message = "Desculpe, mas não encontramos contratos relacionados ao seu usuário. ");
         }
 
+
+        [Authorize(Policy = "GlobalPoliticsAgency")]
         [HttpPut("update-dna-property")]
         [ProducesResponseType(StatusCodes.Status204NoContent)]
         [ProducesResponseType(StatusCodes.Status401Unauthorized)]
@@ -322,7 +316,7 @@ namespace Pregiato.API.Controllers
                 if (user == null)
                     return Unauthorized("Usuário não encontrado");
 
-                var model = await context.Model
+                var model = await context.Models
                     .FirstOrDefaultAsync(m => m.Email == user.Email);
 
                 if (model == null)

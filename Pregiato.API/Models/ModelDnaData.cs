@@ -1,8 +1,9 @@
-﻿using System.Text.Json.Serialization;
+﻿using System.ComponentModel.DataAnnotations.Schema;
+using System.Text.Json.Serialization;
 
 namespace Pregiato.API.Models
 {
-    // Classe principal que representa o JSON inteiro
+    [NotMapped]
     public class ModelDnaData
     {
         [JsonPropertyName("dna")]
