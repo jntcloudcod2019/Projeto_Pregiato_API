@@ -6,11 +6,7 @@ namespace Pregiato.API.Models
     public class ModelsBilling
     {
         [Key]
-        [DatabaseGenerated(DatabaseGeneratedOption.Identity)]
-        public Guid Id { get; set; }
-
-        [Required]
-        public Guid IdModel { get; set; }
+        [ForeignKey("IdModel")]
 
         [Required]
         [Range(0, 99999999.99, ErrorMessage = "O valor deve ser positivo e menor que 100 milhões.")]
@@ -25,5 +21,13 @@ namespace Pregiato.API.Models
         [Required]
         public DateTime UpdatedAt { get; set; } = DateTime.UtcNow;
 
-    } 
+        // FK para Model
+        [Required]
+        public Guid IdModel { get; set; }
+
+        [ForeignKey(nameof(IdModel))]
+        public Model Model { get; set; } = null!;
+
+
+    }
 }

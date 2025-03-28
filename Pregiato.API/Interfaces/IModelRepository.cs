@@ -1,4 +1,5 @@
-﻿using Pregiato.API.Models;
+﻿using Pregiato.API.DTO;
+using Pregiato.API.Models;
 using Pregiato.API.Requests;
 
 namespace Pregiato.API.Interface
@@ -13,5 +14,6 @@ namespace Pregiato.API.Interface
         Task<Model?> GetModelByCriteriaAsync(string query);
         Task<Model> GetModelAllAsync(string? idModel, string? cpf, string? rg);
         Task<Model> ModelExistsAsync(CreateModelRequest inputModel);
+        Task<ModelCheckDto> GetModelCheck (CreateModelRequest inputModel);
     }
 }

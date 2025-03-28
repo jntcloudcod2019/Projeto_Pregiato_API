@@ -7,38 +7,25 @@ using Pregiato.API.Data;
 using Microsoft.AspNetCore.Authorization;
 using Pregiato.API.Response;
 using Pregiato.API.Models;
-using PuppeteerSharp;
 using Pregiato.API.Responses;
-using static iText.StyledXmlParser.Jsoup.Select.Evaluator;
 using Pregiato.API.Services.ServiceModels;
-using System.Diagnostics.Contracts;
-using System.Text;
-using Newtonsoft.Json;
 namespace Pregiato.API.Controllers
 {
     [ApiController]
     [Route("api/[controller]")]
-    public class AgencyContractController : ControllerBase
+    public class AgencyContractController(
+          IContractService contractService,
+          IModelRepository modelRepository,
+          IPaymentService paymentService,
+          IContractRepository contractRepository,
+          ModelAgencyContext context,
+          CustomResponse customResponse) : ControllerBase
     {
-        private readonly IContractService _contractService;
-        private readonly IModelRepository _modelRepository;
-        private readonly IContractRepository _contractRepository;
-        private readonly ModelAgencyContext _context;
-        private readonly CustomResponse _customResponse;
-        public AgencyContractController(
-              IContractService contractService,
-              IModelRepository modelRepository,
-              IPaymentService paymentService,
-              IContractRepository contractRepository,
-              ModelAgencyContext context,
-              CustomResponse customResponse)
-        {
-            _contractService = contractService ?? throw new ArgumentNullException(nameof(contractService));
-            _modelRepository = modelRepository ?? throw new ArgumentNullException(nameof(modelRepository));
-            _context = context ?? throw new ArgumentNullException(nameof(context));
-            _contractRepository = contractRepository;
-            _customResponse = customResponse;
-        }
+        private readonly IContractService _contractService = contractService ?? throw new ArgumentNullException(nameof(contractService));
+        private readonly IModelRepository _modelRepository = modelRepository ?? throw new ArgumentNullException(nameof(modelRepository));
+        private readonly IContractRepository _contractRepository = contractRepository;
+        private readonly ModelAgencyContext _context = context ?? throw new ArgumentNullException(nameof(context));
+        private readonly CustomResponse _customResponse = customResponse;
 
         [Authorize(Policy = "AdminOrManager")]
         [SwaggerOperation(Summary = "Gera um contrato Termo de comprometimento", Description = "Este endpoint gera o Termo de comprometimento.")]
@@ -97,7 +84,7 @@ namespace Pregiato.API.Controllers
             return Ok($"Termo de Concessão de direito de imagem para: {model.Name}, gerado com sucesso. Código da Proposta: {contract.CodProposta}.");
         }
 
-        [Authorize(Policy = "AdminOrManager")]
+      //[Authorize(Policy = "AdminOrManager")]
         [SwaggerOperation("Processo de gerar contrato de Agenciamento e Fotoprgrafia.")]
         [ProducesResponseType(typeof(ApiResponse<object>), StatusCodes.Status200OK)]
         [ProducesResponseType(typeof(ApiResponse<object>), StatusCodes.Status404NotFound)]
@@ -212,21 +199,6 @@ namespace Pregiato.API.Controllers
         }
 
 
-        [Authorize(Policy = "AdminOrManager")]
-        [HttpGet("payment-receipt/{paymentId}")]
-        public async Task<IActionResult> GetPaymentReceipt(Guid paymentId)
-        {
-            var payment = await _context.Payments
-                .AsNoTracking()
-                .Where(p => p.Id == paymentId)
-                .Select(p => new { p.Comprovante })
-                .FirstOrDefaultAsync();
-
-            if (payment == null || payment.Comprovante == null)
-                return NotFound("Receipt not found.");
-
-            return File(payment.Comprovante, "application/pdf", "payment_receipt.pdf");
-        }
 
         [HttpGet("all-contracts")]
         [Authorize(Policy = "AdminOrManagerOrModel")]

@@ -8,6 +8,9 @@ namespace Pregiato.API.Requests
     public class CreateModelRequest
     {
         [Required]
+        public string Nameproducers { get; set; }
+
+        [Required]
         public string Name { get; set; }
 
         [Required]
@@ -36,14 +39,14 @@ namespace Pregiato.API.Requests
         public string BankAccount { get; set; }
 
         [Required]
-        public string? Neighborhood { get; set; } 
+        public string? Neighborhood { get; set; }
 
         [Required]
         public string? City { get; set; }
 
         [Required]
 
-        public string UF {  get; set; }
+        public string UF { get; set; }
 
         public string TelefonePrincipal { get; set; }
         [Required]
@@ -56,6 +59,5 @@ namespace Pregiato.API.Requests
         public string Complement { get; set; }
 
     }
-
 }
 

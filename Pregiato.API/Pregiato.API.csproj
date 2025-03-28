@@ -58,6 +58,10 @@
 		<PackageReference Include="System.Net.Primitives" Version="4.3.0" />
 	</ItemGroup>
 
+	<ItemGroup>
+	  <Folder Include="Migrations\" />
+	</ItemGroup>
+
 	<Target Name="RemoveDuplicateFilesDuringPublish" AfterTargets="Publish">
 		<ItemGroup>
 			<FilesToRemove Include="$(PublishDir)\Select.Html.dep" />

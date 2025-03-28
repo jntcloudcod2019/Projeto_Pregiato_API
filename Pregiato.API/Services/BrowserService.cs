@@ -10,13 +10,25 @@ namespace Pregiato.API.Services
     {
         private static IBrowser? _browser;
         private static readonly SemaphoreSlim _semaphore = new(1, 1);
-        private const string BrowserCachePath = "./.local-browser";
-        private static readonly BrowserFetcher _browserFetcher = new(new BrowserFetcherOptions
-        {
-            Path = BrowserCachePath
-        });
+        private const string BrowserCachePath = "Files/.local-browser";
+        private static BrowserFetcher? _browserFetcher;
         private const int MaxRetries = 3;
         private const int TimeoutSeconds = 60;
+
+        public BrowserService()
+        {
+            // Inicializar o BrowserFetcher no construtor
+            var fullPath = Path.Combine(Directory.GetCurrentDirectory(), BrowserCachePath);
+            if (!Directory.Exists(fullPath))
+            {
+                Directory.CreateDirectory(fullPath);
+            }
+
+            _browserFetcher = new BrowserFetcher(new BrowserFetcherOptions
+            {
+                Path = fullPath
+            });
+        }
 
         public async Task<IBrowser> GetBrowserAsync()
         {

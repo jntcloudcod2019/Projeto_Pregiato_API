@@ -37,7 +37,7 @@ namespace Pregiato.API.Controllers
         [SwaggerResponse(200, "Retorna o token JWT", typeof(string))]
         [SwaggerResponse(400, "Requisição inválida")]
         [SwaggerResponse(401, "Não autorizado")]
-        public async Task<IActionResult> Login([FromBody]LoginUserRequest loginUserRequest)
+        public async Task<IActionResult> LoginAsync([FromBody]LoginUserRequest loginUserRequest)
         {
             try
             {
@@ -49,15 +49,15 @@ namespace Pregiato.API.Controllers
                     });
                 }
 
-                var token = await _userService.AuthenticateUserAsync(loginUserRequest);
+                var tokenUser = await _userService.AuthenticateUserAsync(loginUserRequest);
 
                 return Ok(new LoginResponse
                 {
-                    Token = token,
+                    Token = tokenUser,
                     User = new UserInfo
                     {
                         UserId = loginUserRequest.IdUser?.ToString() ?? string.Empty,
-                        Username = loginUserRequest.Username ?? string.Empty,
+                        Name = loginUserRequest.NickName ?? string.Empty,
                         Email = loginUserRequest.Email ?? string.Empty,
                         UserType = loginUserRequest.UserType ?? string.Empty
                     }
@@ -75,7 +75,7 @@ namespace Pregiato.API.Controllers
 
         [AllowAnonymous]
         [HttpPost("register/logout")]
-        public async Task<IActionResult> Logout()
+        public async Task<IActionResult> LogoutAsync()
         {
             var token = HttpContext.Request.Headers["Authorization"]
                 .ToString()
@@ -91,7 +91,7 @@ namespace Pregiato.API.Controllers
 
         [AllowAnonymous]
         [HttpGet("register/validate")]
-        public async Task<IActionResult> ValidateToken()
+        public async Task<IActionResult> ValidateTokenAsync()
         {
             try
             {
@@ -116,7 +116,7 @@ namespace Pregiato.API.Controllers
                 {
                     IsValid = true,
                     UserId = userId,
-                    Expires =  _getTokenExpiration.GetExpirationToken(token)
+                    Expires = _getTokenExpiration.GetExpirationToken(token)
                 });
             }
             catch (SecurityTokenException ex)
@@ -125,7 +125,7 @@ namespace Pregiato.API.Controllers
             }
             catch (Exception ex)
             {
-                Console.WriteLine( $"Erro ao validar token {ex}");
+                Console.WriteLine($"Erro ao validar token {ex}");
                 return StatusCode(500, new { Error = "Erro interno ao validar token" });
             }
         }
@@ -146,7 +146,7 @@ namespace Pregiato.API.Controllers
         }
 
         [Authorize(Policy = "AdminOrManager")]
-        [HttpPost("register/administrator")]
+        [HttpPost("register/Administrator")]
         public async Task<IActionResult> RegisterAdministrator([FromBody] UserRegisterDto user)
         {
 
@@ -157,7 +157,7 @@ namespace Pregiato.API.Controllers
                     return BadRequest(new { error = "Nome de usuário e email são obrigatórios." });
                 }
 
-                var result = await _userService.RegisterUserAsync(user.Username, user.Email);
+                var result = await _userService.RegisterUserAdministratorAsync(user.Username, user.Email);
 
                 return Ok(new { message = "Usuário ADM cadastrado com sucesso." });
             }
@@ -168,7 +168,7 @@ namespace Pregiato.API.Controllers
         }
 
         [Authorize(Policy = "AdminOrManager")]
-        [HttpPost("register/model")]
+        [HttpPost("register/Model")]
         public async Task<IActionResult> RegisterModel([FromBody] UserRegisterDto user)
         {
             try
@@ -178,18 +178,75 @@ namespace Pregiato.API.Controllers
                     return BadRequest(new { error = "Nome de usuário e email são obrigatórios." });
                 }
 
-                var result = await _userService.RegisterUserAsync(user.Username, user.Email);
+                var result = await _userService.RegisterUserModelAsync(user.Username, user.Email);
 
                 return Ok(new { message = "Usuário ADM cadastrado com sucesso." });
             }
             catch (Exception ex)
             {
                 return BadRequest(new { error = ex.Message });
-            }       
+            }
         }
 
         [Authorize(Policy = "AdminOrManager")]
-        [HttpPost("register/manager")]
+        [HttpPost("register/producers")]
+        public async Task<IActionResult> RegisterUserProducers([FromBody] UserRegisterDto user)
+        {
+            try
+            {
+                if (user == null || string.IsNullOrWhiteSpace(user.Username) || string.IsNullOrWhiteSpace(user.Email))
+                {
+                    return BadRequest(new CustomResponse
+                    {
+                        StatusCode = StatusCodes.Status304NotModified,
+                        Message = $"Informações para cadastro de usuário ivalídos.",
+                        Data = null,
+                    });
+                }
+
+                 await _userService.RegisterUserProducersAsync(user.Username, user.Email);
+
+                return Ok(new CustomResponse
+                {
+                    StatusCode = StatusCodes.Status201Created,
+                    Message = $"Usuário {user.Username} cadastrado com sucesso!",
+                    Data = null,
+                });
+            }
+            catch (Exception ex)
+            {
+                return BadRequest(new CustomResponse
+                {
+                    StatusCode = StatusCodes.Status304NotModified,
+                    Message = $"Informações para cadastro de usuário ivalídos.",
+                    Data = $"Error: {ex}"
+                });
+            }
+        }
+
+
+        [Authorize(Policy = "AdminOrManager")]
+        [HttpPost("register/Coordination")]
+        public async Task<IActionResult> RegisterCoordination([FromBody] UserRegisterDto user)
+        {
+            try
+            {
+                if (user == null || string.IsNullOrWhiteSpace(user.Username) || string.IsNullOrWhiteSpace(user.Email))
+                {
+                    return BadRequest(new { error = "Nome de usuário e email são obrigatórios." });
+                }
+
+                var result = await _userService.RegisterUserCoordinationAsync(user.Username, user.Email);
+            }
+            catch (Exception ex)
+            {
+                return BadRequest(new { error = ex.Message });
+            }
+            return Ok(_customResponse.Message = $"Usuario {user} cadastrado com sucessp.");
+        }
+
+        [Authorize(Policy = "AdminOrManager")]
+        [HttpPost("register/Manager")]
         public async Task<IActionResult> RegisterManager([FromBody] UserRegisterDto user)
         {
             try
@@ -199,15 +256,78 @@ namespace Pregiato.API.Controllers
                     return BadRequest(new { error = "Nome de usuário e email são obrigatórios." });
                 }
 
-                var result = await _userService.RegisterUserAsync(user.Username, user.Email);              
+                var result = await _userService.RegisterManagerAsync(user.Username, user.Email);
             }
             catch (Exception ex)
             {
                 return BadRequest(new { error = ex.Message });
-            }        
+            }
+            return Ok(_customResponse.Message = $"Usuario {user} cadastrado com sucessp.");
+        }
+
+
+        [Authorize(Policy = "AdminOrManager")]
+        [HttpPost("register/Telemarketing")]
+        public async Task<IActionResult> RegisterTelemarking([FromBody] UserRegisterDto user)
+        {
+            try
+            {
+                if (user == null || string.IsNullOrWhiteSpace(user.Username) || string.IsNullOrWhiteSpace(user.Email))
+                {
+                    return BadRequest(new { error = "Nome de usuário e email são obrigatórios." });
+                }
+
+                var result = await _userService.RegisterTelemarketingAsync(user.Username, user.Email);
+            }
+            catch (Exception ex)
+            {
+                return BadRequest(new { error = ex.Message });
+            }
+            return Ok(_customResponse.Message = $"Usuario {user} cadastrado com sucessp.");
+        }
+
+        [Authorize(Policy = "AdminOrManager")]
+        [HttpPost("register/CEO")]
+        public async Task<IActionResult> RegisterCEO([FromBody] UserRegisterDto user)
+        {
+
+            try
+            {
+                if (user == null || string.IsNullOrWhiteSpace(user.Username) || string.IsNullOrWhiteSpace(user.Email))
+                {
+                    return BadRequest(new { error = "Nome de usuário e email são obrigatórios." });
+                }
+
+                var result = await _userService.RegisterCEOAsync(user.Username, user.Email);
+            }
+            catch (Exception ex)
+            {
+                return BadRequest(new { error = ex.Message });
+            }
+            return Ok(_customResponse.Message = $"Usuario {user} cadastrado com sucessp.");
+        }
+
+        [Authorize(Policy = "AdminOrManager")]
+        [HttpPost("register/Production")]
+        public async Task<IActionResult> RegisterProduction([FromBody] UserRegisterDto user)
+        {
+
+            try
+            {
+                if (user == null || string.IsNullOrWhiteSpace(user.Username) || string.IsNullOrWhiteSpace(user.Email))
+                {
+                    return BadRequest(new { error = "Nome de usuário e email são obrigatórios." });
+                }
+
+                var result = await _userService.RegisterProductionAsync(user.Username, user.Email);
+            }
+            catch (Exception ex)
+            {
+                return BadRequest(new { error = ex.Message });
+            }
             return Ok(_customResponse.Message = $"Usuario {user} cadastrado com sucessp.");
         }
 
     }
-    
+
 }

@@ -20,7 +20,7 @@ namespace Pregiato.API.Interface
      Task<byte[]> ConvertHtmlToPdf(string htmlTemplate, Dictionary<string, string> parameters);
      Task<Dictionary<string, string>> AddSignatureToParameters(Dictionary<string, string> parameters, string contractType);
      Task AddMinorModelInfo(Model model, Dictionary<string, string> parameters);
-
+     Task<Producers> ProcessProducersAsync(ContractBase contract, Stream pdfStream, string cpfModelo);
 
     }
 }

@@ -10,25 +10,23 @@ namespace Pregiato.API.Data
     {
         private readonly ModelAgencyContext _context;
 
-        public UserRepository(ModelAgencyContext context) 
-        { 
-            _context = context; 
+        public UserRepository(ModelAgencyContext context)
+        {
+            _context = context;
         }
 
         public async Task AddUserAsync(User user)
         {
-
             try
-{
-             
+            {
                 _context.Users.Add(user);
                 await _context.SaveChangesAsync();
             }
              catch (DbUpdateException ex)
-{
+            {
                 Console.WriteLine($"Erro ao salvar o usuário: {ex.Message}");
                 Console.WriteLine($"Exceção interna: {ex.InnerException?.Message}");
-            }
+             }
         }
 
         public async Task<IEnumerable<User>> GetAllUserAsync()
@@ -41,9 +39,11 @@ namespace Pregiato.API.Data
             return await _context.Users.FindAsync(id);
         }
 
-        public async Task<User> GetByUsernameAsync(string username)
+        public async Task<User> GetByUsernameAsync(string nikeName)
         {
-            return await _context.Users.SingleOrDefaultAsync(u => u.Name == username);
+            return await _context.Users
+             .AsNoTracking() 
+             .SingleOrDefaultAsync(u => u.NickName == nikeName);
         }
 
         public async Task UpdateUserAsync(User user)
@@ -69,14 +69,20 @@ namespace Pregiato.API.Data
 
         public async Task GetByUserAsync(LoginUserRequest loginUserRequest)
         {
-            var loginRequest  =  (from l in   _context.Users
-                                where l.Name == loginUserRequest.Username
+            var loginRequest  =  (from l in _context.Users
+                                where l.NickName == loginUserRequest.NickName
                                 select new LoginUserRequest
                                 {
-                                    Username = loginUserRequest.Username,
+                                    NickName = loginUserRequest.NickName,
                                     Password = l.PasswordHash
                                 }).FirstOrDefault();
-           
+        }
+
+        public async Task<User> GetByProducersAsync(string name)
+        {
+            return await _context.Users
+             .AsNoTracking()
+             .SingleOrDefaultAsync(u => u.Name == name);
         }
     }
 }

@@ -2,21 +2,15 @@
 using Pregiato.API.Models;
 using Pregiato.API.Requests;
 using Pregiato.API.Data;
-using Pregiato.API.Enums;
-using Pregiato.API.Services;
 using Microsoft.EntityFrameworkCore;
-using System.Globalization;
+using Pregiato.API.Services.ServiceModels;
 
-public class PaymentService : IPaymentService
+public class PaymentService(IDbContextFactory<ModelAgencyContext> contextFactory) : IPaymentService
 {
-    private readonly IDbContextFactory<ModelAgencyContext> _contextFactory;
+    private readonly IDbContextFactory<ModelAgencyContext> _contextFactory =
+        contextFactory ?? throw new ArgumentNullException(nameof(contextFactory));
 
-    public PaymentService(IDbContextFactory<ModelAgencyContext> contextFactory)
-    {
-        _contextFactory = contextFactory ?? throw new ArgumentNullException(nameof(contextFactory));
-    }
-
-    public async Task<string> ValidatePayment(PaymentRequest payment, ContractBase contract)
+    public async Task<string> ValidatePayment(Producers producers, PaymentRequest payment, ContractBase contract)
     {
         await using var context = await _contextFactory.CreateDbContextAsync();
         try
@@ -29,8 +23,8 @@ public class PaymentService : IPaymentService
 
             Payment paymentContract = new Payment
             {
-                Id = Guid.NewGuid(),
                 ContractId = contract.ContractId,
+                CodProducers = producers.CodProducers,
                 Valor = payment.Valor,
                 DataPagamento = payment.DataPagamento.Value.ToUniversalTime(),
                 MetodoPagamento = payment.MetodoPagamento,
@@ -57,26 +51,26 @@ public class PaymentService : IPaymentService
                 if (string.IsNullOrEmpty(payment.FinalCartao))
                     throw new ArgumentException("Os últimos 4 dígitos do cartão são obrigatórios para cartões.");
 
-                if(string.IsNullOrEmpty(payment.AutorizationNumber))
+                if (string.IsNullOrEmpty(payment.AutorizationNumber))
                     throw new ArgumentException("É necessário  informar  o número de autorização.");
-                if (payment.Provider == null) 
+                if (payment.Provider == null)
                     throw new ArgumentException("É necessário  informar o provedor da maquina.");
 
                 paymentContract.FinalCartao = payment.FinalCartao;
-               
             }
 
             else if (payment.MetodoPagamento == MetodoPagamento.Pix)
             {
                 //Incluir validação do comprovante 
-               // if (payment.Comprovante == null || payment.Comprovante.Length == 0)
-                    return "Faça o upload do comprovante após gerar o contrato!";
+                // if (payment.Comprovante == null || payment.Comprovante.Length == 0)
+                return "Faça o upload do comprovante após gerar o contrato!";
             }
 
             else if (payment.MetodoPagamento == MetodoPagamento.LinkPagamento)
             {
                 if (string.IsNullOrEmpty(payment.FinalCartao))
-                    throw new ArgumentException("Os últimos 4 dígitos do cartão são obrigatórios para Link de Pagamento.");
+                    throw new ArgumentException(
+                        "Os últimos 4 dígitos do cartão são obrigatórios para Link de Pagamento.");
 
                 paymentContract.FinalCartao = payment.FinalCartao;
             }

@@ -1,6 +1,6 @@
-﻿using Microsoft.Build.Framework;
+﻿using System.ComponentModel.DataAnnotations;
 using System.ComponentModel.DataAnnotations.Schema;
-using System.ComponentModel.DataAnnotations;
+using Microsoft.Build.Framework;
 
 namespace Pregiato.API.Models
 {
@@ -8,7 +8,10 @@ namespace Pregiato.API.Models
     {
         [Key]
         [DatabaseGenerated(DatabaseGeneratedOption.Identity)]
-        public Guid ? IdJob { get; set; }
+        public Guid JobId { get; set; }
+
+        [ForeignKey("IdModel")]
+        public Guid IdModel { get; set; }
 
         [StringLength(500, ErrorMessage = "A descrição deve ter no máximo 500 caracteres.")]
         public string Description { get; set; }
@@ -29,5 +32,9 @@ namespace Pregiato.API.Models
 
         [System.ComponentModel.DataAnnotations.Required]
         public DateTime UpdatedAt { get; set; } = DateTime.UtcNow;
+
+
+        public ICollection<ModelJob>? ModelJobs { get; set; }
+
     }
 }

@@ -42,7 +42,7 @@ namespace Pregiato.API.Services
             {
                 Subject = new ClaimsIdentity(new[]
                 {
-                    new Claim(ClaimTypes.Name, user.Username),
+                    new Claim(ClaimTypes.Name, user.NickName),
                     new Claim(ClaimTypes.Email, user.Email),
                     new Claim(ClaimTypes.NameIdentifier, user.IdUser.ToString()),
                     new Claim(ClaimTypes.Role, user.UserType),

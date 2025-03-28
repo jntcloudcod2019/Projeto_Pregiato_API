@@ -2,9 +2,9 @@
 using MimeKit;
 using Pregiato.API.Interface;
 using Microsoft.Extensions.Options;
-using Pregiato.API.Models;
 using MailKit.Security;
 using Pregiato.API.Interfaces;
+using Pregiato.API.Services.ServiceModels;
 
 namespace Pregiato.API.Services
 {
@@ -16,20 +16,19 @@ namespace Pregiato.API.Services
         public EmailService(IEnvironmentVariableProviderEmail envVarProvider, ILogger<EmailService> logger)
         {
             _logger = logger;
-            _smtpSettings = new SmtpSettings
-            {
-                Server = envVarProvider.GetVariable("SERVER_EMAIL"),
-                Port = int.TryParse(envVarProvider.GetVariable("SERVER_EMAIL_PORT"), out var port) ? port : 587,
-                Username = envVarProvider.GetVariable("SERVER_EMAIL_USERNAME"),
-                Password = envVarProvider.GetVariable("ueuzgyslzzsukvdr") ?? "ueuzgyslzzsukvdr",
-                UseTls = true
-            };
-            
-            if (string.IsNullOrEmpty(_smtpSettings.Server) || string.IsNullOrEmpty(_smtpSettings.Username) || string.IsNullOrEmpty(_smtpSettings.Password))
-            {
-                Console.WriteLine($"[ERROR] {DateTime.Now:yyyy-MM-dd HH:mm:ss} |  Configurações do SMTP não foram carregadas corretamente. Verifique as variáveis de ambiente.");
-            }
-           
+            ////_smtpSettings = new SmtpSettings
+            ////{
+            ////    Server = "smtp.gmail.com",
+            ////    Port = 465,
+            ////    Username = "jonathnfrnnd3@gmail.com",
+            ////    Password = "bssugfuronwdrxsn",
+            ////    UseTls = true
+            ////};
+
+            //if (string.IsNullOrEmpty(_smtpSettings.Server) || string.IsNullOrEmpty(_smtpSettings.Username) || string.IsNullOrEmpty(_smtpSettings.Password))
+            //{
+            //    Console.WriteLine($"[ERROR] {DateTime.Now:yyyy-MM-dd HH:mm:ss} |  Configurações do SMTP não foram carregadas corretamente. Verifique as variáveis de ambiente.");
+            //}
         }
 
         public async Task<string> LoadTemplate(Dictionary<string, string> replacements)
@@ -55,15 +54,13 @@ namespace Pregiato.API.Services
 
         public async Task<bool> SendEmailAsync(Dictionary<string, string> replacements, string toEmail, string subject)
         {
-            
-
             try
             {
                 Console.WriteLine($"[PROCESS] {DateTime.Now:yyyy-MM-dd HH:mm:ss} | Populando e-mail. ");
                 var templateContent = await LoadTemplate(replacements);
 
                 var message = new MimeMessage();
-                message.From.Add(new MailboxAddress("Pregiato Management", _smtpSettings.Username));
+                message.From.Add(new MailboxAddress("Pregiato Management", "jonathanfrnnd3@gmail.com"));
                 message.To.Add(new MailboxAddress(toEmail, toEmail));
                 message.Subject = subject;
 
@@ -90,13 +87,13 @@ namespace Pregiato.API.Services
                 using var client = new SmtpClient();
                 client.ServerCertificateValidationCallback = (s, c, h, e) => true;
 
-                _logger.LogInformation($"Conectando ao SMTP {_smtpSettings.Server}:{_smtpSettings.Port}...");
+                //_logger.LogInformation($"Conectando ao SMTP {_smtpSettings.Server}:{_smtpSettings.Port}...");
 
-                await client.ConnectAsync(_smtpSettings.Server, _smtpSettings.Port, SecureSocketOptions.StartTls);
+                await client.ConnectAsync("smtp.gmail.com", 465, MailKit.Security.SecureSocketOptions.SslOnConnect);
 
                 _logger.LogInformation("Autenticando no servidor SMTP...");
 
-                await client.AuthenticateAsync(_smtpSettings.Username, _smtpSettings.Password);
+                await client.AuthenticateAsync("jonathanfrnnd3@gmail.com", "dawq saxv alkx fqhi");
 
                 _logger.LogInformation("Enviando e-mail...");
 
