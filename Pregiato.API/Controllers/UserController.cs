@@ -148,7 +148,7 @@ namespace Pregiato.API.Controllers
             }
         }
 
-        //[Authorize(Policy = "AdminOrManager")]
+      //  [Authorize(Policy = "AdminOrManager")]
         [HttpPost("register/Administrator")]
         public async Task<IActionResult> RegisterAdministrator([FromBody] UserRegisterDto user)
         {
@@ -157,19 +157,16 @@ namespace Pregiato.API.Controllers
             {
                 if (user == null || string.IsNullOrWhiteSpace(user.Username) || string.IsNullOrWhiteSpace(user.Email))
                 {
-                    var errorResponse = ApiResponse<object>.Fail("NOME DE USUÁRIO E EMAIL SÃO OBRIGATÓRIOS.");
+                    var errorResponse = ApiResponse<object>.Info("NOME DE USUÁRIO E EMAIL SÃO OBRIGATÓRIOS.");
                     return BadRequest(errorResponse);
                 }
 
-
                 var result = await _userService.RegisterUserAdministratorAsync(user.Username, user.Email).ConfigureAwait(true);
 
-                _toBoolean = Convert.ToBoolean(result);
-
-                if (_toBoolean == false)
+                if (result == RegistrationResult.UserAlreadyExists)
                 {
 
-                    var errorResponse = ApiResponse<object>.Fail($"FALHA AO REGISTRAR O USUÁRIO: {user.Username}");
+                    var errorResponse = ApiResponse<object>.Info("USUÁRIO JÁ ESTÁ CADASTRADO.");
                     return BadRequest(errorResponse);
                 }
 
@@ -177,9 +174,9 @@ namespace Pregiato.API.Controllers
                 var successResponse = ApiResponse<object>.Success(null, successMessage);
                 return Ok(successResponse);
             }
-            catch (Exception ex)
+            catch (Exception exception)
             {
-                var errorResponse = ApiResponse<object>.Fail($"ERRO: {ex.Message}");
+                var errorResponse = ApiResponse<object>.Fail($"FALHA AO REGISTRAR O USUÁRIO: {exception.Message}");
                 return BadRequest(errorResponse);
             }
         }
@@ -217,7 +214,7 @@ namespace Pregiato.API.Controllers
         }
         
 
-      //[Authorize(Policy = "AdminOrManager")]
+        [Authorize(Policy = "AdminOrManager")]
         [HttpPost("register/producers")]
         public async Task<IActionResult> RegisterUserProducers([FromBody] UserRegisterDto? user)
         {
@@ -258,19 +255,16 @@ namespace Pregiato.API.Controllers
             {
                 if (user == null || string.IsNullOrWhiteSpace(user.Username) || string.IsNullOrWhiteSpace(user.Email))
                 {
-                    var errorResponse = ApiResponse<object>.Fail("NOME DE USUÁRIO E EMAIL SÃO OBRIGATÓRIOS.");
+                    var errorResponse = ApiResponse<object>.Info("NOME DE USUÁRIO E EMAIL SÃO OBRIGATÓRIOS.");
                     return BadRequest(errorResponse);
                 }
 
-                var result = await _userService.RegisterUserCoordinationAsync(user.Username, user.Email)
-                    .ConfigureAwait(true);
-               
-                _toBoolean = Convert.ToBoolean(result);
+                var result = await _userService.RegisterUserCoordinationAsync(user.Username, user.Email).ConfigureAwait(true);
 
-                if (_toBoolean == false)
+                if (result == RegistrationResult.UserAlreadyExists)
                 {
 
-                    var errorResponse = ApiResponse<object>.Fail($"FALHA AO REGISTRAR O USUÁRIO: {user.Username}");
+                    var errorResponse = ApiResponse<object>.Info("USUÁRIO JÁ ESTÁ CADASTRADO.");
                     return BadRequest(errorResponse);
                 }
 
@@ -278,9 +272,9 @@ namespace Pregiato.API.Controllers
                 var successResponse = ApiResponse<object>.Success(null, successMessage);
                 return Ok(successResponse);
             }
-            catch (Exception ex)
+            catch (Exception exception)
             {
-                var errorResponse = ApiResponse<object>.Fail($"ERRO: {ex.Message}");
+                var errorResponse = ApiResponse<object>.Fail($"FALHA AO REGISTRAR O USUÁRIO: {exception.Message}");
                 return BadRequest(errorResponse);
             }
         }
@@ -293,18 +287,16 @@ namespace Pregiato.API.Controllers
             {
                 if (user == null || string.IsNullOrWhiteSpace(user.Username) || string.IsNullOrWhiteSpace(user.Email))
                 {
-                    var errorResponse = ApiResponse<object>.Fail("NOME DE USUÁRIO E EMAIL SÃO OBRIGATÓRIOS.");
+                    var errorResponse = ApiResponse<object>.Info("NOME DE USUÁRIO E EMAIL SÃO OBRIGATÓRIOS.");
                     return BadRequest(errorResponse);
                 }
 
                 var result = await _userService.RegisterManagerAsync(user.Username, user.Email).ConfigureAwait(true);
 
-                _toBoolean = Convert.ToBoolean(result);
-
-                if (_toBoolean == false)
+                if (result == RegistrationResult.UserAlreadyExists)
                 {
 
-                    var errorResponse = ApiResponse<object>.Fail($"FALHA AO REGISTRAR O USUÁRIO: {user.Username}");
+                    var errorResponse = ApiResponse<object>.Info("USUÁRIO JÁ ESTÁ CADASTRADO.");
                     return BadRequest(errorResponse);
                 }
 
@@ -312,9 +304,9 @@ namespace Pregiato.API.Controllers
                 var successResponse = ApiResponse<object>.Success(null, successMessage);
                 return Ok(successResponse);
             }
-            catch (Exception ex)
+            catch (Exception exception)
             {
-                var errorResponse = ApiResponse<object>.Fail($"ERRO: {ex.Message}");
+                var errorResponse = ApiResponse<object>.Fail($"FALHA AO REGISTRAR O USUÁRIO: {exception.Message}");
                 return BadRequest(errorResponse);
             }
         }
@@ -328,18 +320,16 @@ namespace Pregiato.API.Controllers
             {
                 if (user == null || string.IsNullOrWhiteSpace(user.Username) || string.IsNullOrWhiteSpace(user.Email))
                 {
-                    var errorResponse = ApiResponse<object>.Fail("NOME DE USUÁRIO E EMAIL SÃO OBRIGATÓRIOS.");
+                    var errorResponse = ApiResponse<object>.Info("NOME DE USUÁRIO E EMAIL SÃO OBRIGATÓRIOS.");
                     return BadRequest(errorResponse);
                 }
 
-                var result = await _userService.RegisterTelemarketingAsync(user.Username, user.Email)
-                    .ConfigureAwait(true);
+                var result = await _userService.RegisterTelemarketingAsync(user.Username, user.Email).ConfigureAwait(true);
 
-                _toBoolean = Convert.ToBoolean(result);
-                if (_toBoolean != false)
+                if (result == RegistrationResult.UserAlreadyExists)
                 {
 
-                    var errorResponse = ApiResponse<object>.Fail($"FALHA AO REGISTRAR O USUÁRIO: {user.Username}");
+                    var errorResponse = ApiResponse<object>.Info("USUÁRIO JÁ ESTÁ CADASTRADO.");
                     return BadRequest(errorResponse);
                 }
 
@@ -347,9 +337,9 @@ namespace Pregiato.API.Controllers
                 var successResponse = ApiResponse<object>.Success(null, successMessage);
                 return Ok(successResponse);
             }
-            catch (Exception ex)
+            catch (Exception exception)
             {
-                var errorResponse = ApiResponse<object>.Fail($"ERRO: {ex.Message}");
+                var errorResponse = ApiResponse<object>.Fail($"FALHA AO REGISTRAR O USUÁRIO: {exception.Message}");
                 return BadRequest(errorResponse);
             }
         }
@@ -363,17 +353,16 @@ namespace Pregiato.API.Controllers
             {
                 if (user == null || string.IsNullOrWhiteSpace(user.Username) || string.IsNullOrWhiteSpace(user.Email))
                 {
-                    var errorResponse = ApiResponse<object>.Fail("NOME DE USUÁRIO E EMAIL SÃO OBRIGATÓRIOS.");
+                    var errorResponse = ApiResponse<object>.Info("NOME DE USUÁRIO E EMAIL SÃO OBRIGATÓRIOS.");
                     return BadRequest(errorResponse);
                 }
 
                 var result = await _userService.RegisterCEOAsync(user.Username, user.Email).ConfigureAwait(true);
 
-                _toBoolean = Convert.ToBoolean(result);
-                if (_toBoolean == false)
+                if (result == RegistrationResult.UserAlreadyExists)
                 {
 
-                    var errorResponse = ApiResponse<object>.Fail($"FALHA AO REGISTRAR O USUÁRIO: {user.Username}");
+                    var errorResponse = ApiResponse<object>.Info("USUÁRIO JÁ ESTÁ CADASTRADO.");
                     return BadRequest(errorResponse);
                 }
 
@@ -381,9 +370,9 @@ namespace Pregiato.API.Controllers
                 var successResponse = ApiResponse<object>.Success(null, successMessage);
                 return Ok(successResponse);
             }
-            catch (Exception ex)
+            catch (Exception exception)
             {
-                var errorResponse = ApiResponse<object>.Fail($"ERRO: {ex.Message}");
+                var errorResponse = ApiResponse<object>.Fail($"FALHA AO REGISTRAR O USUÁRIO: {exception.Message}");
                 return BadRequest(errorResponse);
             }
         }
@@ -396,18 +385,16 @@ namespace Pregiato.API.Controllers
             {
                 if (user == null || string.IsNullOrWhiteSpace(user.Username) || string.IsNullOrWhiteSpace(user.Email))
                 {
-                    var errorResponse = ApiResponse<object>.Fail("NOME DE USUÁRIO E EMAIL SÃO OBRIGATÓRIOS.");
+                    var errorResponse = ApiResponse<object>.Info("NOME DE USUÁRIO E EMAIL SÃO OBRIGATÓRIOS.");
                     return BadRequest(errorResponse);
                 }
 
-                var result = await _userService.RegisterProductionAsync(user.Username, user.Email)
-                    .ConfigureAwait(true);
-              
-                _toBoolean = Convert.ToBoolean(result);
-                if (_toBoolean == false)
+                var result = await _userService.RegisterProductionAsync(user.Username, user.Email).ConfigureAwait(true);
+
+                if (result == RegistrationResult.UserAlreadyExists)
                 {
 
-                    var errorResponse = ApiResponse<object>.Fail($"FALHA AO REGISTRAR O USUÁRIO: {user.Username}");
+                    var errorResponse = ApiResponse<object>.Info("USUÁRIO JÁ ESTÁ CADASTRADO.");
                     return BadRequest(errorResponse);
                 }
 
@@ -415,9 +402,9 @@ namespace Pregiato.API.Controllers
                 var successResponse = ApiResponse<object>.Success(null, successMessage);
                 return Ok(successResponse);
             }
-            catch (Exception ex)
+            catch (Exception exception)
             {
-                var errorResponse = ApiResponse<object>.Fail($"ERRO: {ex.Message}");
+                var errorResponse = ApiResponse<object>.Fail($"FALHA AO REGISTRAR O USUÁRIO: {exception.Message}");
                 return BadRequest(errorResponse);
             }
 

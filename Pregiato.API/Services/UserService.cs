@@ -221,46 +221,55 @@ namespace Pregiato.API.Services
         {
             Console.WriteLine($"[PROCESS] {DateTime.Now:yyyy-MM-dd HH:mm:ss} |  Validando se o USER_MODEL: {username}, já está cadastrado... ");
 
-           var userResult = await _userRepository.GetByUser(username, email);
+            var userResult = await _userRepository.GetByUser(username, email)
+                .ConfigureAwait(true);
 
             if (userResult.RegistrationResult == RegistrationResult.UserAlreadyExists)
             {
-                var errorResponse = ApiResponse<object>.Fail($"Este usuário {userResult.User.NickName} já possui cadastro.");
-                return RegistrationResult.NonExistentUser;
+                return RegistrationResult.UserAlreadyExists;
             }
 
             Console.WriteLine($"[PROCESS] {DateTime.Now:yyyy-MM-dd HH:mm:ss} | Gerando cadastro... ");
 
-            string nikeName = username.Replace(" ", "").ToLower();
+            var nikeName = username.Replace(" ", "").ToLower();
 
-            string password = await _passwordHasherService.GenerateRandomPasswordAsync(12);
+            var password = await _passwordHasherService.GenerateRandomPasswordAsync(12)
+                .ConfigureAwait(true);
 
-            Dictionary<string, string> replacements = new Dictionary<string, string>
+            var replacements = new Dictionary<string, string>
             {
                 {"Nome",username},
                 {"User",nikeName },
                 {"Password", password}
             };
 
-            await _emailService.SendEmailAsync(replacements, email, "Bem-vindo à Plataforma My Pregiato");
+            await _emailService
+                .SendEmailAsync(replacements, email, "Bem-vindo à Plataforma My Pregiato")
+                .ConfigureAwait(true);
 
-            string passwordHash = await _passwordHasherService.CreatePasswordHashAsync(password);
+            var passwordHash = await _passwordHasherService
+                .CreatePasswordHashAsync(password)
+                .ConfigureAwait(true);
 
-            User? user = new User
+            var user = new User
             {
-                UserId = new Guid(),
+                UserId = Guid.NewGuid(),
                 Name = username,
                 Email = email,
                 NickName = nikeName,
                 PasswordHash = passwordHash,
-                CodProducers = await GenerateProducerCodeAsync(),
                 UserType = UserType.Administrator.ToString(),
+                CodProducers = await GenerateProducerCodeAsync()
+                    .ConfigureAwait(true),
+
             };
 
-            await _userRepository.AddUserAsync(user);
-            await _userRepository.SaveChangesAsync();
+            await _userRepository.AddUserAsync(user)
+                .ConfigureAwait(true);
+            await _userRepository.SaveChangesAsync()
+                .ConfigureAwait(true);
 
-            Console.WriteLine($"");
+            Console.WriteLine($"Usuário {user.NickName} cadastrado com sucesso.");
             return RegistrationResult.Success;
         }
 
@@ -268,96 +277,55 @@ namespace Pregiato.API.Services
         {
             Console.WriteLine($"[PROCESS] {DateTime.Now:yyyy-MM-dd HH:mm:ss} |  Validando se o USER_MODEL: {username}, já está cadastrado... ");
 
-            User? shfUser = await _userRepository.GetByUsernameAsync(username);
+            var userResult = await _userRepository.GetByUser(username, email)
+                .ConfigureAwait(true);
 
-            if (shfUser != null)
+            if (userResult.RegistrationResult == RegistrationResult.UserAlreadyExists)
             {
-                throw new UnauthorizedAccessException(JsonSerializer.Serialize(new ErrorResponse
-                {
-                    Message = $"Este usuário {username}já posseui cadastrao.",
-                })); ;
+                return RegistrationResult.UserAlreadyExists;
             }
 
             Console.WriteLine($"[PROCESS] {DateTime.Now:yyyy-MM-dd HH:mm:ss} | Gerando cadastro... ");
 
-            string nikeName = username.Replace(" ", "").ToLower();
+            var nikeName = username.Replace(" ", "").ToLower();
 
-            string password = await _passwordHasherService.GenerateRandomPasswordAsync(12);
+            var password = await _passwordHasherService.GenerateRandomPasswordAsync(12)
+                .ConfigureAwait(true);
 
-            Dictionary<string, string> replacements = new Dictionary<string, string>
+            var replacements = new Dictionary<string, string>
             {
                 {"Nome",username},
                 {"User",nikeName },
                 {"Password", password}
             };
 
-            await _emailService.SendEmailAsync(replacements, email, "Bem-vindo à Plataforma My Pregiato");
+            await _emailService
+                .SendEmailAsync(replacements, email, "Bem-vindo à Plataforma My Pregiato")
+                .ConfigureAwait(true);
 
-            string passwordHash = await _passwordHasherService.CreatePasswordHashAsync(password);
+            var passwordHash = await _passwordHasherService
+                .CreatePasswordHashAsync(password)
+                .ConfigureAwait(true);
 
-            User? user = new User
+            var user = new User
             {
-                UserId = new Guid(),
+                UserId = Guid.NewGuid(),
                 Name = username,
                 Email = email,
                 NickName = nikeName,
                 PasswordHash = passwordHash,
-                CodProducers = await GenerateProducerCodeAsync(),
-                UserType = UserType.Coordination.ToString(),
+                UserType = UserType.Coordination,
+                CodProducers = await GenerateProducerCodeAsync()
+                    .ConfigureAwait(true),
+
             };
 
-            await _userRepository.AddUserAsync(user);
-            await _userRepository.SaveChangesAsync();
+            await _userRepository.AddUserAsync(user)
+                .ConfigureAwait(true);
+            await _userRepository.SaveChangesAsync()
+                .ConfigureAwait(true);
 
-            Console.WriteLine($"");
-            return RegistrationResult.Success;
-        }
-
-        public async Task<RegistrationResult> RegisterManagerAsync(string username, string email)
-        {
-            Console.WriteLine($"[PROCESS] {DateTime.Now:yyyy-MM-dd HH:mm:ss} |  Validando se o USER_MODEL: {username}, já está cadastrado... ");
-
-            User? shfUser = await _userRepository.GetByUsernameAsync(username);
-
-            if (shfUser != null)
-            {
-                throw new UnauthorizedAccessException(JsonSerializer.Serialize(new ErrorResponse
-                {
-                    Message = $"Este usuário {username}já posseui cadastrao.",
-                })); ;
-            }
-
-            Console.WriteLine($"[PROCESS] {DateTime.Now:yyyy-MM-dd HH:mm:ss} | Gerando cadastro... ");
-
-            string nikeName = username.Replace(" ", "").ToLower();
-
-            string password = await _passwordHasherService.GenerateRandomPasswordAsync(12);
-
-            Dictionary<string, string> replacements = new Dictionary<string, string>
-            {
-                {"Nome",username},
-                {"User",nikeName },
-                {"Password", password}
-            };
-
-            await _emailService.SendEmailAsync(replacements, email, "Bem-vindo à Plataforma My Pregiato");
-            string passwordHash = await _passwordHasherService.CreatePasswordHashAsync(password);
-
-            User? user = new User
-            {
-                UserId = new Guid(),
-                Name = username,
-                Email = email,
-                NickName = nikeName,
-                PasswordHash = passwordHash,
-                CodProducers = await GenerateProducerCodeAsync(),
-                UserType = UserType.Manager.ToString(),
-            };
-
-            await _userRepository.AddUserAsync(user);
-            await _userRepository.SaveChangesAsync();
-
-            Console.WriteLine($"");
+            Console.WriteLine($"Usuário {user.NickName} cadastrado com sucesso.");
             return RegistrationResult.Success;
         }
 
@@ -365,141 +333,165 @@ namespace Pregiato.API.Services
         {
             Console.WriteLine($"[PROCESS] {DateTime.Now:yyyy-MM-dd HH:mm:ss} |  Validando se o USER_MODEL: {username}, já está cadastrado... ");
 
-            User? shfUser = await _userRepository.GetByUsernameAsync(username);
+            var userResult = await _userRepository.GetByUser(username, email)
+                .ConfigureAwait(true);
 
-            if (shfUser != null)
+            if (userResult.RegistrationResult == RegistrationResult.UserAlreadyExists)
             {
-                throw new UnauthorizedAccessException(JsonSerializer.Serialize(new ErrorResponse
-                {
-                    Message = $"Este usuário {username}já posseui cadastrao.",
-                })); ;
+                return RegistrationResult.UserAlreadyExists;
             }
 
             Console.WriteLine($"[PROCESS] {DateTime.Now:yyyy-MM-dd HH:mm:ss} | Gerando cadastro... ");
 
-            string nikeName = username.Replace(" ", "").ToLower();
+            var nikeName = username.Replace(" ", "").ToLower();
 
-            string password = await _passwordHasherService.GenerateRandomPasswordAsync(12);
+            var password = await _passwordHasherService.GenerateRandomPasswordAsync(12)
+                .ConfigureAwait(true);
 
-            Dictionary<string, string> replacements = new Dictionary<string, string>
+            var replacements = new Dictionary<string, string>
             {
                 {"Nome",username},
                 {"User",nikeName },
                 {"Password", password}
             };
 
-            await _emailService.SendEmailAsync(replacements, email, "Bem-vindo à Plataforma My Pregiato");
-            string passwordHash = await _passwordHasherService.CreatePasswordHashAsync(password);
+            await _emailService
+                .SendEmailAsync(replacements, email, "Bem-vindo à Plataforma My Pregiato")
+                .ConfigureAwait(true);
 
-            User? user = new User
+            var passwordHash = await _passwordHasherService
+                .CreatePasswordHashAsync(password)
+                .ConfigureAwait(true);
+
+            var user = new User
             {
-                UserId = new Guid(),
+                UserId = Guid.NewGuid(),
                 Name = username,
                 Email = email,
                 NickName = nikeName,
                 PasswordHash = passwordHash,
-                CodProducers = await GenerateProducerCodeAsync(),
-                UserType = UserType.Telemarketing.ToString(),
+                UserType = UserType.Telemarketing,
+                CodProducers = await GenerateProducerCodeAsync()
+                    .ConfigureAwait(true),
+
             };
 
-            await _userRepository.AddUserAsync(user);
-            await _userRepository.SaveChangesAsync();
+            await _userRepository.AddUserAsync(user)
+                .ConfigureAwait(true);
+            await _userRepository.SaveChangesAsync()
+                .ConfigureAwait(true);
 
-            Console.WriteLine($"");
+            Console.WriteLine($"Usuário {user.NickName} cadastrado com sucesso.");
             return RegistrationResult.Success;
         }
         public async Task<RegistrationResult> RegisterCEOAsync(string username, string email)
         {
-            Console.WriteLine($"[PROCESS] {DateTime.Now:yyyy-MM-dd HH:mm:ss} | Validando se o USER_MODEL: {username}, já está cadastrado... ");
+            Console.WriteLine($"[PROCESS] {DateTime.Now:yyyy-MM-dd HH:mm:ss} |  Validando se o USER_MODEL: {username}, já está cadastrado... ");
 
-            User? shfUser = await _userRepository.GetByUsernameAsync(username).ConfigureAwait(true);
+            var userResult = await _userRepository.GetByUser(username, email)
+                .ConfigureAwait(true);
 
-            if (shfUser != null)
+            if (userResult.RegistrationResult == RegistrationResult.UserAlreadyExists)
             {
-                throw new UnauthorizedAccessException(JsonSerializer.Serialize(new ErrorResponse
-                {
-                    Message = $"Este usuário {username}já posseui cadastrao.",
-                })); ;
+                return RegistrationResult.UserAlreadyExists;
             }
 
             Console.WriteLine($"[PROCESS] {DateTime.Now:yyyy-MM-dd HH:mm:ss} | Gerando cadastro... ");
 
-            string nikeName = username.Replace(" ", "").ToLower();
+            var nikeName = username.Replace(" ", "").ToLower();
 
-            string password = await _passwordHasherService.GenerateRandomPasswordAsync(12).ConfigureAwait(true);
+            var password = await _passwordHasherService.GenerateRandomPasswordAsync(12)
+                .ConfigureAwait(true);
 
-            Dictionary<string, string> replacements = new Dictionary<string, string>
+            var replacements = new Dictionary<string, string>
             {
                 {"Nome",username},
                 {"User",nikeName },
                 {"Password", password}
             };
 
-            await _emailService.SendEmailAsync(replacements, email, "Bem-vindo à Plataforma My Pregiato").ConfigureAwait(true);
-            string passwordHash = await _passwordHasherService.CreatePasswordHashAsync(password).ConfigureAwait(true);
+            await _emailService
+                .SendEmailAsync(replacements, email, "Bem-vindo à Plataforma My Pregiato")
+                .ConfigureAwait(true);
 
-            User? user = new User
+            var passwordHash = await _passwordHasherService
+                .CreatePasswordHashAsync(password)
+                .ConfigureAwait(true);
+
+            var user = new User
             {
-                UserId = new Guid(),
+                UserId = Guid.NewGuid(),
                 Name = username,
                 Email = email,
                 NickName = nikeName,
                 PasswordHash = passwordHash,
-                CodProducers = await GenerateProducerCodeAsync().ConfigureAwait(true),
                 UserType = UserType.CEO.ToString(),
+                CodProducers = await GenerateProducerCodeAsync()
+                    .ConfigureAwait(true),
+
             };
 
-            await _userRepository.AddUserAsync(user).ConfigureAwait(true);
-            await _userRepository.SaveChangesAsync().ConfigureAwait(true);
+            await _userRepository.AddUserAsync(user)
+                .ConfigureAwait(true);
+            await _userRepository.SaveChangesAsync()
+                .ConfigureAwait(true);
 
-            Console.WriteLine($"");
+            Console.WriteLine($"Usuário {user.NickName} cadastrado com sucesso.");
             return RegistrationResult.Success;
         }
         public async Task<RegistrationResult> RegisterProductionAsync(string username, string email)
         {
-            Console.WriteLine($"[PROCESS] {DateTime.Now:yyyy-MM-dd HH:mm:ss} | Validando se o USER_MODEL: {username}, já está cadastrado... ");
+            Console.WriteLine($"[PROCESS] {DateTime.Now:yyyy-MM-dd HH:mm:ss} |  Validando se o USER_MODEL: {username}, já está cadastrado... ");
 
-            User? shfUser = await _userRepository.GetByUsernameAsync(username);
+            var userResult = await _userRepository.GetByUser(username, email)
+                .ConfigureAwait(true);
 
-            if (shfUser != null)
+            if (userResult.RegistrationResult == RegistrationResult.UserAlreadyExists)
             {
-                throw new UnauthorizedAccessException(JsonSerializer.Serialize(new ErrorResponse
-                {
-                    Message = $"Este usuário {username}já posseui cadastrao.",
-                }));
+                return RegistrationResult.UserAlreadyExists;
             }
 
             Console.WriteLine($"[PROCESS] {DateTime.Now:yyyy-MM-dd HH:mm:ss} | Gerando cadastro... ");
 
-            string nikeName = username.Replace(" ", "").ToLower();
+            var nikeName = username.Replace(" ", "").ToLower();
 
-            string password = await _passwordHasherService.GenerateRandomPasswordAsync(12).ConfigureAwait(true);
+            var password = await _passwordHasherService.GenerateRandomPasswordAsync(12)
+                .ConfigureAwait(true);
 
-            Dictionary<string, string> replacements = new Dictionary<string, string>
+            var replacements = new Dictionary<string, string>
             {
                 {"Nome",username},
                 {"User",nikeName },
                 {"Password", password}
             };
 
-            await _emailService.SendEmailAsync(replacements, email, "Bem-vindo à Plataforma My Pregiato").ConfigureAwait(true);
-            string passwordHash = await _passwordHasherService.CreatePasswordHashAsync(password).ConfigureAwait(true);
+            await _emailService
+                .SendEmailAsync(replacements, email, "Bem-vindo à Plataforma My Pregiato")
+                .ConfigureAwait(true);
 
-            User? user = new User
+            var passwordHash = await _passwordHasherService
+                .CreatePasswordHashAsync(password)
+                .ConfigureAwait(true);
+
+            var user = new User
             {
-                UserId = new Guid(),
+                UserId = Guid.NewGuid(),
                 Name = username,
                 Email = email,
                 NickName = nikeName,
                 PasswordHash = passwordHash,
-                CodProducers = await GenerateProducerCodeAsync().ConfigureAwait(true),
                 UserType = UserType.Production.ToString(),
+                CodProducers = await GenerateProducerCodeAsync()
+                    .ConfigureAwait(true),
+
             };
 
-            await _userRepository.AddUserAsync(user).ConfigureAwait(true);
-            await _userRepository.SaveChangesAsync().ConfigureAwait(true);
+            await _userRepository.AddUserAsync(user)
+                .ConfigureAwait(true);
+            await _userRepository.SaveChangesAsync()
+                .ConfigureAwait(true);
 
-            Console.WriteLine($"");
+            Console.WriteLine($"Usuário {user.NickName} cadastrado com sucesso.");
             return RegistrationResult.Success;
         }
 
