@@ -11,18 +11,15 @@ namespace Pregiato.API.Models
         public Guid ContractId { get; set; }
         public Guid? PaymentId { get; set; }
 
-        [Required]
         public string? CodProducers { get; set; }
-
-        public Producers Producers { get; set; }
         [Required]
         public DateTime CreatedAt { get; set; } = DateTime.UtcNow;
         [Required]
         public DateTime UpdatedAt { get; set; } = DateTime.UtcNow;
         [Required]
-        public string DataContrato { get; set; } = DateTime.UtcNow.ToString("dd/MM/yyyy");
+        public DateTime DataContrato { get; set; } = DateTime.UtcNow;
         [Required]
-        public string VigenciaContrato {get; set; } = DateTime.UtcNow.ToString("dd/MM/yyyy");
+        public DateTime VigenciaContrato {get; set; } = DateTime.UtcNow;
         [Required]
         public decimal ValorContrato { get; set; }
         [Required]
@@ -39,10 +36,8 @@ namespace Pregiato.API.Models
         public int CodProposta { get; set; }
         [Required]
         public StatusContratc StatusContratc { get; set; } = StatusContratc.Ativo;
-        [Required]
         public Guid? IdModel { get; set; }
 
-        public virtual Model Model { get; set; }
     }
 
 

@@ -14,7 +14,7 @@ namespace Pregiato.API.Services
                 age--;
             }
 
-            return await Task.FromResult(age).ConfigureAwait(false);
+            return await Task.FromResult(age).ConfigureAwait(true);
         }
 
     }

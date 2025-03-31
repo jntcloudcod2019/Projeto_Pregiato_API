@@ -14,7 +14,6 @@ namespace Pregiato.API.Models
         [Key]
         public Guid? PaymentId { get; set; }
         public Guid? ContractId { get; set; }  
-        public ContractBase Contract { get; set; }
         [Required]
         public decimal Valor { get; set; }
         public int? QuantidadeParcela { get; set; }
@@ -24,22 +23,21 @@ namespace Pregiato.API.Models
         [SwaggerSchema("Data Pagamento")]
         [JsonConverter(typeof(JsonDateTimeConverter))]
         [DisplayFormat(DataFormatString = "{dd-MM-yyyy}", ApplyFormatInEditMode = true)]
-        public DateTime? DataPagamento { get; set; }
+        public DateTime? DataPagamento { get; set; } = DateTime.UtcNow;
 
-        public StatusPagamento StatusPagamento { get; set; }
+        public StatusPagamento StatusPagamento { get; set; } = null!;
         public byte[]? Comprovante { get; set; }
 
         [DefaultValue("05-02-2025")]
         [SwaggerSchema("Data Pagamento")]
         [JsonConverter(typeof(JsonDateTimeConverter))]
         [DisplayFormat(DataFormatString = "{dd-MM-yyyy}", ApplyFormatInEditMode = true)]
-        public DateTime? DataAcordoPagamento { get; set; }
+        public DateTime? DataAcordoPagamento { get; set; } = DateTime.UtcNow;
         public string MetodoPagamento { get; set; } = string.Empty;
 
         [Column(TypeName = "text")]
         public ProviderEnum? Provider { get; set; }
         public string? AutorizationNumber { get; set; }
         public string? CodProducers { get; set; }
-        public Producers Producers { get; set; }
     }
 }

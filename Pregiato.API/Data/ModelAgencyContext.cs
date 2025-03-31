@@ -13,10 +13,9 @@ namespace Pregiato.API.Data
     public class ModelAgencyContext : DbContext
     {
 
-
         public ModelAgencyContext(DbContextOptions<ModelAgencyContext> options) : base(options) { }
         public DbSet<ContractsModels> ContractsModels { get; set; }
-        public DbSet<User> Users { get; set; }
+        public DbSet<User?> Users { get; set; }
         public DbSet<Model> Models { get; set; }
         public DbSet<Job> Jobs { get; set; }
         public DbSet<ContractBase> Contracts { get; set; }
@@ -82,22 +81,16 @@ namespace Pregiato.API.Data
                     .HasColumnType("text")
                     .IsRequired(false);
                 entity.HasKey(e => e.PaymentId);
-                entity.HasOne(e => e.Contract)
-                    .WithMany()
-                    .HasForeignKey(c => c.ContractId)
-                    .IsRequired(false)
-                    .OnDelete(DeleteBehavior.Restrict);
-                entity.HasOne(e => e.Producers)
-                    .WithMany()
-                    .HasForeignKey(c => c.CodProducers)
-                    .IsRequired(false)
-                    .OnDelete(DeleteBehavior.Restrict);
                 entity.Property(e => e.Valor).IsRequired(true);
                 entity.Property(e => e.QuantidadeParcela).IsRequired(true);
                 entity.Property(e => e.FinalCartao).HasMaxLength(10).IsRequired(false);
-                entity.Property(e => e.DataPagamento).IsRequired(true);
+                entity.Property(e => e.DataPagamento)
+                    .HasDefaultValueSql("CURRENT_TIMESTAMP")  
+                    .HasColumnType("timestamp with time zone");
                 entity.Property(e => e.Comprovante).HasColumnType("bytea");
-                entity.Property(e => e.DataAcordoPagamento).IsRequired(true);
+                entity.Property(e => e.DataAcordoPagamento)
+                    .HasDefaultValueSql("CURRENT_TIMESTAMP") 
+                    .HasColumnType("timestamp with time zone");
                 entity.Property(e => e.MetodoPagamento).IsRequired(true);
                 entity.Property(e => e.AutorizationNumber).IsRequired(true);
 
@@ -107,11 +100,6 @@ namespace Pregiato.API.Data
             modelBuilder.Entity<Producers>(entity =>
             {
                 entity.ToTable("Producers");
-                entity.HasOne(e => e.Contract)
-                     .WithMany()
-                     .HasForeignKey(e => e.ContractId)
-                     .IsRequired(false)
-                     .OnDelete(DeleteBehavior.Restrict);
                 entity.HasKey(e => e.CodProducers);
                 entity.Property(e => e.NameProducer).IsRequired(true);
                 entity.Property(e => e.CodProposal).IsRequired(true);
@@ -123,25 +111,29 @@ namespace Pregiato.API.Data
                     .HasConversion(
                         v => JsonSerializer.Serialize(v, new JsonSerializerOptions()),
                         v => JsonSerializer.Deserialize<DetailsInfo>(v, new JsonSerializerOptions())!);
-                entity.Property(e => e.CreatedAt).HasDefaultValueSql("NOW()");
-                entity.Property(e => e.UpdatedAt).HasDefaultValueSql("NOW()");
+                entity.Property(e => e.CreatedAt)
+                    .HasDefaultValueSql("CURRENT_TIMESTAMP") 
+                    .HasColumnType("timestamp with time zone");
+
+                entity.Property(e => e.UpdatedAt)
+                    .HasDefaultValueSql("CURRENT_TIMESTAMP")  
+                    .HasColumnType("timestamp with time zone");
             });
 
             modelBuilder.Entity<Job>(entity =>
             {
                 entity.ToTable("Jobs");
                 entity.HasKey(e => e.JobId);
-                entity.Property(e => e.CreatedAt);
-                entity.Property(e => e.UpdatedAt);
+                entity.Property(e => e.CreatedAt)
+                    .HasDefaultValueSql("CURRENT_TIMESTAMP")  
+                    .HasColumnType("timestamp with time zone");
+                entity.Property(e => e.UpdatedAt)
+                    .HasDefaultValueSql("CURRENT_TIMESTAMP")  
+                    .HasColumnType("timestamp with time zone");
                 entity.Property(e => e.Amount).IsRequired(true);
                 entity.Property(e => e.Location).IsRequired(false);
                 entity.Property(e => e.JobDate).IsRequired();
                 entity.Property(e => e.Description).IsRequired(false);
-                entity.HasOne(e => e.Model)
-                        .WithMany()
-                        .HasForeignKey(e => e.IdModel)
-                        .IsRequired(false)
-                        .OnDelete(DeleteBehavior.Restrict);
 
             });
 
@@ -150,19 +142,15 @@ namespace Pregiato.API.Data
             {
                 entity.ToTable("ModelsBilling");
                 entity.HasKey(e => e.Id);
-                entity.HasOne(e => e.Job)
-                    .WithMany()
-                    .HasForeignKey(e => e.JobId)
-                    .IsRequired(false);
                 entity.Property(e => e.Amount).IsRequired(true);
                 entity.Property(e => e.BillingDate);
-                entity.Property(e => e.CreatedAt);
-                entity.Property(e => e.UpdatedAt);
-                entity.HasOne(e => e.Model)
-                    .WithMany(e => e.Billings)
-                    .HasForeignKey(e => e.IdModel)
-                    .OnDelete(DeleteBehavior.Restrict) 
-                    .IsRequired(false);
+                entity.Property(e => e.CreatedAt)
+                    .HasDefaultValueSql("CURRENT_TIMESTAMP") 
+                    .HasColumnType("timestamp with time zone");
+                entity.Property(e => e.UpdatedAt)
+                    .HasDefaultValueSql("CURRENT_TIMESTAMP")  
+                    .HasColumnType("timestamp with time zone");
+
             });
 
 
@@ -178,8 +166,12 @@ namespace Pregiato.API.Data
                 entity.Property(e => e.NickName).IsRequired(true);
                 entity.Property(e => e.PasswordHash).IsRequired(true);
                 entity.Property(e => e.UserType).IsRequired(true);
-                entity.Property(e => e.CreatedAt);
-                entity.Property(e => e.UpdatedAt);
+                entity.Property(e => e.CreatedAt)
+                    .HasDefaultValueSql("CURRENT_TIMESTAMP")  
+                    .HasColumnType("timestamp with time zone");
+                entity.Property(e => e.UpdatedAt)
+                    .HasDefaultValueSql("CURRENT_TIMESTAMP")  
+                    .HasColumnType("timestamp with time zone");
 
 
             });
@@ -193,10 +185,7 @@ namespace Pregiato.API.Data
                     .HasDefaultValueSql("gen_random_uuid()");
                 entity.HasKey(e => e.Id);
                 entity.Property(e => e.JobDate);
-                entity.HasOne(e => e.Model)
-                    .WithMany()
-                    .HasForeignKey(e => e.ModelId)
-                    .IsRequired(false);
+                
                 entity.Property(e => e.Location)
                     .IsRequired(false)
                     .HasMaxLength(255);
@@ -204,8 +193,7 @@ namespace Pregiato.API.Data
                     .IsRequired(false);
                 entity.Property(e => e.AdditionalDescription)
                     .HasMaxLength(500);
-                entity.Property(e => e.CreatedAt);
-                entity.Property(e => e.UpdatedAt);
+                
             });
 
 
@@ -228,18 +216,12 @@ namespace Pregiato.API.Data
                     .IsRequired();
                 entity.Property(e => e.StatusContratc)
                     .HasConversion<string>();
-                entity.HasOne(e => e.Producers)
-                    .WithMany()
-                    .HasForeignKey(c => c.CodProducers)
-                    .IsRequired(false)
-                    .OnDelete(DeleteBehavior.Restrict);
-                entity.Property(e => e.CreatedAt);
-                entity.Property(e => e.UpdatedAt);
-                entity.HasOne(e => e.Model)
-                    .WithMany(e => e.Contracts) // Use o nome correto da propriedade
-                    .HasForeignKey(e => e.IdModel)
-                    .OnDelete(DeleteBehavior.Cascade);
-
+                entity.Property(e => e.CreatedAt)
+                    .HasDefaultValueSql("CURRENT_TIMESTAMP")  
+                    .HasColumnType("timestamp with time zone"); 
+                entity.Property(e => e.UpdatedAt)
+                    .HasDefaultValueSql("CURRENT_TIMESTAMP")  
+                    .HasColumnType("timestamp with time zone"); 
             });
 
 
@@ -256,36 +238,27 @@ namespace Pregiato.API.Data
                 entity.Property(e => e.Name).IsRequired().HasMaxLength(100);
                 entity.Property(e => e.RG).IsRequired().HasMaxLength(20);
                 entity.Property(e => e.Email).IsRequired().HasMaxLength(255);
-                entity.Property(e => e.DateOfBirth).IsRequired(true);
+                entity.Property(e => e.DateOfBirth)
+                    .HasDefaultValueSql("CURRENT_TIMESTAMP")  
+                    .HasColumnType("timestamp with time zone");
                 entity.Property(e => e.Age).IsRequired(true);
                 entity.Property(e => e.Complement).IsRequired(true);
                 entity.Property(e => e.Status).IsRequired(true);
                 entity.Property(e => e.Neighborhood).IsRequired(true);
                 entity.Property(e => e.UF).IsRequired(true);
                 entity.Property(e => e.TelefonePrincipal).IsRequired(true);
-                entity.Property(e => e.TelefoneSecundario).IsRequired(true);
-                entity.Property(e => e.CreatedAt).IsRequired(true);
-                entity.Property(e => e.UpdatedAt).IsRequired(true);
                 entity.Property(e => e.PostalCode).IsRequired();
                 entity.Property(e => e.Address).HasMaxLength(255);
                 entity.Property(e => e.BankAccount).HasMaxLength(30);
                 entity.Property(e => e.Status).HasDefaultValue(true);
-                entity.HasOne(m => m.Producers)
-                    .WithMany()
-                    .HasForeignKey(m => m.CodProducers)
-                    .IsRequired(false);
-                entity.Property(e => e.CreatedAt).HasDefaultValueSql("NOW()");
-                entity.Property(e => e.UpdatedAt).HasDefaultValueSql("NOW()");
-                entity.Property(e => e.DNA)
-                    .HasColumnType("jsonb")
-                    .HasDefaultValueSql("'{}'::jsonb");
-                entity.HasMany(c => c.Contracts) 
-                    .WithOne()
-                    .HasForeignKey(c => c.ContractId);
-
+                entity.Property(e => e.CreatedAt)
+                    .HasDefaultValueSql("CURRENT_TIMESTAMP")  
+                    .HasColumnType("timestamp with time zone");
+                entity.Property(e => e.UpdatedAt)
+                    .HasDefaultValueSql("CURRENT_TIMESTAMP")  
+                    .HasColumnType("timestamp with time zone");
+                entity.Property(e => e.DNA);
             });
-
-
         }
     }
 }

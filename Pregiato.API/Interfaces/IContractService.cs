@@ -12,6 +12,7 @@ namespace Pregiato.API.Interfaces
      Task SaveContractAsync(ContractBase contract, Stream pdfStream, string cpfModelo);
      Task<ContractBase> GenerateContractCommitmentTerm(CreateRequestCommitmentTerm createRequestContractImageRights, string querymodel);
      Task<ContractBase> GenetayeContractImageRightsTerm(string querymodel);
+     Task<string> GenerateProducerCodeContractAsync();
      Task<IActionResult> GetMyContracts(string type = "files");
      Task<List<ContractsModels>> GetContractsByModelIdAsync(Guid modelId);
      Task<byte[]> ExtractBytesFromString(string content);
@@ -21,7 +22,10 @@ namespace Pregiato.API.Interfaces
      Task<Dictionary<string, string>> AddSignatureToParameters(Dictionary<string, string> parameters, string contractType);
      Task AddMinorModelInfo(Model model, Dictionary<string, string> parameters);
      Task<Producers> ProcessProducersAsync(ContractBase contract,  Model model);
-     Task<ContractWithProducers> DefineContractAsync(ContractBase contract,CreateContractModelRequest contractModelRequest, Model model);
+     Task<ContractWithProducers> DefineContractAsync(ContractBase contract,
+         CreateContractModelRequest contractModelRequest, Model model, string? contractType);
+     Task<ContractBase> DefineContractAgencyAsync(ContractBase contract,
+         CreateContractModelRequest contractModelRequest, Model model, string? contractType);
 
 
 

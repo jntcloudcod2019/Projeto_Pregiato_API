@@ -1,53 +1,42 @@
 ﻿using Microsoft.Extensions.Caching.Memory;
 using Microsoft.IdentityModel.Tokens;
-using Pregiato.API.Interface;
+using Pregiato.API.Interfaces;
 using Pregiato.API.Models;
 using Pregiato.API.Requests;
 using System.IdentityModel.Tokens.Jwt;
 using System.Security.Claims;
 using System.Text;
+using Pregiato.API.Interfaces;
 
 namespace Pregiato.API.Services
 {
-    public class JwtService : IJwtService
+    public class JwtService(
+        IMemoryCache memoryCache,
+        IConfiguration configuration,
+        IHttpContextAccessor httpContextAccessor)
+        : IJwtService
     {
-        private readonly string _secretKey;
-        private readonly string _issuer;
-        private readonly string _audience;
-        private readonly IConfiguration _configuration;
-        private readonly IMemoryCache _memoryCache;
-        private readonly IHttpContextAccessor _httpContextAccessor;
+        private readonly string _secretKey = Environment.GetEnvironmentVariable("SECRETKEY_JWT_TOKEN") ??
+                                             "3+XcgYxev9TcGXECMBq0ilANarHN68wsDsrhG60icMaACkw9ajU97IYT+cv9IDepqrQjPaj4WUQS3VqOvpmtDw==";
+        private readonly string _issuer = Environment.GetEnvironmentVariable("ISSUER_JWT") ?? "PregiatoAPI";
+        private readonly string _audience = Environment.GetEnvironmentVariable("AUDIENCE_JWT") ?? "PregiatoAPIToken";
+        private readonly IConfiguration _configuration = configuration;
         private readonly TimeSpan _tokenExpiry = TimeSpan.FromHours(4);
 
-        private readonly string SECRETKEY_JWT_TOKEN = Environment.GetEnvironmentVariable("SECRETKEY_JWT_TOKEN")?? "3+XcgYxev9TcGXECMBq0ilANarHN68wsDsrhG60icMaACkw9ajU97IYT+cv9IDepqrQjPaj4WUQS3VqOvpmtDw==";
-        private readonly string ISSUER_JWT = Environment.GetEnvironmentVariable("ISSUER_JWT") ?? "PregiatoAPI";
-        private readonly string AUDIENCE_JWT = Environment.GetEnvironmentVariable("AUDIENCE_JWT") ?? "PregiatoAPIToken";
-        public JwtService(IMemoryCache memoryCache, IConfiguration configuration, IHttpContextAccessor httpContextAccessor)
-        {
-           
-            _memoryCache = memoryCache;
-            _configuration = configuration;
-            _httpContextAccessor = httpContextAccessor;
-            _secretKey = Environment.GetEnvironmentVariable("SECRETKEY_JWT_TOKEN") ??
-                         "3+XcgYxev9TcGXECMBq0ilANarHN68wsDsrhG60icMaACkw9ajU97IYT+cv9IDepqrQjPaj4WUQS3VqOvpmtDw==";
-            _issuer = Environment.GetEnvironmentVariable("ISSUER_JWT") ?? "PregiatoAPI";
-            _audience = Environment.GetEnvironmentVariable("AUDIENCE_JWT") ?? "PregiatoAPIToken";
-        }
-        public async Task<string> GenerateToken(LoginUserRequest user)
+        public async Task<string> GenerateToken(LoginUserRequest? user)
         {
             var tokenHandler = new JwtSecurityTokenHandler();
             var key = Encoding.ASCII.GetBytes(_secretKey);
 
             var tokenDescriptor = new SecurityTokenDescriptor
             {
-                Subject = new ClaimsIdentity(new[]
-                {
-                    new Claim(ClaimTypes.Name, user.NickName),
+                Subject = new ClaimsIdentity([
+                    new Claim(ClaimTypes.Name, user.NickNAme),
                     new Claim(ClaimTypes.Email, user.Email),
                     new Claim(ClaimTypes.NameIdentifier, user.IdUser.ToString()),
                     new Claim(ClaimTypes.Role, user.UserType),
                     new Claim(JwtRegisteredClaimNames.Jti, Guid.NewGuid().ToString())
-                }),
+                ]),
                 Expires = DateTime.UtcNow.Add(_tokenExpiry),
                 SigningCredentials = new SigningCredentials(
                     new SymmetricSecurityKey(key),
@@ -64,7 +53,7 @@ namespace Pregiato.API.Services
         {
             return await Task.Run(() =>
             {
-                if (_memoryCache.TryGetValue($"blacklisted_{token}", out _))
+                if (memoryCache.TryGetValue($"blacklisted_{token}", out _))
                     return false;
 
                 try
@@ -90,7 +79,7 @@ namespace Pregiato.API.Services
                 {
                     return false;
                 }
-            });
+            }).ConfigureAwait(true);
         }
 
         public async Task<bool> InvalidateTokenAsync(string token)
@@ -107,9 +96,9 @@ namespace Pregiato.API.Services
                 if (remainingLife <= TimeSpan.Zero)
                     return false;
 
-                _memoryCache.Set($"blacklisted_{token}", true, remainingLife);
+                memoryCache.Set($"blacklisted_{token}", true, remainingLife);
                 return true;
-            });
+            }).ConfigureAwait(true);
         }
 
         public async Task<string> GetUserIdFromTokenAsync(string token)
@@ -125,7 +114,6 @@ namespace Pregiato.API.Services
 
                 var jwtToken = tokenHandler.ReadJwtToken(token);
 
-                // Busca a claim de forma segura
                 var userIdClaim = jwtToken.Claims.FirstOrDefault(c => c.Type == "sub");
                 if (userIdClaim == null)
                 {
@@ -153,13 +141,13 @@ namespace Pregiato.API.Services
             }
             catch
             {
-                return await Task.FromResult<string>($"Erro ao retornar token do usuário.");
+                return await Task.FromResult<string>($"Erro ao retornar token do usuário.").ConfigureAwait(true);
             }
         }
 
         public async Task<string> GetAuthenticatedUsernameAsync()
         {
-            var httpContext = _httpContextAccessor.HttpContext;
+            var httpContext = httpContextAccessor.HttpContext;
             if (httpContext == null)
             {
                 throw new InvalidOperationException("HttpContext não está disponível.");
@@ -171,7 +159,7 @@ namespace Pregiato.API.Services
                 throw new InvalidOperationException("Cabeçalho de autorização inválido.");
             }
             var token = authorizationHeader.Substring("Bearer ".Length).Trim();
-            return await GetUsernameFromTokenAsync(token);
+            return await GetUsernameFromTokenAsync(token).ConfigureAwait(true);
         }
 
     }

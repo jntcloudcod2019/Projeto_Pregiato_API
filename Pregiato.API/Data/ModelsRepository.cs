@@ -59,13 +59,7 @@ namespace Pregiato.API.Data
                       m.RG == query ||
                       m.Name.Contains(query) ||
                       m.IdModel.ToString() == query)
-           .Select(m => new Model
-           {
-               IdModel = m.IdModel,
-               CPF = m.CPF,
-               RG = m.RG,
-               Name = m.Name
-           })
+          
            .FirstOrDefaultAsync();
         }
 

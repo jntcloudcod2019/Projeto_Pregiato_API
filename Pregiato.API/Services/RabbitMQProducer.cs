@@ -1,21 +1,15 @@
-﻿using Microsoft.AspNetCore.Http.HttpResults;
-using Microsoft.Extensions.Options;
-using Pregiato.API.Interface;
+﻿using Microsoft.Extensions.Options;
+using Pregiato.API.Interfaces;
 using Pregiato.API.Models;
 using Pregiato.API.Services.ServiceModels;
 using RabbitMQ.Client;
 using System.Text;
 using System.Text.Json;
 
-public class RabbitMQProducer : IRabbitMQProducer
+public class RabbitMQProducer(IOptions<RabbitMQConfig> options) : IRabbitMQProducer
 {
-    private readonly RabbitMQConfig _config;
-    private readonly string _rabbitMqUri;
-    public RabbitMQProducer(IOptions<RabbitMQConfig> options)
-    {
-        _config = options.Value;
-        _rabbitMqUri = _config.RabbitMqUri; 
-    }
+    private readonly RabbitMQConfig _config = options.Value;
+
     public async Task<string> SendMensage(List<ContractBase> contracts, string modelDocument)
     {
         try
@@ -41,9 +35,8 @@ public class RabbitMQProducer : IRabbitMQProducer
             };
 
             var jsonMessage = JsonSerializer.Serialize(contractMessage, new JsonSerializerOptions { WriteIndented = true });
-
-            var connection = await factory.CreateConnectionAsync();
-            var channel = await connection.CreateChannelAsync();
+            var connection = await factory.CreateConnectionAsync().ConfigureAwait(true);
+            var channel = await connection.CreateChannelAsync().ConfigureAwait(true);
 
             var body = Encoding.UTF8.GetBytes(jsonMessage);
 
@@ -51,12 +44,21 @@ public class RabbitMQProducer : IRabbitMQProducer
                 exchange: string.Empty,
                 routingKey: _config.QueueName,
                 body: body
-            );
-           
-            await channel.CloseAsync();
-           await connection.CloseAsync();    
+            ).ConfigureAwait(true);
 
-           
+            await channel.CloseAsync().ContinueWith(t =>
+            {
+ 
+                if (t.IsCompletedSuccessfully)
+                {
+                    Console.WriteLine("Canal fechado com sucesso.");
+                }
+                else
+                {
+                    Console.WriteLine($"Falha ao fechar o canal: {t.Exception?.Message}");
+                }
+            });
+            await connection.CloseAsync().ConfigureAwait(true);    
         }
         catch (Exception ex)
         {

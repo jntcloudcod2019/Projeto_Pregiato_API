@@ -26,7 +26,6 @@ namespace Pregiato.API.Models
       
         public DateTime UpdatedAt { get; set; } = DateTime.UtcNow;
 
-        public Model Model { get; set; }
 
     }
 }

@@ -16,16 +16,15 @@ namespace Pregiato.API.Controllers
     public class AgencyContractController(
           IContractService contractService,
           IModelRepository modelRepository,
-          IPaymentService paymentService,
           IContractRepository contractRepository,
           ModelAgencyContext context,
           CustomResponse customResponse) : ControllerBase
     {
         private readonly IContractService _contractService = contractService ?? throw new ArgumentNullException(nameof(contractService));
         private readonly IModelRepository _modelRepository = modelRepository ?? throw new ArgumentNullException(nameof(modelRepository));
-        private readonly IContractRepository _contractRepository = contractRepository;
         private readonly ModelAgencyContext _context = context ?? throw new ArgumentNullException(nameof(context));
         private readonly CustomResponse _customResponse = customResponse;
+
 
         [Authorize(Policy = "AdminOrManager")]
         [SwaggerOperation(Summary = "Gera um contrato Termo de comprometimento", Description = "Este endpoint gera o Termo de comprometimento.")]
@@ -153,7 +152,7 @@ namespace Pregiato.API.Controllers
         public async Task<IActionResult> DownloadContractAsync(int proposalCode)
         {
 
-            ContractDTO? contract = await _contractRepository.DownloadContractAsync(proposalCode);
+            ContractDTO? contract = await contractRepository.DownloadContractAsync(proposalCode);
 
             if (contract == null)
             {
@@ -193,7 +192,7 @@ namespace Pregiato.API.Controllers
             payment.Comprovante = memoryStream.ToArray();
             _context.Entry(payment).Property(p => p.Comprovante).IsModified = true;
 
-            await _context.SaveChangesAsync().ConfigureAwait(false);
+            await _context.SaveChangesAsync().ConfigureAwait(true);
 
             return Ok("Receipt uploaded successfully.");
         }
@@ -206,7 +205,7 @@ namespace Pregiato.API.Controllers
         {
             try
             {
-                List<ContractSummaryDTO>? contracts = await _contractRepository.GetAllContractsAsync().ConfigureAwait(false);
+                List<ContractSummaryDTO>? contracts = await contractRepository.GetAllContractsAsync().ConfigureAwait(true);
 
                 if (contracts == null || !contracts.Any())
                 {

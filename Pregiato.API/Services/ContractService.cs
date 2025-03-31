@@ -1,7 +1,5 @@
-﻿using iText.Layout;
-using Microsoft.EntityFrameworkCore;
+﻿using Microsoft.EntityFrameworkCore;
 using Pregiato.API.Data;
-using Pregiato.API.Interface;
 using Pregiato.API.Models;
 using Pregiato.API.Requests;
 using Microsoft.AspNetCore.Mvc;
@@ -11,9 +9,8 @@ using System.Text;
 using PuppeteerSharp.Media;
 using PuppeteerSharp;
 using Pregiato.API.Interfaces;
-using System.Diagnostics.Contracts;
-using Pregiato.API.Response;
-using System.Net.NetworkInformation;
+using Pregiato.API.Enums;
+using Pregiato.API.Services.ServiceModels;
 
 namespace Pregiato.API.Services
 {
@@ -81,13 +78,13 @@ namespace Pregiato.API.Services
                return ("Os parâmetros para preenchimento do template estão vazios ou nulos.");
             }
 
-            foreach (var param in parameters)
+            StringBuilder stringBuilder = new StringBuilder(template);
+            foreach (KeyValuePair<string, string> param in parameters)
             {
-                template = template.Replace($"<span class=\"highlight\">{{{param.Key}}}</span>", param.Value);
-                template = template.Replace($"{{{param.Key}}}", param.Value);
+                stringBuilder.Replace($"<span class=\"highlight\">{{{param.Key}}}</span>", param.Value);
+                stringBuilder.Replace($"{{{param.Key}}}", param.Value);
             }
-
-            return await Task.FromResult(template);
+            return await Task.FromResult(stringBuilder.ToString());
         }
         public async Task<byte[]> ConvertHtmlToPdf(string populatedHtml, Dictionary<string, string> parameters)
         {
@@ -95,16 +92,16 @@ namespace Pregiato.API.Services
             try
             {
                
-                var browser = await _browserService.GetBrowserAsync();
+                IBrowser browser = await _browserService.GetBrowserAsync();
 
-                await using var page = await browser.NewPageAsync();
+                await using IPage? page = await browser.NewPageAsync();
 
                 await page.SetContentAsync(populatedHtml, new NavigationOptions
                 {
-                    WaitUntil = new[] { WaitUntilNavigation.Networkidle0 }
+                    WaitUntil = [WaitUntilNavigation.Networkidle0]
                 });
 
-                var pdfOptions = new PdfOptions
+                PdfOptions pdfOptions = new PdfOptions
                 {
                     Format = PaperFormat.A4,
                     PrintBackground = true,
@@ -127,9 +124,9 @@ namespace Pregiato.API.Services
         }
         public async Task SaveContractAsync(ContractBase contract, Stream pdfStream, string cpfModelo)
         {
-            using var memoryStream = new MemoryStream();
+            using MemoryStream memoryStream = new MemoryStream();
             await pdfStream.CopyToAsync(memoryStream);
-            var pdfBytes = memoryStream.ToArray();
+            byte[] pdfBytes = memoryStream.ToArray();
 
             var jsonObject = new
             {
@@ -137,20 +134,19 @@ namespace Pregiato.API.Services
                 data = pdfBytes.Select(b => (int)b).ToArray()
             };
 
-            var jsonBytes = JsonSerializer.SerializeToUtf8Bytes(jsonObject);
+            byte[] jsonBytes = JsonSerializer.SerializeToUtf8Bytes(jsonObject);
 
             contract.Content = jsonBytes;
             contract.ContractFilePath = $"Model_CPF:{cpfModelo}_{DateTime.UtcNow:dd-MM-yyyy}.pdf";
             await _contractRepository.SaveContractAsync(contract);         
         }
-
         private async Task<int> GetNextCodPropostaAsync()
         {
-            var maxCodProposta = await _contextFactory.CreateDbContext().Contracts.MaxAsync(c => (int?)c.CodProposta) ?? 109;
+            int maxCodProposta = await _contextFactory.CreateDbContext().Contracts.MaxAsync(c => (int?)c.CodProposta) ?? 109;
             return maxCodProposta + 1;
         }
 
-        public async Task<ContractBase> GenerateContractAsync(CreateContractModelRequest createContractModelRequest, Guid modelId, string contractType, Dictionary<string, string> parameters)
+        public async Task<ContractBase>  GenerateContractAsync(CreateContractModelRequest createContractModelRequest, Model model, string contractType, Dictionary<string, string> parameters, int codProposta)
         {
             parameters ??= new Dictionary<string, string>();
 
@@ -162,18 +158,6 @@ namespace Pregiato.API.Services
                 _ => throw new ArgumentException("Invalid contract type.")
             };
 
-            contract.ModelId = modelId;
-            contract.ContractId = Guid.NewGuid();
-            contract.CodProposta = await GetNextCodPropostaAsync();
-            if (!parameters.TryGetValue("Valor-Contrato", out var valorContrato))
-            {
-                throw new ArgumentException("A chave 'Valor-Contrato' é obrigatória.");
-            }
-
-            contract.ValorContrato = decimal.Parse(valorContrato.Replace("R$", "").Replace(".", "").Replace(",", ".").Trim(), CultureInfo.InvariantCulture);
-            contract.FormaPagamento = createContractModelRequest.Payment.MetodoPagamento;
-            contract.StatusPagamento = createContractModelRequest.Payment.StatusPagamento;
-
             string htmlTemplatePath = $"Templates/{contract.TemplateFileName}";
 
             if (!File.Exists(htmlTemplatePath))
@@ -183,29 +167,35 @@ namespace Pregiato.API.Services
 
             string htmlTemplate = await File.ReadAllTextAsync(htmlTemplatePath);
 
-            string populatedHtml = await PopulateTemplate(htmlTemplate, parameters);
+            string populatedHtml = await PopulateTemplate(htmlTemplate, parameters).ConfigureAwait(true);
 
-            byte[] pdfBytes = await ConvertHtmlToPdf(populatedHtml, parameters);
-
-            await SaveContractAsync(contract, new MemoryStream(pdfBytes), parameters["CPF-Modelo"]);
-
-            Producers producers; 
-            using (var pdfStream = new MemoryStream(pdfBytes))
-            {
-                producers = await ProcessProducersAsync(contract, pdfStream, parameters["CPF-Modelo"]);
-            }
+            byte[] pdfBytes = await ConvertHtmlToPdf(populatedHtml, parameters).ConfigureAwait(true);
+            
+            contract.CodProposta = codProposta;
 
             if (contractType == DefaulTemplatePhotography || contractType == DefaulTemplatePhotographyMinority)
-            {
-                var validationResult = await _paymentService.ValidatePayment(producers, createContractModelRequest.Payment, contract);
+            { ContractWithProducers contractWithProducers = await DefineContractAsync
+                                 (contract, createContractModelRequest, model, contractType).ConfigureAwait(true);
+               
+                await _paymentService.ValidatePayment(contractWithProducers.Producers, createContractModelRequest.Payment, contract);
             }
+
+            if (contractType == DefaulTemplateAgency)
+            {
+              
+                    await DefineContractAgencyAsync(contract, createContractModelRequest, model, contractType)
+                        .ConfigureAwait(true);
+            }
+
+            await SaveContractAsync(contract, new MemoryStream(pdfBytes), model.CPF);
+
             return contract;
         }
 
         public async Task<List<ContractBase>> GenerateAllContractsAsync(CreateContractModelRequest createContractModelRequest, Model model)
         {
 
-            var parameters = new Dictionary<string, string?>
+            Dictionary<string, string> parameters = new Dictionary<string, string?>
             {
                 {"Cidade", createContractModelRequest.City},
                 {"Dia", createContractModelRequest.Day.ToString()},
@@ -229,43 +219,49 @@ namespace Pregiato.API.Services
                 {"Nome-Assinatura", model.Name}
             };
 
-            await AddMinorModelInfo(model, parameters);
+            await AddMinorModelInfo(model, parameters).ConfigureAwait(false);
 
-            var listContracts = new List<ContractBase>();
+            List<ContractBase> listContracts = [];
 
-            var template = model.Age < 18 ? DefaulTemplatePhotographyMinority : DefaulTemplatePhotography;
+            int codProposta = await GetNextCodPropostaAsync().ConfigureAwait(false);
+
+            parameters["CodProposta"] = codProposta.ToString();
+
+            string template = model.Age < 18 ? DefaulTemplatePhotographyMinority : DefaulTemplatePhotography;
                                   
-            var signaturePhotographyParams = await AddSignatureToParameters(parameters, template);
+            Dictionary<string, string> signaturePhotographyParams = await AddSignatureToParameters(parameters, template).ConfigureAwait(false);
             
-            var photographyContract = await GenerateContractAsync(
+            ContractBase photographyContract = await GenerateContractAsync(
                 createContractModelRequest,
-                model.IdModel,
+                model,
                 template,
-                signaturePhotographyParams
-            );
+                signaturePhotographyParams,
+                codProposta
+            ).ConfigureAwait(true);
            
             listContracts.Add(photographyContract);
 
-            var signatureAgencyParams = await AddSignatureToParameters(parameters,  DefaulTemplateAgency);
-            var agencyContract = await GenerateContractAsync(
+            Dictionary<string, string> signatureAgencyParams = await AddSignatureToParameters(parameters,  DefaulTemplateAgency).ConfigureAwait(false);
+            ContractBase agencyContract = await GenerateContractAsync(
                 createContractModelRequest,
-                model.IdModel,
+                model,
                 DefaulTemplateAgency,
-                signatureAgencyParams
-            );
+                signatureAgencyParams,
+                codProposta
+            ).ConfigureAwait(true);
 
-            if (template == DefaulTemplateAgency)
-            {
-                await _rabbitmqProducer.SendMensage(listContracts, model.CPF);
-            }
-            
-            listContracts.Add(agencyContract);
-        
+             listContracts.Add(agencyContract);
+
+             if (listContracts.Any(c => c.TemplateFileName == "AgencyContract.html"))
+             {
+                 await _rabbitmqProducer.SendMensage(listContracts, model.CPF).ConfigureAwait(false);
+             }
+
             return listContracts;
         }
         public async Task<Dictionary<string, string>> AddSignatureToParameters(Dictionary<string, string> parameters, string contractType)
         {
-            var updatedParameters = new Dictionary<string, string>(parameters);
+            Dictionary<string, string> updatedParameters = new Dictionary<string, string>(parameters);
 
             string imageName = _configuration[$"Signatures:{contractType}"];
 
@@ -295,14 +291,14 @@ namespace Pregiato.API.Services
         }
         public async Task<ContractBase> GenerateContractCommitmentTerm(CreateRequestCommitmentTerm createRequestContractImageRights, string querymodel)
         {
-            var model = await _modelRepository.GetModelByCriteriaAsync(querymodel);
+            Model? model = await _modelRepository.GetModelByCriteriaAsync(querymodel);
 
             if (model == null)
             {
                 throw new FileNotFoundException($"Modelo não encontrado:{querymodel}");
             }
 
-            var parameters = new Dictionary<string, string>
+            Dictionary<string, string> parameters = new Dictionary<string, string>
             {
                 {"Local-Contrato", DefaultCidadeEmpresa},
                 {"Data-Contrato", DefaultDataContrato},
@@ -338,7 +334,7 @@ namespace Pregiato.API.Services
                 _ => throw new ArgumentException("Invalid contract type.")
             };
 
-            contract.ModelId = model.IdModel;
+            contract.IdModel = model.IdModel;
            
             string htmlTemplatePath = $"Templates/{contract.TemplateFileName}";
             if (!File.Exists(htmlTemplatePath))
@@ -358,14 +354,14 @@ namespace Pregiato.API.Services
         }
         public async Task<ContractBase> GenetayeContractImageRightsTerm(string querymodel)
         {
-            var model = await _modelRepository.GetModelByCriteriaAsync(querymodel);
+            Model? model = await _modelRepository.GetModelByCriteriaAsync(querymodel);
 
             if (model == null)
             {
                 throw new FileNotFoundException($"Modelo não encontrado:{querymodel}");
             }
 
-            var parameters = new Dictionary<string, string>
+            Dictionary<string, string> parameters = new Dictionary<string, string>
             {
                 {"Local-Contrato", DefaultCidadeEmpresa},
                 {"Data-Contrato", DefaultDataContrato},
@@ -399,8 +395,8 @@ namespace Pregiato.API.Services
                 _ => throw new ArgumentException("Invalid contract type.")
             };
 
-            contract.ModelId = model.IdModel;
-            contract.CodProposta = await GetNextCodPropostaAsync();
+            contract.IdModel = model.IdModel;
+            contract.CodProposta = await GetNextCodPropostaAsync().ConfigureAwait(true);
            
             string htmlTemplatePath = $"Templates/{contract.TemplateFileName}";
             if (!File.Exists(htmlTemplatePath))
@@ -408,31 +404,42 @@ namespace Pregiato.API.Services
                 throw new FileNotFoundException($"Template não encontrado: {htmlTemplatePath}");
             }
 
-            string htmlTemplate = await File.ReadAllTextAsync(htmlTemplatePath);
+            string htmlTemplate = await File.ReadAllTextAsync(htmlTemplatePath).ConfigureAwait(true);
 
-            string populatedHtml = await PopulateTemplate(htmlTemplate, parameters);
+            string populatedHtml = await PopulateTemplate(htmlTemplate, parameters).ConfigureAwait(true);
 
-            byte[] pdfBytes = await ConvertHtmlToPdf(populatedHtml, parameters);
+            byte[] pdfBytes = await ConvertHtmlToPdf(populatedHtml, parameters).ConfigureAwait(true);
 
-            await SaveContractAsync(contract, new MemoryStream(pdfBytes), parameters["CPF-Modelo"]);
+            await SaveContractAsync(contract, new MemoryStream(pdfBytes), parameters["CPF-Modelo"]).ConfigureAwait(true);
 
             return contract;
         }
+
+        public async Task<string?> GenerateProducerCodeContractAsync()
+        {
+            const string prefix = "PMCA";
+            const int randomNumberLength = 6;
+            Random random = new Random();
+            int randomNumber = random.Next(0, 999999);
+            string code = $"{prefix}{randomNumber:000000}";
+            return (code).ToString();
+        }
+
         public async Task<IActionResult> GetMyContracts(string type = "files")
         {
-            var username = await _jwtService.GetAuthenticatedUsernameAsync();
+            string username = await _jwtService.GetAuthenticatedUsernameAsync().ConfigureAwait(true);
             if (string.IsNullOrEmpty(username))
             {
                 return new UnauthorizedResult();
             }
 
-            var modelId = await _modelRepository.GetModelByCriteriaAsync(username);
+            Model? modelId = await _modelRepository.GetModelByCriteriaAsync(username).ConfigureAwait(true);
             if (modelId == null)
             {
                 return new NotFoundObjectResult($"Nenhum modelo encontrado para o usuário: {username}");
             }
 
-            var contracts = await _contractRepository.GetContractsByModelId(modelId.IdModel);
+            List<ContractBase>? contracts = await _contractRepository.GetContractsByModelId(modelId.IdModel).ConfigureAwait(true);
             if (contracts == null || !contracts.Any())
             {
                 return new NotFoundObjectResult("Nenhum contrato encontrado para o usuário.");
@@ -442,15 +449,14 @@ namespace Pregiato.API.Services
                 ? new OkObjectResult(contracts.Select(c => c.ContractFilePath).ToList())
                 : new OkObjectResult(contracts.Select(c => new
                 {
-                    c.ModelId,
+                    c.IdModel,
                     c.ContractFilePath,
                     ContentBase64 = c.Content != null ? Convert.ToBase64String(c.Content) : null
                 }).ToList());
         }
         public async Task<List<ContractsModels>> GetContractsByModelIdAsync(Guid modelId)
         {
-
-            using var context = _contextFactory.CreateDbContext();
+            using ModelAgencyContext context = _contextFactory.CreateDbContext();
 
             return await context.ContractsModels
                 .Where(c => c.ModelId == modelId)
@@ -460,7 +466,7 @@ namespace Pregiato.API.Services
                     ContractFilePath = c.ContractFilePath,
                     Content = c.Content
                 })
-                .ToListAsync();
+                .ToListAsync().ConfigureAwait(true);
 
         }
         public async Task<byte[]> ExtractBytesFromString(string content)
@@ -480,51 +486,97 @@ namespace Pregiato.API.Services
         {
             return await Task.FromResult(Encoding.UTF8.GetString(bytes));
         }
-
-        public async Task<Producers> ProcessProducersAsync(ContractBase contract, Stream pdfStream, string cpfmodel)
+        public async Task<Producers> ProcessProducersAsync(ContractBase contract, Model model )
         {
-             var context = _contextFactory.CreateDbContext();
-
+            User? nameProducer = await _contextFactory.CreateDbContext().Users
+                .AsNoTracking()
+                .Where(c => c.CodProducers == model.CodProducers)
+                .FirstOrDefaultAsync();
             
-              var userResult = await context.Models
-             .AsNoTracking()
-             .Where(m => m.CPF == cpfmodel)
-             .Select(m => new
-             {
-                 Model = m,
-                 User = context.Users.FirstOrDefault(u => u.CodProducers == m.CodProducers)
-             })
-             .FirstOrDefaultAsync();
-
-            
-            var defaultProducerCode = "PMSYSAPI01";
-            var defaultProducerName = "PMSYSAPI01";
-
-           
-            var producers = new Producers
+            Producers producers = new Producers
             {
-               
-                CodProducers = userResult?.User?.CodProducers ?? defaultProducerCode,
-                NameProducer = userResult?.User?.Name ?? defaultProducerName,
-                IdContract = Guid.NewGuid(),
+                CodProducers = model.CodProducers,
+                NameProducer = nameProducer?.Name,
+                ContractId = contract.ContractId,
+                
                 AmountContract = contract?.ValorContrato ?? 0,
                 InfoModel = new DetailsInfo
                 {
-                    IdModel = contract?.ModelId ?? Guid.Empty,
-                    NameModel = contract?.Model?.Name ?? string.Empty,
-                    DocumentModel = cpfmodel ?? string.Empty
+                    IdModel = model.IdModel,
+                    NameModel = model.Name,
+                    DocumentModel = model.CPF
                 },
                 StatusContratc = Enums.StatusContratc.Ativo,
-                ValidityContract = contract?.VigenciaContrato ?? string.Empty,
-                CodProposal = contract?.CodProposta ?? 0,
+                CodProposal = contract.CodProposta ,
                 TotalAgreements = 1
             };
-
-            contract.CodProducers = producers.CodProducers;
-      
-            await SaveContractAsync(contract, pdfStream, cpfmodel);
-            await _producersRepository.SaveProducersAsync(producers);
+            await _producersRepository.SaveProducersAsync(producers).ConfigureAwait(true);
             return producers;
+        }
+
+        public async Task<ContractWithProducers> DefineContractAsync
+            (ContractBase contract, CreateContractModelRequest contractModelRequest, Model model, string contractType)
+        {
+
+            contract.IdModel = model.IdModel;
+            contract.ContractId = Guid.NewGuid();
+            string valorString = contractModelRequest.Payment.Valor != 0
+                ? contractModelRequest.Payment.Valor.ToString(CultureInfo.InvariantCulture)
+                : "0";
+
+            contract.ValorContrato = decimal.Parse(
+                valorString.Replace("R$", "")
+                    .Replace(" ", "")
+                    .Replace(".", "")
+                    .Replace(",", "."),
+                NumberStyles.Any,
+                CultureInfo.InvariantCulture
+            );
+
+            contract.StatusPagamento = contractModelRequest.Payment.StatusPagamento;
+            contract.PaymentId = Guid.NewGuid();
+            contract.DataContrato = DateTime.UtcNow;
+            contract.VigenciaContrato = DateTime.UtcNow;
+            contract.FormaPagamento = contractModelRequest.Payment.MetodoPagamento;
+            contract.StatusContratc = StatusContratc.Ativo;
+
+            Producers producersProcess = await ProcessProducersAsync(contract, model).ConfigureAwait(true);
+            
+            contract.CodProducers = producersProcess.CodProducers;
+            
+            return new ContractWithProducers
+            {
+                Contract = contract,
+                Producers = producersProcess
+            };
+        }
+
+        public async Task<ContractBase> DefineContractAgencyAsync(ContractBase contract,
+            CreateContractModelRequest contractModelRequest, Model model, string? contractType)
+        {
+            contract.IdModel = model.IdModel;
+            contract.ContractId = Guid.NewGuid();
+            string valorString = contractModelRequest.Payment.Valor != 0
+                ? contractModelRequest.Payment.Valor.ToString(CultureInfo.InvariantCulture)
+                : "0";
+
+            contract.ValorContrato = decimal.Parse(
+                valorString.Replace("R$", "")
+                    .Replace(" ", "")
+                    .Replace(".", "")
+                    .Replace(",", "."),
+                NumberStyles.Any,
+                CultureInfo.InvariantCulture
+            );
+
+            contract.StatusPagamento = contractModelRequest.Payment.StatusPagamento;
+            contract.PaymentId = Guid.NewGuid();
+            contract.DataContrato = DateTime.UtcNow;
+            contract.VigenciaContrato = DateTime.UtcNow;
+            contract.FormaPagamento = contractModelRequest.Payment.MetodoPagamento;
+            contract.StatusContratc = StatusContratc.Ativo;
+            contract.CodProducers = await GenerateProducerCodeContractAsync().ConfigureAwait(true);
+            return contract;
         }
     }
 }

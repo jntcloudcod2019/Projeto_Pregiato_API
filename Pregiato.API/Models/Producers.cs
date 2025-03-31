@@ -1,5 +1,6 @@
 ﻿using System.ComponentModel.DataAnnotations;
 using System.ComponentModel.DataAnnotations.Schema;
+using Microsoft.AspNetCore.Http.HttpResults;
 using Pregiato.API.Enums;
 
 namespace Pregiato.API.Models
@@ -7,14 +8,10 @@ namespace Pregiato.API.Models
     public class Producers
     {
 
-        [Required]
         public Guid ContractId { get; set; }
 
-        public ContractBase Contract { get; set; }  
-        [Required]
         public string? CodProducers { get; set; }
 
-        [Required]
         public string? NameProducer { get; set; }
 
         [Required]
@@ -27,12 +24,12 @@ namespace Pregiato.API.Models
         public StatusContratc StatusContratc { get; set; }
 
         [Required]
-        public string? CreatedAt { get; set; } = DateTime.UtcNow.ToString("dd/MM/yyyy");
+        public DateTime CreatedAt { get; set; } = DateTime.UtcNow;
 
         [Required]
-        public string? UpdatedAt { get; set; } = DateTime.UtcNow.ToString("dd/MM/yyyy");
+        public DateTime? UpdatedAt { get; set; } = DateTime.UtcNow;
 
-        public string? ValidityContract { get; set; } = DateTime.UtcNow.ToString("dd/MM/yyyy");
+        public DateTime? ValidityContract { get; set; } = DateTime.UtcNow;
         public int CodProposal { get; set; }
         [Required]
         public int TotalAgreements { get; set; }

@@ -4,7 +4,7 @@ namespace Pregiato.API.Interfaces
 {
     public interface IJwtService
     {
-        Task<string> GenerateToken(LoginUserRequest user);
+        Task<string> GenerateToken(LoginUserRequest? user);
         Task<bool> IsTokenValidAsync(string token);
         Task<bool> InvalidateTokenAsync(string token);
         Task<string> GetUserIdFromTokenAsync(string token);

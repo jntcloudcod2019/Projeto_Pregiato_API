@@ -76,15 +76,8 @@ namespace Pregiato.API.Models
         [Required]
         public DateTime UpdatedAt { get; set; } = DateTime.UtcNow;
 
-        [MaxLength(10)]
-        [Required]
         public string? CodProducers { get; set; }
 
-        public Producers Producers { get; set; }
-
-        public virtual ICollection<ContractBase> Contracts { get; set; }
-
-        public virtual ICollection<ModelsBilling> Billings { get; set; }
 
     }
 }

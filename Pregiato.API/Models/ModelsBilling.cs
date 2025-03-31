@@ -23,12 +23,9 @@ namespace Pregiato.API.Models
         [Required]
         public DateTime UpdatedAt { get; set; } = DateTime.UtcNow;
 
-
-        [Required]
         public Guid IdModel { get; set; }
 
-        public Model Model { get; set; }
-
+  
 
     }
 }

@@ -14,6 +14,7 @@ using Pregiato.API.Response;
 using FluentValidation.AspNetCore;
 using FluentValidation;
 using Npgsql;
+using Pregiato.API.System.Text.Json;
 using Pregiato.API.System.Text.Json.Serialization;
 using Pregiato.API.Validator;
 
@@ -51,7 +52,6 @@ builder.Services.AddDbContextFactory<ModelAgencyContext>(
 builder.Services.AddMemoryCache();
 builder.Services.AddHttpContextAccessor();
 builder.Services.AddEndpointsApiExplorer();
-
 builder.Services.AddScoped<CustomResponse>();
 builder.Services.AddScoped<IJwtService, JwtService>();
 builder.Services.AddScoped<IUserService, UserService>();
@@ -162,6 +162,9 @@ builder.Services.AddAuthorization(options =>
 
     options.AddPolicy("GlobalPoliticsAgency", policy =>
         policy.RequireRole("Administrator", "Manager", "Telemarketing", "Producers", "Coordination", "CEO", "Production", "Model"));
+
+    options.AddPolicy("ManagementPolicyLevel5", policy =>
+        policy.RequireRole("Administrator", "Manager", "Producers", "Coordination", "CEO"));
 });
 
 
@@ -186,7 +189,9 @@ builder.Services.AddControllers()
         options.JsonSerializerOptions.Converters.Add(new JsonStringEnumConverter());
         options.JsonSerializerOptions.Converters.Add(new MetodoPagamentoConverter());
         options.JsonSerializerOptions.DefaultIgnoreCondition = JsonIgnoreCondition.WhenWritingNull;
-        options.JsonSerializerOptions.Converters.Add(new JsonDateTimeConverter("dd-MM-yyyy", "yyyy-MM-dd", "MM/dd/yyyy", "dd/MM/yyyy"));
+        options.JsonSerializerOptions.Converters.Add(new JsonDateTimeConverter("dd-MM-yyyy", "yyyy-MM-dd", "MM/dd/yyyy", "dd/MM/yyyy")); 
+        options.JsonSerializerOptions.PropertyNamingPolicy = new UpperCaseNamingPolicy();
+        
     });
 
 
