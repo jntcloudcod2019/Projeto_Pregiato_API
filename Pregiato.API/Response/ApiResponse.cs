@@ -54,9 +54,9 @@ namespace Pregiato.API.Response
             };
         }
 
-        public static ApiResponse<T> Info(string message)
+        public static ApiResponse<object> Info(string message)
         {
-            return new ApiResponse<T>
+            return new ApiResponse<object>
             {
                 STATUSSUCCESS = false,
                 MESSAGE = message,

@@ -151,6 +151,8 @@ builder.Services.Configure<RabbitMQConfig>(options =>
 
 builder.Services.AddAuthorization(options =>
 {
+    options.AddPolicy("PolicyProducers", policy =>
+        policy.RequireRole("Producers"));
     options.AddPolicy("AdminOrManager", policy =>
         policy.RequireRole("Administrator", "Manager"));
 
@@ -217,20 +219,15 @@ if (!string.IsNullOrEmpty(pathBase))
         return next();
     });
 }
-
-app.UseRouting();
-app.UseCors("AllowAllOrigins");
-
 app.UseAuthentication();
 app.UseAuthorization();
-
+app.UseRouting();
+app.UseCors("AllowAllOrigins");
 app.UseSwagger();
 app.UseSwaggerUI(c =>
 {
     c.SwaggerEndpoint("/swagger/v1/swagger.json", "Model Agency API v1");
     c.RoutePrefix = "swagger";
 });
-
 app.MapControllers();
-
 app.Run();

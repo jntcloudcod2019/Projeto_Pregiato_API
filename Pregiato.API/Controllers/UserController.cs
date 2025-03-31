@@ -48,32 +48,33 @@ namespace Pregiato.API.Controllers
             {
                 if (loginUserRequest == null)
                 {
-                    var errorResponse = ApiResponse<object>.Fail("REQUISIÇÃO INVÁLIDA. VERIFIQUE OS DADOS ENVIADOS.");
-                    return BadRequest(errorResponse); 
+                    return BadRequest(new ErrorResponse
+                    {
+                        Message = "Requisição inválida. Verifique os dados enviados."
+                    });
                 }
 
-                var tokenUser = await _userService.AuthenticateUserAsync(loginUserRequest).ConfigureAwait(true);
+                var token = await _userService.AuthenticateUserAsync(loginUserRequest);
 
-                var userInfo = new UserInfo
+                return Ok(new LoginResponse
                 {
-                    UserId = loginUserRequest.IdUser?.ToString() ?? string.Empty,
-                    Name = loginUserRequest.NickNAme ?? string.Empty,
-                    Email = loginUserRequest.Email ?? string.Empty,
-                    UserType = loginUserRequest.UserType ?? string.Empty
-                };
-
-                var successResponse = ApiResponse<object>.Success(new
-                {
-                    Token = tokenUser,
-                    User = userInfo
-                }, "USUÁRIO AUTENTICADO COM SUCESSO.");
-
-                return Ok(successResponse);
+                    Token = token,
+                    User = new UserInfo
+                    {
+                        UserId = loginUserRequest.IdUser?.ToString() ?? string.Empty,
+                        Name = loginUserRequest.NickNAme ?? string.Empty,
+                        Email = loginUserRequest.Email.ToUpper() ?? string.Empty,
+                        UserType = loginUserRequest.UserType.ToUpper() ?? string.Empty
+                    }
+                });
             }
             catch (Exception ex)
             {
-                var errorResponse = ApiResponse<object>.Fail("ERRO INTERNO NO SERVIDOR.", [ex.Message]);
-                return StatusCode(500, errorResponse); 
+                return StatusCode(500, new ErrorResponse
+                {
+                    Message = "ERRO INTERNO NO SERVIDOR.",
+                    Details = ex.Message.ToUpper()
+                });
             }
         }
 
@@ -183,7 +184,7 @@ namespace Pregiato.API.Controllers
             }
         }
 
-      //  [Authorize(Policy = "ManagementPolicyLevel5")]
+        [Authorize(Policy = "ManagementPolicyLevel5")]
         [HttpPost("register/Model")]
         public async Task<IActionResult> RegisterModel([FromBody] UserRegisterDto user)
         {
@@ -224,17 +225,16 @@ namespace Pregiato.API.Controllers
             {
                 if (user == null || string.IsNullOrWhiteSpace(user.Username) || string.IsNullOrWhiteSpace(user.Email))
                 {
-                    var errorResponse = ApiResponse<object>.Fail("NOME DE USUÁRIO E EMAIL SÃO OBRIGATÓRIOS.");
+                    var errorResponse = ApiResponse<object>.Info("NOME DE USUÁRIO E EMAIL SÃO OBRIGATÓRIOS.");
                     return BadRequest(errorResponse);
                 }
 
+                var result = await _userService.RegisterUserProducersAsync(user.Username, user.Email).ConfigureAwait(true);
 
-                var result =  await _userService.RegisterUserProducersAsync(user.Username, user.Email).ConfigureAwait(true);
-
-                if ((result == RegistrationResult.Success) == (result == RegistrationResult.Failure))
+                if (result == RegistrationResult.UserAlreadyExists)
                 {
-                   
-                    var errorResponse = ApiResponse<object>.Fail($"Falha ao registrar o usuário: {user.Username}");
+
+                    var errorResponse = ApiResponse<object>.Info("USUÁRIO JÁ ESTÁ CADASTRADO.");
                     return BadRequest(errorResponse);
                 }
 
@@ -242,9 +242,9 @@ namespace Pregiato.API.Controllers
                 var successResponse = ApiResponse<object>.Success(null, successMessage);
                 return Ok(successResponse);
             }
-            catch (Exception ex)
+            catch (Exception exception)
             {
-                var errorResponse = ApiResponse<object>.Fail($"ERRO: {ex.Message}");
+                var errorResponse = ApiResponse<object>.Fail($"FALHA AO REGISTRAR O USUÁRIO: {exception.Message}");
                 return BadRequest(errorResponse);
             }
         }

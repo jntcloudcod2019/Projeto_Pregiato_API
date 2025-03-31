@@ -1,4 +1,5 @@
 ﻿using Pregiato.API.Enums;
+using Pregiato.API.Models;
 using Pregiato.API.Requests;
 
 namespace Pregiato.API.Interfaces
@@ -19,3 +20,4 @@ namespace Pregiato.API.Interfaces
 
     }
 }
+

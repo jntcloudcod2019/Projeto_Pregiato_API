@@ -2,7 +2,15 @@
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.EntityFrameworkCore;
 using Pregiato.API.Data;
+using Pregiato.API.Models;
 using Pregiato.API.Response;
+using System.IdentityModel.Tokens.Jwt;
+using System.Text.Json;
+using System.Drawing.Printing;
+using System.IdentityModel.Tokens.Jwt;
+using System.Security.Claims;
+using Pregiato.API.Interfaces;
+
 
 namespace Pregiato.API.Controllers;
 
@@ -11,10 +19,13 @@ namespace Pregiato.API.Controllers;
 public class SalesFeedController : ControllerBase
 {
     private readonly ModelAgencyContext _context;
+    private readonly IDbContextFactory<ModelAgencyContext> _contextFactory;
+    private readonly IProducersRepository _producersRepository;
 
-    public SalesFeedController(ModelAgencyContext context)
+    public SalesFeedController(IDbContextFactory<ModelAgencyContext> contextFactory, IProducersRepository producersRepository)
     {
-        _context = context;
+        _contextFactory = contextFactory;
+        _producersRepository = producersRepository;
     }
 
     [Authorize(Policy = "AdminOrManager")]
@@ -35,7 +46,7 @@ public class SalesFeedController : ControllerBase
                     c.Valor,
                     c.StatusPagamento
                 })
-                .ToListAsync();
+                .ToListAsync().ConfigureAwait(true);
 
             decimal totalSales = transactions.Sum(t => t.Valor);
             decimal pendingAmount = transactions.Where(t => t.StatusPagamento == "Pending")
@@ -105,7 +116,7 @@ public class SalesFeedController : ControllerBase
                     c.Valor,
                     c.StatusPagamento
                 })
-                .ToListAsync();
+                .ToListAsync().ConfigureAwait(true);
 
             decimal totalSales = transactions.Sum(t => t.Valor);
             decimal pendingAmount = transactions.Where(t => t.StatusPagamento == "Pending")
@@ -165,7 +176,7 @@ public class SalesFeedController : ControllerBase
                     c.Valor ,
                     c.StatusPagamento
                 })
-                .ToListAsync();
+                .ToListAsync().ConfigureAwait(true);
 
             decimal totalSales = transactions.Sum(t => t.Valor);
 
@@ -207,5 +218,150 @@ public class SalesFeedController : ControllerBase
                 }
             });
         }
+    }
+
+    [Authorize(Policy = "PolicyProducers")]
+    [HttpGet("GetBillingDayByProducers")]
+    public async Task<IActionResult> GetBillingDayByProducers()
+    {
+        try
+        {
+            User user = await UserCaptureByToken();
+            List<Producers> producers = await _producersRepository.GetDailyBillingByProducers(user);
+
+            if (producers == null || !producers.Any())
+            {
+                return Ok(new BillingResponseProducers
+                {
+                    SUCESS = false,
+                    MESSAGE = "Nenhum registro encontrado para o dia atual",
+                    DATA = null,
+                    RESUME = null
+                });
+            }
+
+            var billingDataList = producers.Select(p =>
+            {
+                // Map DetailsInfo to ModelDetails
+                ModelDetails modelDetails = null;
+                if (p.InfoModel != null)
+                {
+                    var detailsInfo = (DetailsInfo)p.InfoModel;
+                    modelDetails = new ModelDetails
+                    {
+                        IdModel = detailsInfo.DocumentModel,
+                        NameModel = detailsInfo.NameModel,
+                        DocumentModel = detailsInfo.DocumentModel
+                    };
+                }
+
+                return new BillingDataProducers
+                {
+                    NAMEPRODUCERS = p.NameProducer,
+                    AMOUNTCONTRACT = p.AmountContract,
+                    DATE = p.CreatedAt.ToString("dd/MM/yyyy"),
+                    STATUSCONTRACT = p.StatusContratc.ToString(),
+                    MODELDETAILS = modelDetails
+                };
+            }).ToList();
+            var resumeData = new BillingDataResume
+            {
+                TOTASTALESCONTRACT = producers.Sum(p => p.AmountContract),
+                TOTALCONTRACTS = producers.Count 
+            };
+
+            return Ok(new BillingResponseProducers
+            {
+                SUCESS = true,
+                MESSAGE = "SEU RENDIMENTO DE HOJE:",
+                DATA = billingDataList,
+                RESUME = resumeData
+            });
+        
+        }
+        catch (Exception ex)
+        {
+            return StatusCode(500, new
+            {
+                success = false,
+                message = "Ocorreu um erro ao calcular o faturamento diário.",
+                error = new
+                {
+                    code = "INTERNAL_SERVER_ERROR",
+                    details = ex.Message
+                }
+            });
+        }
+
+    }
+
+
+    private async Task<User> UserCaptureByToken()
+    {
+        var authorizationHeader = HttpContext.Request.Headers["Authorization"].ToString();
+        if (string.IsNullOrEmpty(authorizationHeader) || !authorizationHeader.StartsWith("Bearer "))
+        {
+            throw new UnauthorizedAccessException(JsonSerializer.Serialize(new ErrorResponse
+            {
+                Message = "TOKEN INVÁLIDO",
+            }));
+        }
+
+        var token = authorizationHeader.Substring("Bearer ".Length).Trim();
+        var handler = new JwtSecurityTokenHandler();
+        JwtSecurityToken jwtToken;
+
+        try
+        {
+            jwtToken = handler.ReadJwtToken(token);
+        }
+        catch (Exception)
+        {
+            throw new UnauthorizedAccessException(JsonSerializer.Serialize(new ErrorResponse
+            {
+                Message = "TOKEN INVÁLIDO",
+            }));
+        }
+
+        string GetClaimValue(string claimType)
+        {
+            return jwtToken.Claims.FirstOrDefault(c =>
+                c.Type == claimType ||
+                c.Type.EndsWith($"/{claimType}", StringComparison.OrdinalIgnoreCase))?.Value;
+        }
+
+        var userId = GetClaimValue("nameid") ?? GetClaimValue(ClaimTypes.NameIdentifier);
+        var userName = GetClaimValue("unique_name") ?? GetClaimValue(ClaimTypes.Name);
+        var email = GetClaimValue("email") ?? GetClaimValue(ClaimTypes.Email);
+        var userType = GetClaimValue("role") ?? GetClaimValue(ClaimTypes.Role);
+
+        if (string.IsNullOrEmpty(userId))
+        {
+            throw new UnauthorizedAccessException(JsonSerializer.Serialize(new ErrorResponse
+            {
+                Message = "USUÁRIO NÃO AUTENTICADO - ID DO USUÁRIO FALTANDO NO TOKEN",
+            }));
+        }
+
+        using ModelAgencyContext context = _contextFactory.CreateDbContext();
+
+        User? user = await context.Users
+            .FirstOrDefaultAsync(u => u.UserId.ToString() == userId);
+
+        if (user == null)
+        {
+            user = await context.Users
+                .FirstOrDefaultAsync(u => u.NickName == userName || u.Name == userName);
+        }
+
+        if (user == null)
+        {
+            throw new UnauthorizedAccessException(JsonSerializer.Serialize(new ErrorResponse
+            {
+                Message = "USUÁRIO NÃO ENCONTRADO NA BASE DE DADOS",
+            }));
+        }
+
+        return user;
     }
 }

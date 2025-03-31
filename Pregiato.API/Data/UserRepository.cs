@@ -7,49 +7,42 @@ using Pregiato.API.Services.ServiceModels;
 
 namespace Pregiato.API.Data
 {
-    public class UserRepository : IUserRepository
+    public class UserRepository(ModelAgencyContext context) : IUserRepository
     {
-        private readonly ModelAgencyContext _context;
-
-        public UserRepository(ModelAgencyContext context)
-        {
-            _context = context;
-        }
-
         public async Task AddUserAsync(User? user)
         {
             try
             {
-                _context.Users.Add(user);
-                await _context.SaveChangesAsync().ConfigureAwait(true);
+                context.Users.Add(user);
+                await context.SaveChangesAsync().ConfigureAwait(true);
             }
-             catch (DbUpdateException ex)
+            catch (DbUpdateException ex)
             {
                 Console.WriteLine($"Erro ao salvar o usuário: {ex.Message}");
                 Console.WriteLine($"Exceção interna: {ex.InnerException?.Message}");
-             }
+            }
         }
 
         public async Task<IEnumerable<User?>> GetAllUserAsync()
         {
-            return await _context.Users.ToListAsync().ConfigureAwait(true);
+            return await context.Users.ToListAsync().ConfigureAwait(true);
         }
 
         public async Task<User?> GetByUserIdAsync(Guid id)
         {
-            return await _context.Users.FindAsync(id).ConfigureAwait(true);
+            return await context.Users.FindAsync(id).ConfigureAwait(true);
         }
 
         public async Task<User> GetByUsernameAsync(string nikeName)
         {
-            return await _context.Users
+            return await context.Users
                 .AsNoTracking() 
                 .SingleOrDefaultAsync(u => u.NickName == nikeName);
         }
 
         public async Task<UserWhitResultRegister> GetByUser(string nikeName, string email)
         {
-            var user = await _context.Users
+            var user = await context.Users
                 .AsTracking()
                 .SingleOrDefaultAsync
                     (u => u.Name== nikeName && u.Email == email)
@@ -74,28 +67,28 @@ namespace Pregiato.API.Data
 
         public async Task UpdateUserAsync(User? user)
         {
-            _context.Users.Update(user);
-            await _context.SaveChangesAsync().ConfigureAwait(true);
+            context.Users.Update(user);
+            await context.SaveChangesAsync().ConfigureAwait(true);
         }
 
         public async Task SaveChangesAsync()
         {
-            await _context.SaveChangesAsync().ConfigureAwait(true);
+            await context.SaveChangesAsync().ConfigureAwait(true);
         }
 
         public async Task DeleteUserAsync(Guid id)
         {
-            User? idUser = await _context.Users.FindAsync(id).ConfigureAwait(true);
+            User? idUser = await context.Users.FindAsync(id).ConfigureAwait(true);
             if (idUser != null)
             {
-                _context.Users.Remove(idUser);
-                await _context.SaveChangesAsync().ConfigureAwait(true);
+                context.Users.Remove(idUser);
+                await context.SaveChangesAsync().ConfigureAwait(true);
             }
         }
 
         public async Task GetByUserAsync(LoginUserRequest loginUserRequest)
         {
-            LoginUserRequest? loginRequest  =  (from l in _context.Users
+            LoginUserRequest? loginRequest  =  (from l in context.Users
                                 where l.NickName == loginUserRequest.NickNAme
                                 select new LoginUserRequest
                                 {
@@ -106,7 +99,7 @@ namespace Pregiato.API.Data
 
         public async Task<User> GetByProducersAsync(string name)
         {
-            return await _context.Users
+            return await context.Users
                 .AsNoTracking()
                 .SingleOrDefaultAsync(u => EF.Functions.Like(u.Name.Trim(), name.Trim()));
         }

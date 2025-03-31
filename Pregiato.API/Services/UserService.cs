@@ -1,4 +1,5 @@
-﻿using System.Text.Json;
+﻿using System.IdentityModel.Tokens.Jwt;
+using System.Text.Json;
 using Pregiato.API.Enums;
 using Pregiato.API.Interfaces;
 using Pregiato.API.Models;
@@ -164,48 +165,55 @@ namespace Pregiato.API.Services
         {
             Console.WriteLine($"[PROCESS] {DateTime.Now:yyyy-MM-dd HH:mm:ss} |  Validando se o USER_MODEL: {username}, já está cadastrado... ");
 
-            User? shfUser = await _userRepository.GetByUsernameAsync(username).ConfigureAwait(true);
+            var userResult = await _userRepository.GetByUser(username, email)
+                .ConfigureAwait(true);
 
-            if (shfUser != null)
+            if (userResult.RegistrationResult == RegistrationResult.UserAlreadyExists)
             {
-                throw new UnauthorizedAccessException(JsonSerializer.Serialize(new ErrorResponse
-                {
-                    Message = $"Este usuário {username}já posseui cadastrao.",
-                })); ;
+                return RegistrationResult.UserAlreadyExists;
             }
 
             Console.WriteLine($"[PROCESS] {DateTime.Now:yyyy-MM-dd HH:mm:ss} | Gerando cadastro... ");
 
-            string nikeName = username.Replace(" ", "").ToLower();
+            var nikeName = username.Replace(" ", "").ToLower();
 
-            string password = await _passwordHasherService.GenerateRandomPasswordAsync(12).ConfigureAwait(true);
+            var password = await _passwordHasherService.GenerateRandomPasswordAsync(12)
+                .ConfigureAwait(true);
 
-            Dictionary<string, string> replacements = new Dictionary<string, string>
+            var replacements = new Dictionary<string, string>
             {
                 {"Nome",username},
                 {"User",nikeName },
                 {"Password", password}
             };
 
-            await _emailService.SendEmailAsync(replacements, email, "Bem-vindo à Plataforma My Pregiato").ConfigureAwait(true);
+            await _emailService
+                .SendEmailAsync(replacements, email, "Bem-vindo à Plataforma My Pregiato")
+                .ConfigureAwait(true);
 
-            string passwordHash = await _passwordHasherService.CreatePasswordHashAsync(password).ConfigureAwait(true);
+            var passwordHash = await _passwordHasherService
+                .CreatePasswordHashAsync(password)
+                .ConfigureAwait(true);
 
-            User? user = new User
+            var user = new User
             {
-                UserId = new Guid(),
+                UserId = Guid.NewGuid(),
                 Name = username,
                 Email = email,
                 NickName = nikeName,
                 PasswordHash = passwordHash,
-                CodProducers = await GenerateProducerCodeAsync().ConfigureAwait(true),
                 UserType = UserType.Producers.ToString(),
+                CodProducers = await GenerateProducerCodeAsync()
+                    .ConfigureAwait(true),
+
             };
 
-            await _userRepository.AddUserAsync(user).ConfigureAwait(true);
-            await _userRepository.SaveChangesAsync().ConfigureAwait(true);
+            await _userRepository.AddUserAsync(user)
+                .ConfigureAwait(true);
+            await _userRepository.SaveChangesAsync()
+                .ConfigureAwait(true);
 
-            Console.WriteLine($"");
+            Console.WriteLine($"Usuário {user.NickName} cadastrado com sucesso.");
             return RegistrationResult.Success;
         }
 
@@ -494,6 +502,9 @@ namespace Pregiato.API.Services
             Console.WriteLine($"");
             return RegistrationResult.Success;
         }
+
+      
+
         public Task<string> GenerateProducerCodeAsync()
         {
             const string prefix = "PM";
