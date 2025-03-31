@@ -1,5 +1,4 @@
-﻿using Pregiato.API.Models;
-using System.ComponentModel.DataAnnotations;
+﻿using System.ComponentModel.DataAnnotations;
 
 namespace Pregiato.API.Requests
 {

@@ -1,25 +1,17 @@
 ﻿using System.ComponentModel.DataAnnotations;
 using System.ComponentModel.DataAnnotations.Schema;
-using iText.Kernel.Pdf.Canvas.Parser.ClipperLib;
+using Microsoft.AspNetCore.Http.HttpResults;
 using Pregiato.API.Enums;
 
 namespace Pregiato.API.Models
 {
     public class Producers
     {
-        [Key] 
-        [DatabaseGenerated(DatabaseGeneratedOption.Identity)]
-        public Guid IdProducer { get; set; }
 
-        [Required]
-        [ForeignKey("ContractId")]
-        public Guid IdContract { get; set; }
+        public Guid ContractId { get; set; }
 
-        [MaxLength(10)]
-        [Required]
         public string? CodProducers { get; set; }
 
-        [Required]
         public string? NameProducer { get; set; }
 
         [Required]
@@ -32,16 +24,14 @@ namespace Pregiato.API.Models
         public StatusContratc StatusContratc { get; set; }
 
         [Required]
-        public string? CreatedAt { get; set; } = DateTime.UtcNow.ToString("dd/MM/yyyy");
+        public DateTime CreatedAt { get; set; } = DateTime.UtcNow;
 
         [Required]
-        public string? UpdatedAt { get; set; } = DateTime.UtcNow.ToString("dd/MM/yyyy");
+        public DateTime? UpdatedAt { get; set; } = DateTime.UtcNow;
 
-        public string? ValidityContract { get; set; } = DateTime.UtcNow.ToString("dd/MM/yyyy");
-
-        [Required]
+        public DateTime? ValidityContract { get; set; } = DateTime.UtcNow;
         public int CodProposal { get; set; }
-
+        [Required]
         public int TotalAgreements { get; set; }
 
     }

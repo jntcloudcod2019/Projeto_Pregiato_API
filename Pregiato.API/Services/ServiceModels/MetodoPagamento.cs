@@ -1,6 +1,6 @@
 ﻿using System.ComponentModel.DataAnnotations.Schema;
 
-namespace Pregiato.API.Models
+namespace Pregiato.API.Services.ServiceModels
 {
     [NotMapped]
     public class MetodoPagamento
@@ -11,14 +11,14 @@ namespace Pregiato.API.Models
         public const string Dinheiro = "Dinheiro";
         public const string LinkPagamento = "LinkPagamento";
 
-        private static readonly HashSet<string> ValidValues = new()
-        {
+        private static readonly HashSet<string> ValidValues =
+        [
             CartaoCredito,
             CartaoDebito,
             Pix,
             Dinheiro,
             LinkPagamento
-        };
+        ];
 
         public string Value { get; private set; }
 
@@ -50,10 +50,7 @@ namespace Pregiato.API.Models
             return new MetodoPagamento(value);
         }
 
-        public override bool Equals(object obj)
-        {
-            return obj is MetodoPagamento other && Value == other.Value;
-        }
+        public override bool Equals(object obj) => obj is MetodoPagamento other && Value == other.Value;
 
         public override int GetHashCode()
         {

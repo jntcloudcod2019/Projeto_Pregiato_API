@@ -1,33 +1,27 @@
-﻿using iText.Commons.Actions.Contexts;
-using iText.Kernel.Geom;
-using iText.Layout.Element;
-using Microsoft.AspNetCore.Authorization;
+﻿using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.EntityFrameworkCore;
-using Microsoft.EntityFrameworkCore.Internal;
 using Pregiato.API.Data;
-using Pregiato.API.Interface;
 using Pregiato.API.Models;
 using Pregiato.API.Requests;
 using Pregiato.API.Response;
-using Pregiato.API.Services;
 using Swashbuckle.AspNetCore.Annotations;
-using System.Data;
 using Npgsql;
-using System.Diagnostics;
-using System.Drawing.Printing;
 using System.IdentityModel.Tokens.Jwt;
 using System.Security.Claims;
 using System.Text.Json;
+using Pregiato.API.DTO;
+using Pregiato.API.Interfaces;
+
 namespace Pregiato.API.Controllers
 {
+    using Alias = string;
+
     [ApiController]
     [Route("api/[controller]")]
     public class ModelsController : ControllerBase
     {
         private readonly IModelRepository _modelRepository;
-        private readonly IContractService _contractService;
-        private readonly IJwtService _jwtService;
         private readonly IUserService _userService;
         private readonly IServiceUtilites _serviceUtilites;
         private readonly IUserRepository _userRepository;
@@ -48,8 +42,7 @@ namespace Pregiato.API.Controllers
         {
             _modelRepository = modelRepository ?? throw new ArgumentNullException(nameof(modelRepository));
             _agencyContext = agencyContext ?? throw new ArgumentNullException(nameof(agencyContext));
-            _contractService = contractService;
-            _jwtService = jwtService; ;
+            ;
             _userService = userService;
             _serviceUtilites = serviceUtilites;
             _userRepository = userRepository;
@@ -62,11 +55,11 @@ namespace Pregiato.API.Controllers
         [SwaggerOperation("Retorna todos os modelos cadastrados.")]
         public async Task<IActionResult> GetAllModels()
         {
-            var modelsExists = await _modelRepository.GetAllModelAsync();
+            IEnumerable<Model> modelsExists = await _modelRepository.GetAllModelAsync();
             return Ok(modelsExists);
         }
 
-        [Authorize(Policy = "GlobalPolitic")]
+       // [Authorize(Policy = "GlobalPolitic")]
         [HttpPost("AddModels")]
         [SwaggerOperation("Criar novo modelo.")]
         [ProducesResponseType(typeof(CustomResponse), StatusCodes.Status200OK)]
@@ -77,7 +70,7 @@ namespace Pregiato.API.Controllers
            
             Console.WriteLine($"[PROCESS] {DateTime.Now:yyyy-MM-dd HH:mm:ss} |Validando se model {createModelRequest.Name} | Documento: {createModelRequest.CPF}");
 
-            var checkExistence = await _modelRepository.GetModelCheck(createModelRequest);
+            ModelCheckDto? checkExistence = await _modelRepository.GetModelCheck(createModelRequest);
 
             if (checkExistence != null)
             {
@@ -90,11 +83,12 @@ namespace Pregiato.API.Controllers
                     Data = null,
                 });
             }
-                  var producer = await _userRepository.GetByProducersAsync(createModelRequest.Nameproducers); 
+
+            User producer = await _userRepository.GetByProducersAsync(createModelRequest.Nameproducers);
           
-            var model = new Model
+            Model model = new Model
             {
-                CodProducers = createModelRequest.Nameproducers ?? "PMSYSAPI01",
+                CodProducers = producer.CodProducers ?? "PMSYSAPI01",
                 Name = createModelRequest.Name,
                 CPF = createModelRequest.CPF,
                 RG = createModelRequest.RG,
@@ -109,8 +103,10 @@ namespace Pregiato.API.Controllers
                 Neighborhood = createModelRequest.Neighborhood,
                 City = createModelRequest.City,
                 UF = createModelRequest.UF,
+                Status = true,
                 TelefonePrincipal = createModelRequest.TelefonePrincipal,
-                TelefoneSecundario = createModelRequest.TelefoneSecundario,
+                TelefoneSecundario = createModelRequest.TelefoneSecundario
+
             };
 
             Console.WriteLine($"[PROCESS] {DateTime.Now:yyyy-MM-dd HH:mm:ss} |  Processando cadastro do Moelo: {model.Name} | Documento:{model.CPF}. ");
@@ -134,7 +130,7 @@ namespace Pregiato.API.Controllers
         [SwaggerOperation("Deletar cadastro de modelos.")]
         public async Task<IActionResult> DeleteModel(Guid id)
         {
-            var modelExists = await _modelRepository.GetByIdModelAsync(id);
+            Model? modelExists = await _modelRepository.GetByIdModelAsync(id);
             if (modelExists == null)
             {
                 return NotFound();
@@ -184,9 +180,9 @@ namespace Pregiato.API.Controllers
 
         [Authorize(Policy = "GlobalPolitic")]
         [HttpGet("findModel")]
-        public async Task<IActionResult> FindModel([FromQuery] string query)
+        public async Task<IActionResult> FindModel([FromQuery] Alias query)
         {
-            var model = await _modelRepository.GetModelByCriteriaAsync(query);
+            Model? model = await _modelRepository.GetModelByCriteriaAsync(query);
 
             if (model == null)
             {
@@ -214,13 +210,13 @@ namespace Pregiato.API.Controllers
         [HttpGet("my-contracts")]
         public async Task<IActionResult> GetMyContracts()
         {
-            var authorizationHeader = HttpContext.Request.Headers["Authorization"].ToString();
-            if (string.IsNullOrEmpty(authorizationHeader) || !authorizationHeader.StartsWith("Bearer "))
+            Alias authorizationHeader = HttpContext.Request.Headers["Authorization"].ToString();
+            if (Alias.IsNullOrEmpty(authorizationHeader) || !authorizationHeader.StartsWith("Bearer "))
             {
                 return Unauthorized("Token de autenticação não fornecido ou inválido.");
             }
-            var token = authorizationHeader.Substring("Bearer ".Length).Trim();
-            var handler = new JwtSecurityTokenHandler();
+            Alias token = authorizationHeader.Substring("Bearer ".Length).Trim();
+            JwtSecurityTokenHandler handler = new JwtSecurityTokenHandler();
             JwtSecurityToken jwtToken;
             try
             {
@@ -238,44 +234,42 @@ namespace Pregiato.API.Controllers
             var username = usernameClaim.Value;
 
             var schforModel = await _userRepository.GetByUsernameAsync(username);
-
+            
             var model = await _agencyContext.Models
-                .FirstOrDefaultAsync(m => m.Email == schforModel.Email);
+                .FirstOrDefaultAsync(m => m.Email == schforModel!.Email).ConfigureAwait(true);
             if (model == null)
             {
                 return Unauthorized("Usuário não encontrado na base de dados.");
             }
-            var roleClaim = jwtToken.Claims.FirstOrDefault(c => c.Type == "http://schemas.microsoft.com/ws/2008/06/identity/claims/role");
+            Claim? roleClaim = jwtToken.Claims.FirstOrDefault(c => c.Type == "http://schemas.microsoft.com/ws/2008/06/identity/claims/role");
             if (roleClaim == null || roleClaim.Value != "Model")
             {
                 return Forbid("Permissão insuficiente.");
             }
 
             var contracts = await _agencyContext.Contracts
-                 .Where(c => c.ModelId == model.IdModel)
-                 .Select(c => new
-                 {
-                     c.ModelId,
-                     c.ContractFilePath,
-                     c.Content
-                 })
-                 .ToListAsync();
+                .Where(c => c.IdModel == model.IdModel)
+                .Select(c => new
+                {
+                    c.IdModel,
+                    c.ContractFilePath,
+                    c.Content
+                })
+                .ToListAsync().ConfigureAwait(true);
 
-            if (contracts != null)
             {
                 var listContracts = contracts.Select(c =>
                 {
-                    byte[] fileBytes = c.Content ?? Array.Empty<byte>();
+                    byte[] fileBytes = c.Content ?? [];
                     return new
                     {
-                        ModelId = c.ModelId,
+                        ModelId = c.IdModel,
                         ContractFilePath = c.ContractFilePath,
                         ContentBase64 = fileBytes.Length > 0 ? Convert.ToBase64String(fileBytes) : null
                     };
                 }).ToList();
                 return Ok(listContracts);
             }
-            return BadRequest(_customResponse.Message = "Desculpe, mas não encontramos contratos relacionados ao seu usuário. ");
         }
 
 
@@ -287,7 +281,7 @@ namespace Pregiato.API.Controllers
         [ProducesResponseType(StatusCodes.Status500InternalServerError)]
         public async Task<IActionResult> UpdateDnaData([FromBody] UpdateDnaPropertyRequest request)
         {
-            if (string.IsNullOrEmpty(request?.PropertyName) || request.Values == null || !request.Values.Any())
+            if (Alias.IsNullOrEmpty(request?.PropertyName) || request.Values == null || !request.Values.Any())
                 return BadRequest("Nome da propriedade ou valores inválidos.");
 
             try
@@ -295,7 +289,7 @@ namespace Pregiato.API.Controllers
                 var token = HttpContext.Request.Headers["Authorization"]
                     .FirstOrDefault()?.Split("Bearer ").Last();
 
-                if (string.IsNullOrEmpty(token))
+                if (Alias.IsNullOrEmpty(token))
                     return Unauthorized("Token não fornecido");
 
                 var username = new JwtSecurityTokenHandler()
@@ -304,25 +298,24 @@ namespace Pregiato.API.Controllers
                     .FirstOrDefault(c => c.Type == ClaimTypes.Name)?
                     .Value;
 
-                if (string.IsNullOrEmpty(username))
+                if (Alias.IsNullOrEmpty(username))
                     return Unauthorized("Token inválido");
 
-                await using var context = await _contextFactory.CreateDbContextAsync();
+                await using var context = await _contextFactory.CreateDbContextAsync().ConfigureAwait(true);
 
-                var user = await context.Users
-                    .AsNoTracking()
-                    .FirstOrDefaultAsync(u => u.Name == username);
+                context.Users.AsNoTracking();
+                var user = await context.Users.FirstOrDefaultAsync(u => u.Name == username).ConfigureAwait(true);
 
                 if (user == null)
                     return Unauthorized("Usuário não encontrado");
 
                 var model = await context.Models
-                    .FirstOrDefaultAsync(m => m.Email == user.Email);
+                    .FirstOrDefaultAsync(m => m.Email == user.Email).ConfigureAwait(true);
 
                 if (model == null)
                     return Unauthorized("Modelo não encontrado");
 
-                var propertyJson = JsonSerializer.Serialize(request.Values);
+                Alias propertyJson = JsonSerializer.Serialize(request.Values);
 
                 var sql = @"
                     UPDATE ""Model"" m 
@@ -330,6 +323,7 @@ namespace Pregiato.API.Controllers
                         ""UpdatedAt"" = @updatedAt
                     WHERE m.""Email"" = @email"
                 ;
+                if (sql == null) throw new ArgumentNullException(nameof(sql));
 
                 await context.Database.ExecuteSqlRawAsync(
                     sql,
@@ -337,7 +331,7 @@ namespace Pregiato.API.Controllers
                     new NpgsqlParameter("@propertyJson", propertyJson),
                     new NpgsqlParameter("@updatedAt", DateTime.UtcNow),
                     new NpgsqlParameter("@email", user.Email)
-                 );
+                ).ConfigureAwait(true);
 
                 return NoContent();
             }

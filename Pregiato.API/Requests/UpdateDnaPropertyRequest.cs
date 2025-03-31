@@ -1,6 +1,4 @@
-﻿using System.Text.Json;
-
-namespace Pregiato.API.Requests
+﻿namespace Pregiato.API.Requests
 {
     public class UpdateDnaPropertyRequest
     {

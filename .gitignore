@@ -364,3 +364,4 @@ FodyWeavers.xsd
 
 #nnão sobe o arquivo env para repo
 .env
+/Pregiato.API/Files/.local-browser/Win64-970485/chrome-win

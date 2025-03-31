@@ -6,7 +6,7 @@ namespace Pregiato.API.Services
     {
         public static JsonDocument SerializeToDocument<T>(T value)
         {
-            var json = JsonSerializer.Serialize(value);
+            string json = JsonSerializer.Serialize(value);
             return JsonDocument.Parse(json);
         }
     }

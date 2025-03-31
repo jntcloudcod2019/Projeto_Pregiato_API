@@ -2,29 +2,26 @@
 using Microsoft.OpenApi.Models;
 using Pregiato.API.Data;
 using Microsoft.IdentityModel.Tokens;
-using Pregiato.API.Interface;
 using Microsoft.AspNetCore.Authentication.JwtBearer;
 using System.Text;
 using Pregiato.API.Services;
 using System.Text.Json.Serialization;
 using Microsoft.OpenApi.Any;
-using Pregiato.API.Models;
 using System.Globalization;
 using Pregiato.API.Services.ServiceModels;
 using Pregiato.API.Interfaces;
 using Pregiato.API.Response;
-using Microsoft.Extensions.DependencyInjection;
-using System.Reflection;
-using Microsoft.AspNetCore.Mvc;
 using FluentValidation.AspNetCore;
-using Pregiato.API.Validators;
 using FluentValidation;
 using Npgsql;
+using Pregiato.API.System.Text.Json;
+using Pregiato.API.System.Text.Json.Serialization;
+using Pregiato.API.Validator;
 
-var builder = WebApplication.CreateBuilder(args);
-var connectionString = Environment.GetEnvironmentVariable("SECRET_KEY_DATABASE") ?? "Host=191.101.235.250;Port=5432;Database=pregiato;Username=pregiato;Password=pregiato123";
-var secretKey = Environment.GetEnvironmentVariable("SECRETKEY_JWT_TOKEN") ?? "3+XcgYxev9TcGXECMBq0ilANarHN68wsDsrhG60icMaACkw9ajU97IYT+cv9IDepqrQjPaj4WUQS3VqOvpmtDw==";
-var pathBase = Environment.GetEnvironmentVariable("PATH_BASE");
+WebApplicationBuilder builder = WebApplication.CreateBuilder(args);
+string connectionString = Environment.GetEnvironmentVariable("SECRET_KEY_DATABASE") ?? "Host=191.101.235.250;Port=5432;Database=pregiato;Username=pregiato;Password=pregiato123";
+string secretKey = Environment.GetEnvironmentVariable("SECRETKEY_JWT_TOKEN") ?? "3+XcgYxev9TcGXECMBq0ilANarHN68wsDsrhG60icMaACkw9ajU97IYT+cv9IDepqrQjPaj4WUQS3VqOvpmtDw==";
+string pathBase = Environment.GetEnvironmentVariable("PATH_BASE");
 
 CultureInfo.DefaultThreadCurrentUICulture = new CultureInfo("pt-BR");
 Npgsql.TypeMapping.INpgsqlTypeMapper npgsqlTypeMapper = NpgsqlConnection.GlobalTypeMapper.EnableDynamicJson();
@@ -55,7 +52,6 @@ builder.Services.AddDbContextFactory<ModelAgencyContext>(
 builder.Services.AddMemoryCache();
 builder.Services.AddHttpContextAccessor();
 builder.Services.AddEndpointsApiExplorer();
-
 builder.Services.AddScoped<CustomResponse>();
 builder.Services.AddScoped<IJwtService, JwtService>();
 builder.Services.AddScoped<IUserService, UserService>();
@@ -95,7 +91,7 @@ builder.Services.AddSwaggerGen(c =>
 
     c.ResolveConflictingActions(apiDescriptions => apiDescriptions.First());
 
-    var securityScheme = new OpenApiSecurityScheme
+    OpenApiSecurityScheme securityScheme = new OpenApiSecurityScheme
     {
         Name = "Authorization",
         Description = "Enter JWT Bearer token",
@@ -111,9 +107,9 @@ builder.Services.AddSwaggerGen(c =>
     };
     c.AddSecurityDefinition("Bearer", securityScheme);
 
-    var securityRequirement = new OpenApiSecurityRequirement
+    OpenApiSecurityRequirement securityRequirement = new OpenApiSecurityRequirement
     {
-        { securityScheme, new[] { "Bearer" } }
+        { securityScheme, ["Bearer"] }
     };
     c.AddSecurityRequirement(securityRequirement);
 });
@@ -144,7 +140,7 @@ builder.Services.Configure<RabbitMQConfig>(options =>
         ?? builder.Configuration["RabbitMQ:Uri"]
         ?? "amqps://guest:guest@localhost:5672";
 
-    options.Port = int.TryParse(Environment.GetEnvironmentVariable("RABBITMQ_PORT"), out var port)
+    options.Port = int.TryParse(Environment.GetEnvironmentVariable("RABBITMQ_PORT"), out int port)
         ? port
         : (builder.Configuration.GetValue<int?>("RabbitMQ:Port") ?? 5672);
 
@@ -155,6 +151,8 @@ builder.Services.Configure<RabbitMQConfig>(options =>
 
 builder.Services.AddAuthorization(options =>
 {
+    options.AddPolicy("PolicyProducers", policy =>
+        policy.RequireRole("Producers"));
     options.AddPolicy("AdminOrManager", policy =>
         policy.RequireRole("Administrator", "Manager"));
 
@@ -166,6 +164,9 @@ builder.Services.AddAuthorization(options =>
 
     options.AddPolicy("GlobalPoliticsAgency", policy =>
         policy.RequireRole("Administrator", "Manager", "Telemarketing", "Producers", "Coordination", "CEO", "Production", "Model"));
+
+    options.AddPolicy("ManagementPolicyLevel5", policy =>
+        policy.RequireRole("Administrator", "Manager", "Producers", "Coordination", "CEO"));
 });
 
 
@@ -190,7 +191,9 @@ builder.Services.AddControllers()
         options.JsonSerializerOptions.Converters.Add(new JsonStringEnumConverter());
         options.JsonSerializerOptions.Converters.Add(new MetodoPagamentoConverter());
         options.JsonSerializerOptions.DefaultIgnoreCondition = JsonIgnoreCondition.WhenWritingNull;
-        options.JsonSerializerOptions.Converters.Add(new JsonDateTimeConverter("dd-MM-yyyy", "yyyy-MM-dd", "MM/dd/yyyy", "dd/MM/yyyy"));
+        options.JsonSerializerOptions.Converters.Add(new JsonDateTimeConverter("dd-MM-yyyy", "yyyy-MM-dd", "MM/dd/yyyy", "dd/MM/yyyy")); 
+        options.JsonSerializerOptions.PropertyNamingPolicy = new UpperCaseNamingPolicy();
+        
     });
 
 
@@ -199,7 +202,7 @@ builder.Logging.AddConsole();
 builder.Logging.AddDebug();
 builder.Logging.SetMinimumLevel(LogLevel.Trace);
 
-var app = builder.Build();
+WebApplication app = builder.Build();
 
 // Configuração do Pipeline de Requisições
 if (app.Environment.IsDevelopment())
@@ -216,20 +219,15 @@ if (!string.IsNullOrEmpty(pathBase))
         return next();
     });
 }
-
-app.UseRouting();
-app.UseCors("AllowAllOrigins");
-
 app.UseAuthentication();
 app.UseAuthorization();
-
+app.UseRouting();
+app.UseCors("AllowAllOrigins");
 app.UseSwagger();
 app.UseSwaggerUI(c =>
 {
     c.SwaggerEndpoint("/swagger/v1/swagger.json", "Model Agency API v1");
     c.RoutePrefix = "swagger";
 });
-
 app.MapControllers();
-
 app.Run();

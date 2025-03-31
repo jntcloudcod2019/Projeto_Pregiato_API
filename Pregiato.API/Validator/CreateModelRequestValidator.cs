@@ -1,7 +1,7 @@
 ﻿using FluentValidation;
 using Pregiato.API.Requests;
 
-namespace Pregiato.API.Validators
+namespace Pregiato.API.Validator
 {
     public class CreateModelRequestValidator : AbstractValidator<CreateModelRequest>
     {

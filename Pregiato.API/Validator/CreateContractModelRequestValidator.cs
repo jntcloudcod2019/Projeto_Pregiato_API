@@ -1,17 +1,18 @@
 ﻿using FluentValidation;
 using Pregiato.API.Requests;
 
+namespace Pregiato.API.Validator;
+
 public class CreateContractModelRequestValidator : AbstractValidator<CreateContractModelRequest>
 {
     public CreateContractModelRequestValidator()
     {
-        RuleFor(x => x.ModelIdentification).NotEmpty().Length(1, 50);
-        RuleFor(x => x.UFContract).NotEmpty().Length(2).Matches("^[A-Z]{2}$");
-        RuleFor(x => x.City).NotEmpty().Length(2, 100);
-        RuleFor(x => x.Day).InclusiveBetween(1, 31);
-        RuleFor(x => x.Month).NotEmpty().Must(m => new[] { "janeiro", "fevereiro", "março" }.Contains(m.ToLower()))
-                             .WithMessage("Mês inválido.");
-        RuleFor(x => x.MonthContract).InclusiveBetween(1, 12);
+        RuleFor(x => x.ModelIdentification).NotEmpty();
+        RuleFor(x => x.UFContract).NotEmpty();
+        RuleFor(x => x.City).NotEmpty();
+        RuleFor(x => x.Day).NotEmpty();
+        RuleFor(x => x.Month).NotEmpty();
+        RuleFor(x => x.MonthContract).NotEmpty();
         RuleFor(x => x.Payment).NotNull().SetValidator(new PaymentRequestValidator());
     }
 }

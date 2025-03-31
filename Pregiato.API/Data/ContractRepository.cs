@@ -1,15 +1,7 @@
-﻿using iText.Kernel.Pdf;
-using Microsoft.EntityFrameworkCore;
-using Pregiato.API.Interface;
+﻿using Microsoft.EntityFrameworkCore;
 using Pregiato.API.Models;
-using Pregiato.API.Requests;
 using Pregiato.API.DTO;
-using System;
-using System.Collections.Generic;
-using System.Linq;
-using System.Threading.Tasks;
-using System.Diagnostics.Contracts;
-using iText.Kernel.Geom;
+using Pregiato.API.Interfaces;
 using Pregiato.API.Services.ServiceModels;
 
 namespace Pregiato.API.Data
@@ -24,47 +16,47 @@ namespace Pregiato.API.Data
         }
         public async Task AddAsync(ContractsModels contract)
         {
-            using var context = _contextFactory.CreateDbContext();
+            using ModelAgencyContext context = _contextFactory.CreateDbContext();
             context.ContractsModels.Add(contract);
             await context.SaveChangesAsync();
         }
         public async Task UpdateAsync(ContractsModels contract)
         {
-            using var context = _contextFactory.CreateDbContext();
+            using ModelAgencyContext context = _contextFactory.CreateDbContext();
             context.ContractsModels.Update(contract);
             await context.SaveChangesAsync();
         }
         public async Task DeleteAsync(ContractsModels contract)
         {
-            using var context = _contextFactory.CreateDbContext();
+            using ModelAgencyContext context = _contextFactory.CreateDbContext();
             context.ContractsModels.Remove(contract);
             await context.SaveChangesAsync();
         }
         public async Task<ContractsModels> GetByIdContractAsync(Guid id)
         {
-            using var context = _contextFactory.CreateDbContext();
+            using ModelAgencyContext context = _contextFactory.CreateDbContext();
             return await context.ContractsModels.FindAsync(id);
         }
         public async Task SaveContractAsync(ContractBase contract)
         {
-            using var context = _contextFactory.CreateDbContext();
+            using ModelAgencyContext context = _contextFactory.CreateDbContext();
             context.Add(contract);
             await context.SaveChangesAsync();
         }
         public async Task<List<ContractBase>> GetContractsByModelId(Guid modelId)
         {
-            using var context = _contextFactory.CreateDbContext();
+            using ModelAgencyContext context = _contextFactory.CreateDbContext();
             return await context.Contracts
-                .AsNoTracking()
-                .Where(c => c.ModelId == modelId)
+                .AsNoTracking()     
+                .Where(c => c.IdModel == modelId)
                 .ToListAsync();
         }
         public async Task<ContractBase> GetContractByCriteriaAsync(string? contractId, string? modelId, int? codProposta)
         {
-            using var context = _contextFactory.CreateDbContext();
+            using ModelAgencyContext context = _contextFactory.CreateDbContext();
 
-            var contract = await context.Contracts.FirstOrDefaultAsync
-                (m => (modelId != null && m.ModelId.ToString() == modelId) ||
+            ContractBase? contract = await context.Contracts.FirstOrDefaultAsync
+                (m => (modelId != null && m.IdModel.ToString() == modelId) ||
                 (contractId != null && m.ContractId.ToString() == contractId) ||
                 (codProposta != null && m.CodProposta == codProposta));
 
@@ -77,14 +69,14 @@ namespace Pregiato.API.Data
         }
         public async Task<ContractDTO?> DownloadContractAsync(int proposalCode)
         {
-            using var context = _contextFactory.CreateDbContext();
-            var contract = await context.Contracts
+            using ModelAgencyContext context = _contextFactory.CreateDbContext();
+            ContractDTO? contract = await context.Contracts
                 .AsNoTracking()
                 .Where(c => c.CodProposta == proposalCode)
                 .Select(c => new ContractDTO
                 {
                     ContractId = c.ContractId,
-                    ModelId = c.ModelId,
+                    ModelId = c.IdModel,
                     ProposalCode = c.CodProposta,
                     ContractFilePath = c.ContractFilePath,
                     Content = c.Content
@@ -95,14 +87,14 @@ namespace Pregiato.API.Data
         }
        public async Task<List<ContractSummaryDTO>> GetAllContractsAsync()
         {
-            using var context = _contextFactory.CreateDbContext();
+            using ModelAgencyContext context = _contextFactory.CreateDbContext();
             return await context.Contracts
                 .AsNoTracking()
                 .OrderBy(c => c.ContractId)
                 .Select(c => new ContractSummaryDTO
                 {
                     ContractId = c.ContractId,
-                    ModelId = c.ModelId,
+                    ModelId = c.IdModel ?? Guid.Empty,
                     DataContrato = c.DataContrato,
                     VigenciaContrato = c.VigenciaContrato, 
                     ValorContrato = c.ValorContrato,

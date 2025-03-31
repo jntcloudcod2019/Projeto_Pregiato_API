@@ -1,5 +1,4 @@
-﻿using Pregiato.API.Models;
-using System.ComponentModel.DataAnnotations;
+﻿using System.ComponentModel.DataAnnotations;
 using System.Text.Json.Serialization;
 
 namespace Pregiato.API.Requests
@@ -7,7 +6,7 @@ namespace Pregiato.API.Requests
     public class LoginUserRequest
     {
         [Required]
-        public string? NickName { get; set; }
+        public string? NickNAme { get; set; }
 
         [Required]
         public string? Password { get; set; }

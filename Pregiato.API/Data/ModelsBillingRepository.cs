@@ -1,4 +1,4 @@
-﻿using Pregiato.API.Interface;
+﻿using Pregiato.API.Interfaces;
 using Pregiato.API.Models;
 
 namespace Pregiato.API.Data
@@ -20,7 +20,7 @@ namespace Pregiato.API.Data
 
         public async Task DeleteModelsBillingAsync(Guid id)
         {
-            var billing = _context.ModelsBilling.FirstOrDefault(b => b.IdModel== id);
+            ModelsBilling? billing = _context.ModelsBilling.FirstOrDefault(b => b.IdModel== id);
             if (billing != null)
             {
                 _context.ModelsBilling.Remove(billing);
@@ -40,7 +40,7 @@ namespace Pregiato.API.Data
 
         public async Task UpdateModelsBillingAsync(ModelsBilling modelsBilling)
         {
-            var existingBilling = _context.ModelsBilling.FirstOrDefault(b => b.IdModel == modelsBilling.IdModel);
+            ModelsBilling? existingBilling = _context.ModelsBilling.FirstOrDefault(b => b.IdModel == modelsBilling.IdModel);
             if (existingBilling != null)
             {
                existingBilling.Amount = modelsBilling.Amount;   

@@ -1,16 +1,11 @@
 ﻿using System.ComponentModel.DataAnnotations;
-using System.ComponentModel.DataAnnotations.Schema;
-using Microsoft.Build.Framework;
 
 namespace Pregiato.API.Models
 {
     public class Job
     {
         [Key]
-        [DatabaseGenerated(DatabaseGeneratedOption.Identity)]
         public Guid JobId { get; set; }
-
-        [ForeignKey("IdModel")]
         public Guid IdModel { get; set; }
 
         [StringLength(500, ErrorMessage = "A descrição deve ter no máximo 500 caracteres.")]
@@ -20,21 +15,17 @@ namespace Pregiato.API.Models
         [RegularExpression(@"^(Confirmed|Cancel|Pending|Completed)$", ErrorMessage = "Status inválido.")]
         public string Status { get; set; } = "Pending";
 
-        [System.ComponentModel.DataAnnotations.Required]
         public DateTime JobDate { get; set; }
 
         [StringLength(255, ErrorMessage = "A localização deve ter no máximo 255 caracteres.")]
         public string Location { get; set; }
 
-        [System.ComponentModel.DataAnnotations.Required]
-
+        public decimal Amount { get; set; }
         public DateTime CreatedAt { get; set; } = DateTime.UtcNow;
 
-        [System.ComponentModel.DataAnnotations.Required]
+      
         public DateTime UpdatedAt { get; set; } = DateTime.UtcNow;
 
-
-        public ICollection<ModelJob>? ModelJobs { get; set; }
 
     }
 }
