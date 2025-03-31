@@ -31,30 +31,37 @@ public class SalesFeedController : ControllerBase
         _producersRepository = producersRepository;
     }
 
-    [Authorize(Policy = "AdminOrManager")]
+    [Authorize(Policy = "ManagementPolicyLevel3")]
     [HttpGet("daily")]
     public async Task<IActionResult> GetDailySales()
     {
+        
         DateTimeOffset startOfDay = new DateTimeOffset(DateTime.UtcNow.Date, TimeSpan.Zero);
         DateTimeOffset endOfDay = startOfDay.AddDays(1).AddTicks(-1);
 
         try
         {
-            var transactions = await _context.Payments
-                .Where(p => p.DataPagamento >= startOfDay && p.DataPagamento <= endOfDay &&
-                            (p.StatusPagamento == "Paid" || p.StatusPagamento == "Pending"))
-                .Select(c => new
+            using ModelAgencyContext context = _contextFactory.CreateDbContext();
+
+            var transactions = await context.Payments
+                .AsNoTracking()  // Adicionado para melhor performance
+                .Where(p => p.DataPagamento >= startOfDay &&
+                           p.DataPagamento <= endOfDay &&
+                           (p.StatusPagamento == "Paid" || p.StatusPagamento == "Pending"))
+                .Select(p => new
                 {
-                    c.DataPagamento,
-                    c.Valor,
-                    c.StatusPagamento
+                    p.DataPagamento,
+                    p.Valor,
+                    p.StatusPagamento
                 })
-                .ToListAsync().ConfigureAwait(true);
+                .ToListAsync();
 
             decimal totalSales = transactions.Sum(t => t.Valor);
-            decimal pendingAmount = transactions.Where(t => t.StatusPagamento == "Pending")
+            decimal pendingAmount = transactions
+                .Where(t => t.StatusPagamento == "Pending")
                 .Sum(t => t.Valor);
-            decimal paidAmount = transactions.Where(t => t.StatusPagamento == "Paid")
+            decimal paidAmount = transactions
+                .Where(t => t.StatusPagamento == "Paid")
                 .Sum(t => t.Valor);
 
             return Ok(new BillingResponse
@@ -78,6 +85,7 @@ public class SalesFeedController : ControllerBase
         }
         catch (Exception ex)
         {
+            // Log do erro seria recomendado aqui
             return StatusCode(500, new
             {
                 success = false,
@@ -91,7 +99,7 @@ public class SalesFeedController : ControllerBase
         }
     }
 
-    [Authorize(Policy = "AdminOrManager")]
+    [Authorize(Policy = "ManagementPolicyLevel3")]
     [HttpGet("weekly")]
     public async Task<IActionResult> GetWeeklySales([FromQuery] string date = null!)
     {
@@ -163,7 +171,7 @@ public class SalesFeedController : ControllerBase
         }
     }
 
-    [Authorize(Policy = "AdminOrManager")]
+    [Authorize(Policy = "ManagementPolicyLevel3")]
     [HttpGet("monthly")]
     public async Task<IActionResult> GetMonthlySales()
     {
@@ -226,7 +234,7 @@ public class SalesFeedController : ControllerBase
         }
     }
 
-    [Authorize(Policy = "PolicyProducers")]
+    [Authorize(Policy = "ManagementPolicyLevel3")]
     [HttpGet("GetBillingDayByProducers")]
     public async Task<IActionResult> GetBillingDayByProducers()
     {

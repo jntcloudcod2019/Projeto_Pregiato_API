@@ -59,13 +59,13 @@ namespace Pregiato.API.Controllers
 
                 return Ok(new LoginResponse
                 {
-                    Token = token,
+                    Token = token.ToUpper(),
                     User = new UserInfo
                     {
-                        UserId = loginUserRequest.IdUser?.ToString() ?? string.Empty,
-                        Name = loginUserRequest.NickNAme ?? string.Empty,
-                        Email = loginUserRequest.Email.ToUpper() ?? string.Empty,
-                        UserType = loginUserRequest.UserType ?? string.Empty
+                        UserId = loginUserRequest.IdUser?.ToString().ToUpper() ?? string.Empty,
+                        Name = loginUserRequest.NickNAme.ToUpper() ?? string.Empty,
+                        Email = loginUserRequest.Email.ToUpper().ToUpper() ?? string.Empty,
+                        UserType = loginUserRequest.UserType.ToUpper() ?? string.Empty
                     }
                 });
             }
@@ -76,7 +76,7 @@ namespace Pregiato.API.Controllers
                     Message = "ERRO INTERNO NO SERVIDOR."
 
                 });
-                Console.WriteLine($"[ERROR:]");
+               
             }
         }
 
@@ -150,7 +150,7 @@ namespace Pregiato.API.Controllers
             }
         }
 
-      //  [Authorize(Policy = "AdminOrManager")]
+        [Authorize(Policy = "AdminOrManager")]
         [HttpPost("register/Administrator")]
         public async Task<IActionResult> RegisterAdministrator([FromBody] UserRegisterDto user)
         {
