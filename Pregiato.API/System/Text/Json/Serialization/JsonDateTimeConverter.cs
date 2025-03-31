@@ -1,9 +1,8 @@
-﻿using System;
+﻿using System.Globalization;
 using System.Text.Json;
 using System.Text.Json.Serialization;
-using System.Globalization;
 
-namespace System.Text.Json.Serialization
+namespace Pregiato.API.System.Text.Json.Serialization
 {
     public class JsonDateTimeConverter : JsonConverter<DateTime>
     {
@@ -12,12 +11,12 @@ namespace System.Text.Json.Serialization
         public JsonDateTimeConverter() : this("dd-MM-yyyy") { }
         public JsonDateTimeConverter(params string[] formats)
         {
-            _formats = formats ?? new[] { "dd-MM-yyyy" };
+            _formats = formats ?? ["dd-MM-yyyy"];
         }
 
         public override DateTime Read(ref Utf8JsonReader reader, Type typeToConvert, JsonSerializerOptions options)
         {
-            var dateString = reader.GetString();
+            string? dateString = reader.GetString();
             if (DateTime.TryParseExact(dateString, _formats, CultureInfo.InvariantCulture, DateTimeStyles.None, out DateTime date))
             {
                 return date;

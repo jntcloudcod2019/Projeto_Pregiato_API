@@ -1,4 +1,6 @@
-﻿using Pregiato.API.Interface;
+﻿using Pregiato.API.Interfaces;
+
+namespace Pregiato.API.Services;
 
 public class TokenValidationMiddleware
 {
@@ -11,10 +13,10 @@ public class TokenValidationMiddleware
 
     public async Task InvokeAsync(HttpContext context, IJwtService jwtService)
     {
-        var path = context.Request.Path;
+        PathString path = context.Request.Path;
         if (path.StartsWithSegments("/api") && !path.StartsWithSegments("/api/register/user/login"))
         {
-            var token = context.Request.Headers["Authorization"]
+            string? token = context.Request.Headers["Authorization"]
                 .FirstOrDefault()?.Split("Bearer ").Last();
 
             if (!string.IsNullOrEmpty(token) && !await jwtService.IsTokenValidAsync(token))

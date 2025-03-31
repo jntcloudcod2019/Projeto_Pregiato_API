@@ -1,5 +1,4 @@
-﻿using System.Diagnostics.Contracts;
-using Microsoft.EntityFrameworkCore;
+﻿using Microsoft.EntityFrameworkCore;
 using Pregiato.API.Interfaces;
 using Pregiato.API.Models;
 
@@ -12,9 +11,10 @@ namespace Pregiato.API.Data
         {
             _contextFactory = contextFactory;
         }
+
         public async Task SaveProducersAsync(Producers proceducers)
         {
-            using var context = _contextFactory.CreateDbContext();
+            using ModelAgencyContext context = _contextFactory.CreateDbContext();
             context.Producers.Add(proceducers);
             await context.SaveChangesAsync();
         }

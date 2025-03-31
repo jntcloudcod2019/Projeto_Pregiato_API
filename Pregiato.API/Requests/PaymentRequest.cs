@@ -1,10 +1,10 @@
 ﻿using Pregiato.API.Enums;
-using Pregiato.API.Models;
+using Pregiato.API.Services.ServiceModels;
 using Swashbuckle.AspNetCore.Annotations;
 using System.ComponentModel;
 using System.ComponentModel.DataAnnotations;
-using System.ComponentModel.DataAnnotations.Schema;
 using System.Text.Json.Serialization;
+using Pregiato.API.System.Text.Json.Serialization;
 
 namespace Pregiato.API.Requests
 {

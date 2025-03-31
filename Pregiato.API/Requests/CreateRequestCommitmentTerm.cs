@@ -1,8 +1,8 @@
-﻿using System;
-using System.ComponentModel;
+﻿using System.ComponentModel;
 using System.ComponentModel.DataAnnotations;
 using System.ComponentModel.DataAnnotations.Schema;
 using System.Text.Json.Serialization;
+using Pregiato.API.System.Text.Json.Serialization;
 using Swashbuckle.AspNetCore.Annotations;
 
 namespace Pregiato.API.Requests

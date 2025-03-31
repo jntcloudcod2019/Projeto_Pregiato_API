@@ -1,4 +1,4 @@
-﻿using Pregiato.API.Models;
+﻿using Pregiato.API.Services.ServiceModels;
 using System.Text.Json;
 using System.Text.Json.Serialization;
 
@@ -8,7 +8,7 @@ namespace Pregiato.API.Services
     {
         public override MetodoPagamento Read(ref Utf8JsonReader reader, Type typeToConvert, JsonSerializerOptions options)
         {
-            var value = reader.GetString();
+            string? value = reader.GetString();
             return MetodoPagamento.Create(value); 
         }
 

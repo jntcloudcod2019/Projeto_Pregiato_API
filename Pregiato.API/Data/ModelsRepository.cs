@@ -1,6 +1,6 @@
 ﻿using Microsoft.EntityFrameworkCore;
 using Pregiato.API.DTO;
-using Pregiato.API.Interface;
+using Pregiato.API.Interfaces;
 using Pregiato.API.Models;
 using Pregiato.API.Requests;
 
@@ -27,7 +27,7 @@ namespace Pregiato.API.Data
 
         public async Task DeleteModelAsync(Guid id)
         {
-           var idModel = await _context.Models.FindAsync(id);
+           Model? idModel = await _context.Models.FindAsync(id);
             if (idModel != null)
             { 
                 _context.Models.Remove(idModel);    
@@ -79,7 +79,7 @@ namespace Pregiato.API.Data
         public async Task<Model> ModelExistsAsync(CreateModelRequest inputModel)
         {
 
-            var existingModel = await _context.Models
+            Model? existingModel = await _context.Models
                 .FirstOrDefaultAsync(m =>
                     m.CPF == inputModel.CPF &&
                     m.Name == inputModel.Name &&
@@ -90,7 +90,7 @@ namespace Pregiato.API.Data
 
         public async Task<ModelCheckDto> GetModelCheck(CreateModelRequest inputModel)
         {
-             var existingModel = await _context.Models
+             ModelCheckDto? existingModel = await _context.Models
               .Where(m => m.CPF == inputModel.CPF &&
                          m.Name == inputModel.Name &&
                          m.RG == inputModel.RG &&

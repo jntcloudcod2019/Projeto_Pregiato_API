@@ -1,12 +1,12 @@
-﻿using Microsoft.AspNetCore.Mvc.ViewFeatures;
-using Newtonsoft.Json;
-using System.ComponentModel.DataAnnotations;
-using System.Reflection.Metadata;
+﻿using System.ComponentModel.DataAnnotations;
 
 namespace Pregiato.API.Requests
 {
     public class CreateContractModelRequest
     {
+        [Required]
+        public string? NameProducers { get; set; }
+
         [Required]
         public string? ModelIdentification { get; set; }
 

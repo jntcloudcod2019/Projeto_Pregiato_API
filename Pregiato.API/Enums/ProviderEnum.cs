@@ -1,6 +1,4 @@
-﻿using System;
-
-namespace Pregiato.API.Enums
+﻿namespace Pregiato.API.Enums
 {
    public enum ProviderEnum
     {

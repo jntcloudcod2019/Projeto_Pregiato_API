@@ -1,7 +1,6 @@
 ﻿using Microsoft.EntityFrameworkCore;
-using Pregiato.API.Interface;
+using Pregiato.API.Interfaces;
 using Pregiato.API.Models;
-using System.Runtime.CompilerServices;
 
 namespace Pregiato.API.Data
 {
@@ -21,7 +20,7 @@ namespace Pregiato.API.Data
 
         public async Task DeleteJobAsync(Guid id)
         {
-            var idJob = await _context.Jobs.FindAsync(id);
+            Job? idJob = await _context.Jobs.FindAsync(id);
             if (idJob != null) 
             {
                 _context.Jobs.Remove(idJob);    

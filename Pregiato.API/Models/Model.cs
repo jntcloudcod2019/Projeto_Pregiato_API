@@ -1,8 +1,8 @@
 ﻿using System.ComponentModel;
 using System.ComponentModel.DataAnnotations;
-using System.ComponentModel.DataAnnotations.Schema;
 using System.Text.Json;
 using System.Text.Json.Serialization;
+using Pregiato.API.System.Text.Json.Serialization;
 using Swashbuckle.AspNetCore.Annotations;
 
 namespace Pregiato.API.Models
@@ -10,15 +10,11 @@ namespace Pregiato.API.Models
     public class Model
     {
         [Key]
-        [DatabaseGenerated(DatabaseGeneratedOption.Identity)]
         public Guid IdModel { get; set; } = Guid.NewGuid();
 
         [Required]
         [StringLength(255)]
         public string? Name { get; set; }
-
-        [JsonIgnore]
-        public List<ContractBase> Contracts { get; set; } = new List<ContractBase>();
 
         [Required]
         [StringLength(14, ErrorMessage = "CPF deve ter no máximo 14 caracteres.")]
@@ -34,8 +30,6 @@ namespace Pregiato.API.Models
         [JsonConverter(typeof(JsonDateTimeConverter))]
         [DisplayFormat(DataFormatString = "{dd-MM-yyyy}", ApplyFormatInEditMode = true)]
         public DateTime? DateOfBirth { get; set; }
-
-        [JsonIgnore]
         public int Age { get; set; }
 
         [Required]
@@ -59,11 +53,10 @@ namespace Pregiato.API.Models
         public string? BankAccount { get; set; }
 
         [Required]
-        [JsonIgnore]
         public bool Status { get; set; } = default == true;
 
         [Required]
-        public string? Neighborhood { get; set; }
+        public string Neighborhood { get; set; }
         [Required]
         public string? City { get; set; }
 
@@ -75,26 +68,23 @@ namespace Pregiato.API.Models
         [Required]
         public string? TelefoneSecundario { get; set; }
 
-        [JsonIgnore]
         public JsonDocument? DNA { get; set; }
 
-        [Required]
         [JsonIgnore]
         public DateTime CreatedAt { get; set; } = DateTime.UtcNow;
 
         [Required]
-        [JsonIgnore]
         public DateTime UpdatedAt { get; set; } = DateTime.UtcNow;
 
         [MaxLength(10)]
         [Required]
         public string? CodProducers { get; set; }
 
-        public ICollection<ContractBase>? Contract { get; set; }
+        public Producers Producers { get; set; }
 
-        public ICollection<ModelJob>? ModelJobs { get; set; }
+        public virtual ICollection<ContractBase> Contracts { get; set; }
 
-        public ModelsBilling ModelsBilling { get; set; }
+        public virtual ICollection<ModelsBilling> Billings { get; set; }
 
     }
 }

@@ -1,29 +1,22 @@
 ﻿using System.ComponentModel.DataAnnotations;
-using System.ComponentModel.DataAnnotations.Schema;
 
 namespace Pregiato.API.Models
 {
     public class ModelJob
     {
         [Key]
-        [DatabaseGenerated(DatabaseGeneratedOption.Identity)]
         public Guid Id { get; set; }
 
-        // FK para Model
         [Required]
-        public Guid IdModel { get; set; }
-        [ForeignKey(nameof(IdModel))]
+        public Guid ModelId{ get; set; }
         public Model? Model { get; set; }
 
-        // FK para Job
-        [Required]
-        public Guid IdJob { get; set; }
-        [ForeignKey(nameof(IdJob))]
         public Job? Job { get; set; }
 
         [Required]
         public DateTime JobDate { get; set; }
 
+        [Required]
         [MaxLength(255)]
         public string? Location { get; set; }
 

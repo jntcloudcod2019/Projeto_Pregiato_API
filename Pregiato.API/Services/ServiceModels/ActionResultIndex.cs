@@ -1,6 +1,4 @@
-﻿using Microsoft.AspNetCore.Http;
-using Microsoft.AspNetCore.Mvc;
-using System.Threading.Tasks;
+﻿using Microsoft.AspNetCore.Mvc;
 
 namespace Pregiato.API.Services.ServiceModels
 {
@@ -21,7 +19,7 @@ namespace Pregiato.API.Services.ServiceModels
 
         public async Task ExecuteResultAsync(ActionContext context)
         {
-            var response = context.HttpContext.Response;
+            HttpResponse response = context.HttpContext.Response;
             response.ContentType = "application/json";
             response.StatusCode = IsCompletedSuccessfully ? StatusCodes.Status200OK : StatusCodes.Status400BadRequest;
 

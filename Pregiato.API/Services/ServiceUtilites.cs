@@ -1,5 +1,4 @@
-﻿using Pregiato.API.Interface;
-using System.Globalization;
+﻿using Pregiato.API.Interfaces;
 
 namespace Pregiato.API.Services
 {
@@ -7,9 +6,6 @@ namespace Pregiato.API.Services
     {
         public async Task<int> CalculateAge(DateTime dateOfBirth)
         {
-            if (dateOfBirth == null)
-                throw new ArgumentException("Data de nascimento é obrigatória.");
-
             DateTime today = DateTime.Today;
             int age = today.Year - dateOfBirth.Year;
           
@@ -18,7 +14,7 @@ namespace Pregiato.API.Services
                 age--;
             }
 
-            return age;
+            return await Task.FromResult(age).ConfigureAwait(false);
         }
 
     }

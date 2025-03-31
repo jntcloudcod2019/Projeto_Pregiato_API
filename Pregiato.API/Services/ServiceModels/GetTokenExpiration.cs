@@ -6,8 +6,8 @@ namespace Pregiato.API.Services.ServiceModels
     {
        public DateTime GetExpirationToken(string token)
        {
-            var tokenHandler = new JwtSecurityTokenHandler();
-            var jwtToken = tokenHandler.ReadJwtToken(token);
+            JwtSecurityTokenHandler tokenHandler = new JwtSecurityTokenHandler();
+            JwtSecurityToken? jwtToken = tokenHandler.ReadJwtToken(token);
             return jwtToken.ValidTo;
        }
     }

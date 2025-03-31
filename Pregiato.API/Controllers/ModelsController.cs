@@ -1,24 +1,18 @@
-﻿using iText.Commons.Actions.Contexts;
-using iText.Kernel.Geom;
-using iText.Layout.Element;
-using Microsoft.AspNetCore.Authorization;
+﻿using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.EntityFrameworkCore;
-using Microsoft.EntityFrameworkCore.Internal;
 using Pregiato.API.Data;
-using Pregiato.API.Interface;
 using Pregiato.API.Models;
 using Pregiato.API.Requests;
 using Pregiato.API.Response;
-using Pregiato.API.Services;
 using Swashbuckle.AspNetCore.Annotations;
-using System.Data;
 using Npgsql;
-using System.Diagnostics;
-using System.Drawing.Printing;
 using System.IdentityModel.Tokens.Jwt;
 using System.Security.Claims;
 using System.Text.Json;
+using Pregiato.API.DTO;
+using Pregiato.API.Interfaces;
+
 namespace Pregiato.API.Controllers
 {
     [ApiController]
@@ -26,8 +20,6 @@ namespace Pregiato.API.Controllers
     public class ModelsController : ControllerBase
     {
         private readonly IModelRepository _modelRepository;
-        private readonly IContractService _contractService;
-        private readonly IJwtService _jwtService;
         private readonly IUserService _userService;
         private readonly IServiceUtilites _serviceUtilites;
         private readonly IUserRepository _userRepository;
@@ -48,8 +40,7 @@ namespace Pregiato.API.Controllers
         {
             _modelRepository = modelRepository ?? throw new ArgumentNullException(nameof(modelRepository));
             _agencyContext = agencyContext ?? throw new ArgumentNullException(nameof(agencyContext));
-            _contractService = contractService;
-            _jwtService = jwtService; ;
+            ;
             _userService = userService;
             _serviceUtilites = serviceUtilites;
             _userRepository = userRepository;
@@ -62,11 +53,11 @@ namespace Pregiato.API.Controllers
         [SwaggerOperation("Retorna todos os modelos cadastrados.")]
         public async Task<IActionResult> GetAllModels()
         {
-            var modelsExists = await _modelRepository.GetAllModelAsync();
+            IEnumerable<Model> modelsExists = await _modelRepository.GetAllModelAsync();
             return Ok(modelsExists);
         }
 
-        [Authorize(Policy = "GlobalPolitic")]
+       // [Authorize(Policy = "GlobalPolitic")]
         [HttpPost("AddModels")]
         [SwaggerOperation("Criar novo modelo.")]
         [ProducesResponseType(typeof(CustomResponse), StatusCodes.Status200OK)]
@@ -77,7 +68,7 @@ namespace Pregiato.API.Controllers
            
             Console.WriteLine($"[PROCESS] {DateTime.Now:yyyy-MM-dd HH:mm:ss} |Validando se model {createModelRequest.Name} | Documento: {createModelRequest.CPF}");
 
-            var checkExistence = await _modelRepository.GetModelCheck(createModelRequest);
+            ModelCheckDto? checkExistence = await _modelRepository.GetModelCheck(createModelRequest);
 
             if (checkExistence != null)
             {
@@ -90,11 +81,12 @@ namespace Pregiato.API.Controllers
                     Data = null,
                 });
             }
-                  var producer = await _userRepository.GetByProducersAsync(createModelRequest.Nameproducers); 
+
+            User producer = await _userRepository.GetByProducersAsync(createModelRequest.Nameproducers);
           
-            var model = new Model
+            Model model = new Model
             {
-                CodProducers = createModelRequest.Nameproducers ?? "PMSYSAPI01",
+                CodProducers = producer.CodProducers ?? "PMSYSAPI01",
                 Name = createModelRequest.Name,
                 CPF = createModelRequest.CPF,
                 RG = createModelRequest.RG,
@@ -109,6 +101,7 @@ namespace Pregiato.API.Controllers
                 Neighborhood = createModelRequest.Neighborhood,
                 City = createModelRequest.City,
                 UF = createModelRequest.UF,
+                Status = true,
                 TelefonePrincipal = createModelRequest.TelefonePrincipal,
                 TelefoneSecundario = createModelRequest.TelefoneSecundario,
             };
@@ -134,7 +127,7 @@ namespace Pregiato.API.Controllers
         [SwaggerOperation("Deletar cadastro de modelos.")]
         public async Task<IActionResult> DeleteModel(Guid id)
         {
-            var modelExists = await _modelRepository.GetByIdModelAsync(id);
+            Model? modelExists = await _modelRepository.GetByIdModelAsync(id);
             if (modelExists == null)
             {
                 return NotFound();
@@ -186,7 +179,7 @@ namespace Pregiato.API.Controllers
         [HttpGet("findModel")]
         public async Task<IActionResult> FindModel([FromQuery] string query)
         {
-            var model = await _modelRepository.GetModelByCriteriaAsync(query);
+            Model? model = await _modelRepository.GetModelByCriteriaAsync(query);
 
             if (model == null)
             {
@@ -214,13 +207,13 @@ namespace Pregiato.API.Controllers
         [HttpGet("my-contracts")]
         public async Task<IActionResult> GetMyContracts()
         {
-            var authorizationHeader = HttpContext.Request.Headers["Authorization"].ToString();
+            string authorizationHeader = HttpContext.Request.Headers["Authorization"].ToString();
             if (string.IsNullOrEmpty(authorizationHeader) || !authorizationHeader.StartsWith("Bearer "))
             {
                 return Unauthorized("Token de autenticação não fornecido ou inválido.");
             }
-            var token = authorizationHeader.Substring("Bearer ".Length).Trim();
-            var handler = new JwtSecurityTokenHandler();
+            string token = authorizationHeader.Substring("Bearer ".Length).Trim();
+            JwtSecurityTokenHandler handler = new JwtSecurityTokenHandler();
             JwtSecurityToken jwtToken;
             try
             {
@@ -230,32 +223,32 @@ namespace Pregiato.API.Controllers
             {
                 return Unauthorized("Token inválido.");
             }
-            var usernameClaim = jwtToken.Claims.FirstOrDefault(c => c.Type == "http://schemas.xmlsoap.org/ws/2005/05/identity/claims/name");
+            Claim? usernameClaim = jwtToken.Claims.FirstOrDefault(c => c.Type == "http://schemas.xmlsoap.org/ws/2005/05/identity/claims/name");
             if (usernameClaim == null)
             {
                 return Unauthorized("Usuário não autenticado.");
             }
-            var username = usernameClaim.Value;
+            string username = usernameClaim.Value;
 
-            var schforModel = await _userRepository.GetByUsernameAsync(username);
+            User schforModel = await _userRepository.GetByUsernameAsync(username);
 
-            var model = await _agencyContext.Models
+            Model? model = await _agencyContext.Models
                 .FirstOrDefaultAsync(m => m.Email == schforModel.Email);
             if (model == null)
             {
                 return Unauthorized("Usuário não encontrado na base de dados.");
             }
-            var roleClaim = jwtToken.Claims.FirstOrDefault(c => c.Type == "http://schemas.microsoft.com/ws/2008/06/identity/claims/role");
+            Claim? roleClaim = jwtToken.Claims.FirstOrDefault(c => c.Type == "http://schemas.microsoft.com/ws/2008/06/identity/claims/role");
             if (roleClaim == null || roleClaim.Value != "Model")
             {
                 return Forbid("Permissão insuficiente.");
             }
 
             var contracts = await _agencyContext.Contracts
-                 .Where(c => c.ModelId == model.IdModel)
+                 .Where(c => c.IdModel == model.IdModel)
                  .Select(c => new
                  {
-                     c.ModelId,
+                     c.IdModel,
                      c.ContractFilePath,
                      c.Content
                  })
@@ -265,10 +258,10 @@ namespace Pregiato.API.Controllers
             {
                 var listContracts = contracts.Select(c =>
                 {
-                    byte[] fileBytes = c.Content ?? Array.Empty<byte>();
+                    byte[] fileBytes = c.Content ?? [];
                     return new
                     {
-                        ModelId = c.ModelId,
+                        ModelId = c.IdModel,
                         ContractFilePath = c.ContractFilePath,
                         ContentBase64 = fileBytes.Length > 0 ? Convert.ToBase64String(fileBytes) : null
                     };
@@ -292,13 +285,13 @@ namespace Pregiato.API.Controllers
 
             try
             {
-                var token = HttpContext.Request.Headers["Authorization"]
+                string? token = HttpContext.Request.Headers["Authorization"]
                     .FirstOrDefault()?.Split("Bearer ").Last();
 
                 if (string.IsNullOrEmpty(token))
                     return Unauthorized("Token não fornecido");
 
-                var username = new JwtSecurityTokenHandler()
+                string? username = new JwtSecurityTokenHandler()
                     .ReadJwtToken(token)
                     .Claims
                     .FirstOrDefault(c => c.Type == ClaimTypes.Name)?
@@ -307,24 +300,24 @@ namespace Pregiato.API.Controllers
                 if (string.IsNullOrEmpty(username))
                     return Unauthorized("Token inválido");
 
-                await using var context = await _contextFactory.CreateDbContextAsync();
+                await using ModelAgencyContext context = await _contextFactory.CreateDbContextAsync();
 
-                var user = await context.Users
+                User? user = await context.Users
                     .AsNoTracking()
                     .FirstOrDefaultAsync(u => u.Name == username);
 
                 if (user == null)
                     return Unauthorized("Usuário não encontrado");
 
-                var model = await context.Models
+                Model? model = await context.Models
                     .FirstOrDefaultAsync(m => m.Email == user.Email);
 
                 if (model == null)
                     return Unauthorized("Modelo não encontrado");
 
-                var propertyJson = JsonSerializer.Serialize(request.Values);
+                string propertyJson = JsonSerializer.Serialize(request.Values);
 
-                var sql = @"
+                string sql = @"
                     UPDATE ""Model"" m 
                     SET ""DNA"" = jsonb_set(m.""DNA"", ARRAY[@propertyName], @propertyJson::jsonb, true),
                         ""UpdatedAt"" = @updatedAt

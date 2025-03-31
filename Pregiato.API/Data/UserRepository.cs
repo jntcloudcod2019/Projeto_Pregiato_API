@@ -1,6 +1,5 @@
-﻿using Microsoft.AspNetCore.Http.HttpResults;
-using Microsoft.EntityFrameworkCore;
-using Pregiato.API.Interface;
+﻿using Microsoft.EntityFrameworkCore;
+using Pregiato.API.Interfaces;
 using Pregiato.API.Models;
 using Pregiato.API.Requests;
 
@@ -59,7 +58,7 @@ namespace Pregiato.API.Data
 
         public async Task DeleteUserAsync(Guid id)
         {
-            var idUser = await _context.Users.FindAsync(id);
+            User? idUser = await _context.Users.FindAsync(id);
             if (idUser != null)
             {
                 _context.Users.Remove(idUser);
@@ -69,7 +68,7 @@ namespace Pregiato.API.Data
 
         public async Task GetByUserAsync(LoginUserRequest loginUserRequest)
         {
-            var loginRequest  =  (from l in _context.Users
+            LoginUserRequest? loginRequest  =  (from l in _context.Users
                                 where l.NickName == loginUserRequest.NickName
                                 select new LoginUserRequest
                                 {
@@ -81,8 +80,8 @@ namespace Pregiato.API.Data
         public async Task<User> GetByProducersAsync(string name)
         {
             return await _context.Users
-             .AsNoTracking()
-             .SingleOrDefaultAsync(u => u.Name == name);
+                .AsNoTracking()
+                .SingleOrDefaultAsync(u => EF.Functions.Like(u.Name.Trim(), name.Trim()));
         }
     }
 }

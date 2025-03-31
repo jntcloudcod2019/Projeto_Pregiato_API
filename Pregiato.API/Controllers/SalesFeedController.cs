@@ -1,9 +1,10 @@
-﻿using Microsoft.AspNetCore.Mvc;
-using Pregiato.API.Data;
+﻿using Microsoft.AspNetCore.Authorization;
+using Microsoft.AspNetCore.Mvc;
 using Microsoft.EntityFrameworkCore;
-using Microsoft.AspNetCore.Authorization;
+using Pregiato.API.Data;
 using Pregiato.API.Response;
-using System.Globalization;
+
+namespace Pregiato.API.Controllers;
 
 [ApiController]
 [Route("api/[controller]")]
@@ -36,11 +37,11 @@ public class SalesFeedController : ControllerBase
                 })
                 .ToListAsync();
 
-            var totalSales = transactions.Sum(t => t.Valor);
-            var pendingAmount = transactions.Where(t => t.StatusPagamento == "Pending")
-                                           .Sum(t => t.Valor);
-            var paidAmount = transactions.Where(t => t.StatusPagamento == "Paid")
-                                        .Sum(t => t.Valor);
+            decimal totalSales = transactions.Sum(t => t.Valor);
+            decimal pendingAmount = transactions.Where(t => t.StatusPagamento == "Pending")
+                .Sum(t => t.Valor);
+            decimal paidAmount = transactions.Where(t => t.StatusPagamento == "Paid")
+                .Sum(t => t.Valor);
 
             return Ok(new BillingResponse
             {
@@ -78,11 +79,11 @@ public class SalesFeedController : ControllerBase
 
     [Authorize(Policy = "AdminOrManager")]
     [HttpGet("weekly")]
-    public async Task<IActionResult> GetWeeklySales([FromQuery] string date = null)
+    public async Task<IActionResult> GetWeeklySales([FromQuery] string date = null!)
     {
        
         DateTimeOffset startOfWeek;
-        if (!string.IsNullOrEmpty(date) && DateTimeOffset.TryParseExact(date, "yyyy-MM-dd", null, System.Globalization.DateTimeStyles.None, out var parsedDate))
+        if (!string.IsNullOrEmpty(date) && DateTimeOffset.TryParseExact(date, "yyyy-MM-dd", null, global::System.Globalization.DateTimeStyles.None, out DateTimeOffset parsedDate))
         {
             startOfWeek = new DateTimeOffset(parsedDate.Date, TimeSpan.Zero); 
         }
@@ -106,11 +107,11 @@ public class SalesFeedController : ControllerBase
                 })
                 .ToListAsync();
 
-            var totalSales = transactions.Sum(t => t.Valor);
-            var pendingAmount = transactions.Where(t => t.StatusPagamento == "Pending")
-                                           .Sum(t => t.Valor);
-            var paidAmount = transactions.Where(t => t.StatusPagamento == "Paid")
-                                        .Sum(t => t.Valor);
+            decimal totalSales = transactions.Sum(t => t.Valor);
+            decimal pendingAmount = transactions.Where(t => t.StatusPagamento == "Pending")
+                .Sum(t => t.Valor);
+            decimal paidAmount = transactions.Where(t => t.StatusPagamento == "Paid")
+                .Sum(t => t.Valor);
 
             return Ok(new BillingResponse
             {
@@ -146,7 +147,7 @@ public class SalesFeedController : ControllerBase
         }
     }
 
-   [Authorize(Policy = "AdminOrManager")]
+    [Authorize(Policy = "AdminOrManager")]
     [HttpGet("monthly")]
     public async Task<IActionResult> GetMonthlySales()
     {
@@ -166,13 +167,13 @@ public class SalesFeedController : ControllerBase
                 })
                 .ToListAsync();
 
-           var totalSales = transactions.Sum(t => t.Valor);
+            decimal totalSales = transactions.Sum(t => t.Valor);
 
-           var pendingAmount = transactions.Where(t => t.StatusPagamento == "Pending")
-                                                  .Sum(t => t.Valor);
+            decimal pendingAmount = transactions.Where(t => t.StatusPagamento == "Pending")
+                .Sum(t => t.Valor);
 
-           var paidAmount = transactions.Where(t => t.StatusPagamento == "Paid")
-                                               .Sum(t => t.Valor);        
+            decimal paidAmount = transactions.Where(t => t.StatusPagamento == "Paid")
+                .Sum(t => t.Valor);        
 
             return Ok(new BillingResponse
             {

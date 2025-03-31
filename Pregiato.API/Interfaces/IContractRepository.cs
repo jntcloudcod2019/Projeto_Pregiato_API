@@ -1,11 +1,8 @@
-﻿using Microsoft.EntityFrameworkCore.Internal;
-using Pregiato.API.DTO;
+﻿using Pregiato.API.DTO;
 using Pregiato.API.Models;
-using Pregiato.API.Requests;
 using Pregiato.API.Services.ServiceModels;
-using System.Diagnostics.Contracts;
 
-namespace Pregiato.API.Interface
+namespace Pregiato.API.Interfaces
 {
     public interface IContractRepository
     {

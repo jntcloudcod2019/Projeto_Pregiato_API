@@ -2,29 +2,25 @@
 using Microsoft.OpenApi.Models;
 using Pregiato.API.Data;
 using Microsoft.IdentityModel.Tokens;
-using Pregiato.API.Interface;
 using Microsoft.AspNetCore.Authentication.JwtBearer;
 using System.Text;
 using Pregiato.API.Services;
 using System.Text.Json.Serialization;
 using Microsoft.OpenApi.Any;
-using Pregiato.API.Models;
 using System.Globalization;
 using Pregiato.API.Services.ServiceModels;
 using Pregiato.API.Interfaces;
 using Pregiato.API.Response;
-using Microsoft.Extensions.DependencyInjection;
-using System.Reflection;
-using Microsoft.AspNetCore.Mvc;
 using FluentValidation.AspNetCore;
-using Pregiato.API.Validators;
 using FluentValidation;
 using Npgsql;
+using Pregiato.API.System.Text.Json.Serialization;
+using Pregiato.API.Validator;
 
-var builder = WebApplication.CreateBuilder(args);
-var connectionString = Environment.GetEnvironmentVariable("SECRET_KEY_DATABASE") ?? "Host=191.101.235.250;Port=5432;Database=pregiato;Username=pregiato;Password=pregiato123";
-var secretKey = Environment.GetEnvironmentVariable("SECRETKEY_JWT_TOKEN") ?? "3+XcgYxev9TcGXECMBq0ilANarHN68wsDsrhG60icMaACkw9ajU97IYT+cv9IDepqrQjPaj4WUQS3VqOvpmtDw==";
-var pathBase = Environment.GetEnvironmentVariable("PATH_BASE");
+WebApplicationBuilder builder = WebApplication.CreateBuilder(args);
+string connectionString = Environment.GetEnvironmentVariable("SECRET_KEY_DATABASE") ?? "Host=191.101.235.250;Port=5432;Database=pregiato;Username=pregiato;Password=pregiato123";
+string secretKey = Environment.GetEnvironmentVariable("SECRETKEY_JWT_TOKEN") ?? "3+XcgYxev9TcGXECMBq0ilANarHN68wsDsrhG60icMaACkw9ajU97IYT+cv9IDepqrQjPaj4WUQS3VqOvpmtDw==";
+string pathBase = Environment.GetEnvironmentVariable("PATH_BASE");
 
 CultureInfo.DefaultThreadCurrentUICulture = new CultureInfo("pt-BR");
 Npgsql.TypeMapping.INpgsqlTypeMapper npgsqlTypeMapper = NpgsqlConnection.GlobalTypeMapper.EnableDynamicJson();
@@ -95,7 +91,7 @@ builder.Services.AddSwaggerGen(c =>
 
     c.ResolveConflictingActions(apiDescriptions => apiDescriptions.First());
 
-    var securityScheme = new OpenApiSecurityScheme
+    OpenApiSecurityScheme securityScheme = new OpenApiSecurityScheme
     {
         Name = "Authorization",
         Description = "Enter JWT Bearer token",
@@ -111,9 +107,9 @@ builder.Services.AddSwaggerGen(c =>
     };
     c.AddSecurityDefinition("Bearer", securityScheme);
 
-    var securityRequirement = new OpenApiSecurityRequirement
+    OpenApiSecurityRequirement securityRequirement = new OpenApiSecurityRequirement
     {
-        { securityScheme, new[] { "Bearer" } }
+        { securityScheme, ["Bearer"] }
     };
     c.AddSecurityRequirement(securityRequirement);
 });
@@ -144,7 +140,7 @@ builder.Services.Configure<RabbitMQConfig>(options =>
         ?? builder.Configuration["RabbitMQ:Uri"]
         ?? "amqps://guest:guest@localhost:5672";
 
-    options.Port = int.TryParse(Environment.GetEnvironmentVariable("RABBITMQ_PORT"), out var port)
+    options.Port = int.TryParse(Environment.GetEnvironmentVariable("RABBITMQ_PORT"), out int port)
         ? port
         : (builder.Configuration.GetValue<int?>("RabbitMQ:Port") ?? 5672);
 
@@ -199,7 +195,7 @@ builder.Logging.AddConsole();
 builder.Logging.AddDebug();
 builder.Logging.SetMinimumLevel(LogLevel.Trace);
 
-var app = builder.Build();
+WebApplication app = builder.Build();
 
 // Configuração do Pipeline de Requisições
 if (app.Environment.IsDevelopment())

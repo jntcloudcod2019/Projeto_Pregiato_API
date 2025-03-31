@@ -1,13 +1,9 @@
 ﻿using System.Text.Json;
-using Microsoft.AspNetCore.Http.HttpResults;
-using Microsoft.AspNetCore.Identity.Data;
-using Pregiato.API.Interface;
+using Pregiato.API.Interfaces;
 using Pregiato.API.Models;
 using Pregiato.API.Requests;
 using Pregiato.API.Response;
-using Pregiato.API.Responses;
 using Pregiato.API.Services.ServiceModels;
-using PuppeteerSharp;
 
 
 namespace Pregiato.API.Services
@@ -39,7 +35,7 @@ namespace Pregiato.API.Services
 
             string password = await _passwordHasherService.GenerateRandomPasswordAsync(12);
 
-            var replacements = new Dictionary<string, string>
+            Dictionary<string, string> replacements = new Dictionary<string, string>
             {
                 {"Nome",username},
                 {"User",nikeName },
@@ -50,7 +46,7 @@ namespace Pregiato.API.Services
 
             string passwordHash = await _passwordHasherService.CreatePasswordHashAsync(password);
 
-            var user = new User
+            User user = new User
             {
                 UserId = new Guid(),
                 Name = nikeName,
@@ -74,7 +70,7 @@ namespace Pregiato.API.Services
                     throw new ArgumentException("Nome de usuário não pode ser nulo ou vazio.");
                 }
 
-                var user = await _userRepository.GetByUsernameAsync(loginUserRequest.NickName);
+                User? user = await _userRepository.GetByUsernameAsync(loginUserRequest.NickName);
 
                 if (user == null)
                 {
@@ -112,7 +108,7 @@ namespace Pregiato.API.Services
 
             Console.WriteLine($"[PROCESS] {DateTime.Now:yyyy-MM-dd HH:mm:ss} |  Validando se o USER_MODEL: {username}, já está cadastrado... ");
 
-            var shfUser = await _userRepository.GetByUsernameAsync(username);
+            User? shfUser = await _userRepository.GetByUsernameAsync(username);
 
             if (shfUser != null)
             {
@@ -128,7 +124,7 @@ namespace Pregiato.API.Services
 
             string password = await _passwordHasherService.GenerateRandomPasswordAsync(12);
 
-            var replacements = new Dictionary<string, string>
+            Dictionary<string, string> replacements = new Dictionary<string, string>
             {
                 {"Nome",username},
                 {"User",nikeName },
@@ -139,7 +135,7 @@ namespace Pregiato.API.Services
 
             string passwordHash = await _passwordHasherService.CreatePasswordHashAsync(password);
 
-            var user = new User
+            User user = new User
             {
                 UserId = new Guid(),
                 Name = username,
@@ -161,7 +157,7 @@ namespace Pregiato.API.Services
         {
             Console.WriteLine($"[PROCESS] {DateTime.Now:yyyy-MM-dd HH:mm:ss} |  Validando se o USER_MODEL: {username}, já está cadastrado... ");
 
-            var shfUser = await _userRepository.GetByUsernameAsync(username);
+            User? shfUser = await _userRepository.GetByUsernameAsync(username);
 
             if (shfUser != null)
             {
@@ -177,7 +173,7 @@ namespace Pregiato.API.Services
 
             string password = await _passwordHasherService.GenerateRandomPasswordAsync(12);
 
-            var replacements = new Dictionary<string, string>
+            Dictionary<string, string> replacements = new Dictionary<string, string>
             {
                 {"Nome",username},
                 {"User",nikeName },
@@ -188,7 +184,7 @@ namespace Pregiato.API.Services
 
             string passwordHash = await _passwordHasherService.CreatePasswordHashAsync(password);
 
-            var user = new User
+            User user = new User
             {
                 UserId = new Guid(),
                 Name = username,
@@ -210,7 +206,7 @@ namespace Pregiato.API.Services
         {
             Console.WriteLine($"[PROCESS] {DateTime.Now:yyyy-MM-dd HH:mm:ss} |  Validando se o USER_MODEL: {username}, já está cadastrado... ");
 
-            var shfUser = await _userRepository.GetByUsernameAsync(username);
+            User? shfUser = await _userRepository.GetByUsernameAsync(username);
 
             if (shfUser != null)
             {
@@ -226,7 +222,7 @@ namespace Pregiato.API.Services
 
             string password = await _passwordHasherService.GenerateRandomPasswordAsync(12);
 
-            var replacements = new Dictionary<string, string>
+            Dictionary<string, string> replacements = new Dictionary<string, string>
             {
                 {"Nome",username},
                 {"User",nikeName },
@@ -237,7 +233,7 @@ namespace Pregiato.API.Services
 
             string passwordHash = await _passwordHasherService.CreatePasswordHashAsync(password);
 
-            var user = new User
+            User user = new User
             {
                 UserId = new Guid(),
                 Name = username,
@@ -259,7 +255,7 @@ namespace Pregiato.API.Services
         {
             Console.WriteLine($"[PROCESS] {DateTime.Now:yyyy-MM-dd HH:mm:ss} |  Validando se o USER_MODEL: {username}, já está cadastrado... ");
 
-            var shfUser = await _userRepository.GetByUsernameAsync(username);
+            User? shfUser = await _userRepository.GetByUsernameAsync(username);
 
             if (shfUser != null)
             {
@@ -275,7 +271,7 @@ namespace Pregiato.API.Services
 
             string password = await _passwordHasherService.GenerateRandomPasswordAsync(12);
 
-            var replacements = new Dictionary<string, string>
+            Dictionary<string, string> replacements = new Dictionary<string, string>
             {
                 {"Nome",username},
                 {"User",nikeName },
@@ -286,7 +282,7 @@ namespace Pregiato.API.Services
 
             string passwordHash = await _passwordHasherService.CreatePasswordHashAsync(password);
 
-            var user = new User
+            User user = new User
             {
                 UserId = new Guid(),
                 Name = username,
@@ -308,7 +304,7 @@ namespace Pregiato.API.Services
         {
             Console.WriteLine($"[PROCESS] {DateTime.Now:yyyy-MM-dd HH:mm:ss} |  Validando se o USER_MODEL: {username}, já está cadastrado... ");
 
-            var shfUser = await _userRepository.GetByUsernameAsync(username);
+            User? shfUser = await _userRepository.GetByUsernameAsync(username);
 
             if (shfUser != null)
             {
@@ -324,7 +320,7 @@ namespace Pregiato.API.Services
 
             string password = await _passwordHasherService.GenerateRandomPasswordAsync(12);
 
-            var replacements = new Dictionary<string, string>
+            Dictionary<string, string> replacements = new Dictionary<string, string>
             {
                 {"Nome",username},
                 {"User",nikeName },
@@ -334,7 +330,7 @@ namespace Pregiato.API.Services
             await _emailService.SendEmailAsync(replacements, email, "Bem-vindo à Plataforma My Pregiato");
             string passwordHash = await _passwordHasherService.CreatePasswordHashAsync(password);
 
-            var user = new User
+            User user = new User
             {
                 UserId = new Guid(),
                 Name = username,
@@ -356,7 +352,7 @@ namespace Pregiato.API.Services
         {
             Console.WriteLine($"[PROCESS] {DateTime.Now:yyyy-MM-dd HH:mm:ss} |  Validando se o USER_MODEL: {username}, já está cadastrado... ");
 
-            var shfUser = await _userRepository.GetByUsernameAsync(username);
+            User? shfUser = await _userRepository.GetByUsernameAsync(username);
 
             if (shfUser != null)
             {
@@ -372,7 +368,7 @@ namespace Pregiato.API.Services
 
             string password = await _passwordHasherService.GenerateRandomPasswordAsync(12);
 
-            var replacements = new Dictionary<string, string>
+            Dictionary<string, string> replacements = new Dictionary<string, string>
             {
                 {"Nome",username},
                 {"User",nikeName },
@@ -382,7 +378,7 @@ namespace Pregiato.API.Services
             await _emailService.SendEmailAsync(replacements, email, "Bem-vindo à Plataforma My Pregiato");
             string passwordHash = await _passwordHasherService.CreatePasswordHashAsync(password);
 
-            var user = new User
+            User user = new User
             {
                 UserId = new Guid(),
                 Name = username,
@@ -403,7 +399,7 @@ namespace Pregiato.API.Services
         {
             Console.WriteLine($"[PROCESS] {DateTime.Now:yyyy-MM-dd HH:mm:ss} | Validando se o USER_MODEL: {username}, já está cadastrado... ");
 
-            var shfUser = await _userRepository.GetByUsernameAsync(username);
+            User? shfUser = await _userRepository.GetByUsernameAsync(username).ConfigureAwait(false);
 
             if (shfUser != null)
             {
@@ -417,31 +413,31 @@ namespace Pregiato.API.Services
 
             string nikeName = username.Replace(" ", "").ToLower();
 
-            string password = await _passwordHasherService.GenerateRandomPasswordAsync(12);
+            string password = await _passwordHasherService.GenerateRandomPasswordAsync(12).ConfigureAwait(false);
 
-            var replacements = new Dictionary<string, string>
+            Dictionary<string, string> replacements = new Dictionary<string, string>
             {
                 {"Nome",username},
                 {"User",nikeName },
                 {"Password", password}
             };
 
-            await _emailService.SendEmailAsync(replacements, email, "Bem-vindo à Plataforma My Pregiato");
-            string passwordHash = await _passwordHasherService.CreatePasswordHashAsync(password);
+            await _emailService.SendEmailAsync(replacements, email, "Bem-vindo à Plataforma My Pregiato").ConfigureAwait(false);
+            string passwordHash = await _passwordHasherService.CreatePasswordHashAsync(password).ConfigureAwait(false);
 
-            var user = new User
+            User user = new User
             {
                 UserId = new Guid(),
                 Name = username,
                 Email = email,
                 NickName = nikeName,
                 PasswordHash = passwordHash,
-                CodProducers = await GenerateProducerCodeAsync(),
+                CodProducers = await GenerateProducerCodeAsync().ConfigureAwait(false),
                 UserType = UserType.CEO.ToString(),
             };
 
-            await _userRepository.AddUserAsync(user);
-            await _userRepository.SaveChangesAsync();
+            await _userRepository.AddUserAsync(user).ConfigureAwait(false);
+            await _userRepository.SaveChangesAsync().ConfigureAwait(false);
 
             Console.WriteLine($"");
             return ($"Usuário {username} cadastrado com sucesso.");
@@ -450,7 +446,7 @@ namespace Pregiato.API.Services
         {
             Console.WriteLine($"[PROCESS] {DateTime.Now:yyyy-MM-dd HH:mm:ss} | Validando se o USER_MODEL: {username}, já está cadastrado... ");
 
-            var shfUser = await _userRepository.GetByUsernameAsync(username);
+            User? shfUser = await _userRepository.GetByUsernameAsync(username);
 
             if (shfUser != null)
             {
@@ -466,7 +462,7 @@ namespace Pregiato.API.Services
 
             string password = await _passwordHasherService.GenerateRandomPasswordAsync(12);
 
-            var replacements = new Dictionary<string, string>
+            Dictionary<string, string> replacements = new Dictionary<string, string>
             {
                 {"Nome",username},
                 {"User",nikeName },
@@ -476,7 +472,7 @@ namespace Pregiato.API.Services
             await _emailService.SendEmailAsync(replacements, email, "Bem-vindo à Plataforma My Pregiato");
             string passwordHash = await _passwordHasherService.CreatePasswordHashAsync(password);
 
-            var user = new User
+            User user = new User
             {
                 UserId = new Guid(),
                 Name = username,

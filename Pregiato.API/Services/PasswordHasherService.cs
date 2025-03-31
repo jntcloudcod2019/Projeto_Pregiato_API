@@ -1,5 +1,4 @@
-﻿ using Org.BouncyCastle.Crypto.Generators;
-using Pregiato.API.Interface;
+﻿using Pregiato.API.Interfaces;
 
 namespace Pregiato.API.Services
 {
@@ -16,9 +15,9 @@ namespace Pregiato.API.Services
 
             const string chars = "ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789";
           
-            var random = new Random();
+            Random random = new Random();
             
-            var password = new string(Enumerable.Repeat(chars, length)
+            string password = new string(Enumerable.Repeat(chars, length)
                 .Select(s => s[random.Next(s.Length)]).ToArray());
 
             return await Task.FromResult(password);

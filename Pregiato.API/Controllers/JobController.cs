@@ -1,11 +1,10 @@
 ﻿using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
 using Pregiato.API.Data;
-using Pregiato.API.Interface;
+using Pregiato.API.Interfaces;
 using Pregiato.API.Models;
 using Pregiato.API.Requests;
 using Swashbuckle.AspNetCore.Annotations;
-using System.ComponentModel.DataAnnotations;
 
 namespace Pregiato.API.Controllers
 {
@@ -14,13 +13,11 @@ namespace Pregiato.API.Controllers
     public class JobController : ControllerBase
     {
         private readonly IJobRepository _jobRepository;
-        private readonly IModelRepository _modelRepository;
         private readonly ModelAgencyContext _agencyContext;
 
-        public JobController(IJobRepository jobRepository, IModelRepository modelRepository, ModelAgencyContext agencyContext)
+        public JobController(IJobRepository jobRepository, ModelAgencyContext agencyContext)
         {
             _jobRepository = jobRepository;
-            _modelRepository = modelRepository;
             _agencyContext = agencyContext ?? throw new ArgumentNullException(nameof(agencyContext));
         }
 
@@ -34,7 +31,7 @@ namespace Pregiato.API.Controllers
                 return BadRequest($"Erro ao criar Job, favor reviar os campos de preenchimento.");
             }
 
-            var jobModel = new Job
+            Job jobModel = new Job
             {
               Status = "Pending",
              IdModel = new Guid(),
@@ -62,23 +59,23 @@ namespace Pregiato.API.Controllers
                 return BadRequest("ModelId ou JobId são obrigatórios.");
             }
 
-            var model = await _agencyContext.Models.FindAsync(request.ModelId);
+            Model? model = await _agencyContext.Models.FindAsync(request.ModelId);
             if (model == null)
             {
                 return NotFound($"Modelo com ID {request.ModelId} não encontrado.");
             }
 
-            var job = await _agencyContext.Jobs.FindAsync(request.JobId);
+            Job? job = await _agencyContext.Jobs.FindAsync(request.JobId);
 
             if (job == null)
             {
                 return NotFound($"Job com ID {request.JobId} não encontrado.");
             }
 
-            var modelJob = new ModelJob
+            ModelJob modelJob = new ModelJob
             {
                
-                IdModel= request.ModelId,
+                ModelId= request.ModelId,
                 JobDate = request.JobDate,
                 Location = request.Location,
                 Time = request.Time,

@@ -1,21 +1,16 @@
 ﻿using System.ComponentModel.DataAnnotations;
 using System.ComponentModel.DataAnnotations.Schema;
-using iText.Kernel.Pdf.Canvas.Parser.ClipperLib;
 using Pregiato.API.Enums;
 
 namespace Pregiato.API.Models
 {
     public class Producers
     {
-        [Key] 
-        [DatabaseGenerated(DatabaseGeneratedOption.Identity)]
-        public Guid IdProducer { get; set; }
 
         [Required]
-        [ForeignKey("ContractId")]
-        public Guid IdContract { get; set; }
+        public Guid ContractId { get; set; }
 
-        [MaxLength(10)]
+        public ContractBase Contract { get; set; }  
         [Required]
         public string? CodProducers { get; set; }
 
@@ -38,10 +33,8 @@ namespace Pregiato.API.Models
         public string? UpdatedAt { get; set; } = DateTime.UtcNow.ToString("dd/MM/yyyy");
 
         public string? ValidityContract { get; set; } = DateTime.UtcNow.ToString("dd/MM/yyyy");
-
-        [Required]
         public int CodProposal { get; set; }
-
+        [Required]
         public int TotalAgreements { get; set; }
 
     }

@@ -1,8 +1,6 @@
 ﻿using System.ComponentModel.DataAnnotations;
-using System.ComponentModel.DataAnnotations.Schema;
-using System.Text.Json.Serialization;
 using Pregiato.API.Enums;
-using Swashbuckle.AspNetCore.Annotations;
+
 
 namespace Pregiato.API.Models
 {
@@ -10,62 +8,64 @@ namespace Pregiato.API.Models
     {
 
         [Key]
-        public Guid PaymentId { get; set; }
-
-        [ForeignKey("Contract")]
         public Guid ContractId { get; set; }
+        public Guid? PaymentId { get; set; }
 
-        public ContractBase? Contract { get; set; }
-
-        [MaxLength(10)]
         [Required]
         public string? CodProducers { get; set; }
+
+        public Producers Producers { get; set; }
+        [Required]
         public DateTime CreatedAt { get; set; } = DateTime.UtcNow;
+        [Required]
         public DateTime UpdatedAt { get; set; } = DateTime.UtcNow;
- 
+        [Required]
         public string DataContrato { get; set; } = DateTime.UtcNow.ToString("dd/MM/yyyy");
+        [Required]
         public string VigenciaContrato {get; set; } = DateTime.UtcNow.ToString("dd/MM/yyyy");
+        [Required]
         public decimal ValorContrato { get; set; }
+        [Required]
         public string? FormaPagamento { get; set; }
-        public string StatusPagamento { get; set; } = "N/A";
-
+        [Required]
+        public string StatusPagamento { get; set; } = "Paid";
+        [Required]
         public string ContractFilePath { get; set; } = string.Empty;
+        [Required]
         public byte[]? Content { get; set; }
+        [Required]
         public abstract string TemplateFileName { get; }
+        [Required]
         public int CodProposta { get; set; }
-
         [Required]
         public StatusContratc StatusContratc { get; set; } = StatusContratc.Ativo;
-
         [Required]
-        public Guid ModelId { get; set; }
+        public Guid? IdModel { get; set; }
 
-        [ForeignKey(nameof(ModelId))]
-        public Model? Model { get; set; }
-
-        public ICollection<Payment> Payments { get; set; } = new List<Payment>();
+        public virtual Model Model { get; set; }
     }
-    [NotMapped]
+
+
     public class AgencyContract : ContractBase
     {
         public override string TemplateFileName => "AgencyContract.html";
     }
-    [NotMapped]
+
     public class PhotographyProductionContract : ContractBase
     {
         public override string TemplateFileName => "PhotographyProductionContract.html";
     }
-    [NotMapped]
+ 
     public class CommitmentTerm : ContractBase
     {
         public override string TemplateFileName => "CommitmentTerm.html";
     }
-    [NotMapped]
+
     public class ImageRightsTerm : ContractBase
     {
         public override string TemplateFileName => "ImageRightsTerm.html";
     }
-    [NotMapped]
+
     public class PhotographyProductionContractMinority : ContractBase
     {
         public override string TemplateFileName => "PhotographyProductionContractMinority.html";

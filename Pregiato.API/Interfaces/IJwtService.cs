@@ -1,8 +1,6 @@
-﻿using Microsoft.AspNetCore.Identity.Data;
-using Pregiato.API.Requests;
+﻿using Pregiato.API.Requests;
 
-
-namespace Pregiato.API.Interface
+namespace Pregiato.API.Interfaces
 {
     public interface IJwtService
     {

@@ -1,13 +1,13 @@
-﻿using Microsoft.AspNetCore.Mvc;
-using Pregiato.API.Interface;
+﻿using System.Text.Json;
+using Microsoft.AspNetCore.Mvc;
 using Pregiato.API.Requests;
-using Microsoft.EntityFrameworkCore;
 using Swashbuckle.AspNetCore.Annotations;
 using Pregiato.API.Data;
 using Microsoft.AspNetCore.Authorization;
+using Pregiato.API.DTO;
+using Pregiato.API.Interfaces;
 using Pregiato.API.Response;
 using Pregiato.API.Models;
-using Pregiato.API.Responses;
 using Pregiato.API.Services.ServiceModels;
 namespace Pregiato.API.Controllers
 {
@@ -41,7 +41,7 @@ namespace Pregiato.API.Controllers
                 throw new Exception("Campos de parametros vazio.");
             }
 
-            var contract = await _contractService.GenerateContractCommitmentTerm(createRequestCommitmentTerm, queryModel);
+            ContractBase contract = await _contractService.GenerateContractCommitmentTerm(createRequestCommitmentTerm, queryModel);
 
             await _context.SaveChangesAsync();
 
@@ -58,14 +58,14 @@ namespace Pregiato.API.Controllers
         public async Task<IActionResult> GenerateImageRightsTermContract
         ([FromQuery] string queryModel)
         {
-            var model = await _modelRepository.GetModelByCriteriaAsync(queryModel);
+            Model? model = await _modelRepository.GetModelByCriteriaAsync(queryModel);
 
             if (model == null)
             {
                 return NotFound("Modelo não encontrado.");
             }
 
-            var parameters = new Dictionary<string, string?>
+            Dictionary<string, string?> parameters = new Dictionary<string, string?>
             {
                     {"Nome-Modelo", model.Name },
                     {"CPF-Modelo", model.CPF },
@@ -79,7 +79,7 @@ namespace Pregiato.API.Controllers
                     {"Telefone-Principal", model.TelefonePrincipal},
                     {"Telefone-Secundário", model.TelefoneSecundario},
             };
-            var contract = await _contractService.GenetayeContractImageRightsTerm(queryModel);
+            ContractBase contract = await _contractService.GenetayeContractImageRightsTerm(queryModel);
             await _context.SaveChangesAsync();
             return Ok($"Termo de Concessão de direito de imagem para: {model.Name}, gerado com sucesso. Código da Proposta: {contract.CodProposta}.");
         }
@@ -96,7 +96,7 @@ namespace Pregiato.API.Controllers
             {
                 if (createContractModelRequest == null || !ModelState.IsValid)
                 {
-                    var erros = ModelState.Values.SelectMany(v => v.Errors)
+                    List<string> erros = ModelState.Values.SelectMany(v => v.Errors)
                                          .Select(e => e.ErrorMessage)
                                          .ToList();
                     return ActionResultIndex.Failure($"Os dados fornecidos são inválidos: {string.Join(", ", erros)}");
@@ -104,7 +104,7 @@ namespace Pregiato.API.Controllers
 
                 Console.WriteLine($"Buscando dados do modelo {createContractModelRequest.ModelIdentification}");
 
-                var model = await _modelRepository.GetModelByCriteriaAsync(createContractModelRequest.ModelIdentification);
+                Model? model = await _modelRepository.GetModelByCriteriaAsync(createContractModelRequest.ModelIdentification);
 
                 if (model == null)
                 {
@@ -124,8 +124,8 @@ namespace Pregiato.API.Controllers
 
                 byte[] pdfBytes = await _contractService.ExtractBytesFromString(contentString);
 
-                var message = $"Contrato para {model.Name}, emitidos com sucesso!";
-                var contractsSummary = contracts.Select(c => new ContractSummary
+                string message = $"Contrato para {model.Name}, emitidos com sucesso!";
+                List<ContractSummary> contractsSummary = contracts.Select(c => new ContractSummary
                 {
                     CodProposta = c.CodProposta
                 }).ToList();
@@ -136,7 +136,7 @@ namespace Pregiato.API.Controllers
                     Contracts = contractsSummary
                 };
 
-                string metadataJson = System.Text.Json.JsonSerializer.Serialize(metadata);
+                string metadataJson = JsonSerializer.Serialize(metadata);
 
                 Response.Headers.Add("X-Contract-Metadata", metadataJson);
                 return File(pdfBytes, "application/pdf", "contract.pdf");
@@ -153,7 +153,7 @@ namespace Pregiato.API.Controllers
         public async Task<IActionResult> DownloadContractAsync(int proposalCode)
         {
 
-            var contract = await _contractRepository.DownloadContractAsync(proposalCode);
+            ContractDTO? contract = await _contractRepository.DownloadContractAsync(proposalCode);
 
             if (contract == null)
             {
@@ -183,17 +183,17 @@ namespace Pregiato.API.Controllers
             if (request.File == null || request.File.Length == 0)
                 return BadRequest("The receipt is required for Pix payments.");
 
-            var payment = await _context.Payments.FindAsync(request.PaymentId);
+            Payment? payment = await _context.Payments.FindAsync(request.PaymentId);
 
             if (payment == null)
                 return NotFound("Payment not found.");
 
-            using var memoryStream = new MemoryStream();
+            using MemoryStream memoryStream = new MemoryStream();
             await request.File.CopyToAsync(memoryStream);
             payment.Comprovante = memoryStream.ToArray();
             _context.Entry(payment).Property(p => p.Comprovante).IsModified = true;
 
-            await _context.SaveChangesAsync();
+            await _context.SaveChangesAsync().ConfigureAwait(false);
 
             return Ok("Receipt uploaded successfully.");
         }
@@ -206,7 +206,7 @@ namespace Pregiato.API.Controllers
         {
             try
             {
-                var contracts = await _contractRepository.GetAllContractsAsync();
+                List<ContractSummaryDTO>? contracts = await _contractRepository.GetAllContractsAsync().ConfigureAwait(false);
 
                 if (contracts == null || !contracts.Any())
                 {

@@ -1,8 +1,5 @@
 ﻿using MailKit.Net.Smtp;
 using MimeKit;
-using Pregiato.API.Interface;
-using Microsoft.Extensions.Options;
-using MailKit.Security;
 using Pregiato.API.Interfaces;
 using Pregiato.API.Services.ServiceModels;
 
@@ -33,7 +30,7 @@ namespace Pregiato.API.Services
 
         public async Task<string> LoadTemplate(Dictionary<string, string> replacements)
         {
-            var templatePath = Path.Combine(Directory.GetCurrentDirectory(), "Templates", "WelcomeEmailTemplate.html");
+            string templatePath = Path.Combine(Directory.GetCurrentDirectory(), "Templates", "WelcomeEmailTemplate.html");
 
             if (!File.Exists(templatePath))
             {
@@ -43,8 +40,8 @@ namespace Pregiato.API.Services
 
             Console.WriteLine($"[ERROR] {DateTime.Now:yyyy-MM-dd HH:mm:ss} | Populando tamplate do e-mail..: {templatePath}.");
 
-            var templateContent = await File.ReadAllTextAsync(templatePath);
-            foreach (var replacement in replacements)
+            string templateContent = await File.ReadAllTextAsync(templatePath);
+            foreach (KeyValuePair<string, string> replacement in replacements)
             {
                 templateContent = templateContent.Replace($"{{{replacement.Key}}}", replacement.Value);
             }
@@ -57,20 +54,20 @@ namespace Pregiato.API.Services
             try
             {
                 Console.WriteLine($"[PROCESS] {DateTime.Now:yyyy-MM-dd HH:mm:ss} | Populando e-mail. ");
-                var templateContent = await LoadTemplate(replacements);
+                string templateContent = await LoadTemplate(replacements);
 
-                var message = new MimeMessage();
+                MimeMessage message = new MimeMessage();
                 message.From.Add(new MailboxAddress("Pregiato Management", "jonathanfrnnd3@gmail.com"));
                 message.To.Add(new MailboxAddress(toEmail, toEmail));
                 message.Subject = subject;
 
-                var bodyBuilder = new BodyBuilder();
+                BodyBuilder bodyBuilder = new BodyBuilder();
 
-                var imagePath = Path.Combine(Directory.GetCurrentDirectory(), "Templates", "logo.png");
+                string imagePath = Path.Combine(Directory.GetCurrentDirectory(), "Templates", "logo.png");
 
                 if (File.Exists(imagePath))
                 {
-                    var image = bodyBuilder.LinkedResources.Add(imagePath);
+                    MimeEntity? image = bodyBuilder.LinkedResources.Add(imagePath);
                     image.ContentId = "logo";
                 }
                 else
@@ -84,7 +81,7 @@ namespace Pregiato.API.Services
 
                 message.Body = bodyBuilder.ToMessageBody();
 
-                using var client = new SmtpClient();
+                using SmtpClient client = new SmtpClient();
                 client.ServerCertificateValidationCallback = (s, c, h, e) => true;
 
                 //_logger.LogInformation($"Conectando ao SMTP {_smtpSettings.Server}:{_smtpSettings.Port}...");

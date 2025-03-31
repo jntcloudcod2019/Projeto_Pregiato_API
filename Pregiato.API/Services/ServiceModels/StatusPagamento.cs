@@ -6,12 +6,12 @@
     public const string Pending = "Pending";
     public const string NotDone = "NotDone";
 
-    private static readonly HashSet<string> ValidValues = new()
-    {
+    private static readonly HashSet<string> ValidValues =
+    [
         Paid,
         Pending,
         NotDone
-    };
+    ];
 
     public string Value { get; private set; }
 

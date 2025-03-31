@@ -1,7 +1,7 @@
 ﻿using Pregiato.API.Models;
 using Pregiato.API.Requests;
 
-namespace Pregiato.API.Interface
+namespace Pregiato.API.Interfaces
 {
     public interface IPaymentService
     {
