@@ -62,24 +62,19 @@ namespace Pregiato.API.Services
 
             return RegistrationResult.Success;
         }
-
         public async Task<string> AuthenticateUserAsync(LoginUserRequest? loginUserRequest)
         {
             try
             {
-                if (loginUserRequest == null || string.IsNullOrWhiteSpace(loginUserRequest.NickNAme))
-                {
-                    throw new ArgumentException("Nome de usuário não pode ser nulo ou vazio.");
-                }
-
+               
                 User? user = await _userRepository.GetByUsernameAsync(loginUserRequest.NickNAme);
 
                 if (user == null)
                 {
                     throw new UnauthorizedAccessException(JsonSerializer.Serialize(new ErrorResponse
                     {
-                        Message = "Usuário ou senha inválidos.",
-                        Details = "O NickName fornecido não foi encontrado na base de dados."
+                        Message = "USUÁRIOS OU SENHA INVÁLIDOS.".ToUpper()
+                       
                     }));
                 }
 

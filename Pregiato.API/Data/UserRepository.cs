@@ -33,11 +33,19 @@ namespace Pregiato.API.Data
             return await context.Users.FindAsync(id).ConfigureAwait(true);
         }
 
-        public async Task<User> GetByUsernameAsync(string nikeName)
+        public async Task<User> GetByUsernameAsync(string queryUser)
         {
-            return await context.Users
-                .AsNoTracking() 
-                .SingleOrDefaultAsync(u => u.NickName == nikeName);
+            var users = await context.Users
+                .AsNoTracking()
+                .Where(u => u.NickName == queryUser || u.Email == queryUser || u.Name == queryUser)
+                .ToListAsync();
+
+            if (users.Count > 1)
+            {
+                Console.WriteLine($"Atenção: múltiplos usuários encontrados para '{queryUser}'");
+            }
+
+            return users.FirstOrDefault();
         }
 
         public async Task<UserWhitResultRegister> GetByUser(string nikeName, string email)

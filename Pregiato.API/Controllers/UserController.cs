@@ -13,6 +13,7 @@ using Pregiato.API.Services.ServiceModels;
 using Pregiato.API.Services;
 using Microsoft.IdentityModel.Tokens;
 using Pregiato.API.Enums;
+using Serilog;
 
 namespace Pregiato.API.Controllers
 {
@@ -72,9 +73,10 @@ namespace Pregiato.API.Controllers
             {
                 return StatusCode(500, new ErrorResponse
                 {
-                    Message = "ERRO INTERNO NO SERVIDOR.",
-                    Details = ex.Message.ToUpper()
+                    Message = "ERRO INTERNO NO SERVIDOR."
+
                 });
+                Console.WriteLine($"[ERROR:]");
             }
         }
 
