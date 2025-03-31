@@ -10,6 +10,7 @@ using System.Drawing.Printing;
 using System.IdentityModel.Tokens.Jwt;
 using System.Security.Claims;
 using Pregiato.API.Interfaces;
+using Pregiato.API.Requests;
 
 
 namespace Pregiato.API.Controllers;
@@ -22,7 +23,8 @@ public class SalesFeedController : ControllerBase
     private readonly IDbContextFactory<ModelAgencyContext> _contextFactory;
     private readonly IProducersRepository _producersRepository;
 
-    public SalesFeedController(IDbContextFactory<ModelAgencyContext> contextFactory, IProducersRepository producersRepository)
+    public SalesFeedController(IDbContextFactory<ModelAgencyContext> contextFactory,
+        IProducersRepository producersRepository)
     {
         _contextFactory = contextFactory;
         _producersRepository = producersRepository;
@@ -32,8 +34,8 @@ public class SalesFeedController : ControllerBase
     [HttpGet("daily")]
     public async Task<IActionResult> GetDailySales()
     {
-        DateTimeOffset startOfDay = new DateTimeOffset(DateTime.UtcNow.Date, TimeSpan.Zero); 
-        DateTimeOffset endOfDay = startOfDay.AddDays(1).AddTicks(-1); 
+        DateTimeOffset startOfDay = new DateTimeOffset(DateTime.UtcNow.Date, TimeSpan.Zero);
+        DateTimeOffset endOfDay = startOfDay.AddDays(1).AddTicks(-1);
 
         try
         {
@@ -92,15 +94,16 @@ public class SalesFeedController : ControllerBase
     [HttpGet("weekly")]
     public async Task<IActionResult> GetWeeklySales([FromQuery] string date = null!)
     {
-       
+
         DateTimeOffset startOfWeek;
-        if (!string.IsNullOrEmpty(date) && DateTimeOffset.TryParseExact(date, "yyyy-MM-dd", null, global::System.Globalization.DateTimeStyles.None, out DateTimeOffset parsedDate))
+        if (!string.IsNullOrEmpty(date) && DateTimeOffset.TryParseExact(date, "yyyy-MM-dd", null,
+                global::System.Globalization.DateTimeStyles.None, out DateTimeOffset parsedDate))
         {
-            startOfWeek = new DateTimeOffset(parsedDate.Date, TimeSpan.Zero); 
+            startOfWeek = new DateTimeOffset(parsedDate.Date, TimeSpan.Zero);
         }
         else
         {
-            startOfWeek = new DateTimeOffset(DateTime.UtcNow.Date, TimeSpan.Zero); 
+            startOfWeek = new DateTimeOffset(DateTime.UtcNow.Date, TimeSpan.Zero);
         }
 
         DateTimeOffset endOfWeek = startOfWeek.AddDays(7).AddTicks(-1);
@@ -127,7 +130,8 @@ public class SalesFeedController : ControllerBase
             return Ok(new BillingResponse
             {
                 Success = true,
-                Message = $"Faturamento da semana de {startOfWeek.ToString("dd-MM-yyyy")} a {endOfWeek.ToString("dd-MM-yyyy")}.",
+                Message =
+                    $"Faturamento da semana de {startOfWeek.ToString("dd-MM-yyyy")} a {endOfWeek.ToString("dd-MM-yyyy")}.",
                 Data = new BillingData
                 {
                     TotalSales = totalSales,
@@ -162,7 +166,8 @@ public class SalesFeedController : ControllerBase
     [HttpGet("monthly")]
     public async Task<IActionResult> GetMonthlySales()
     {
-        DateTimeOffset startOfMonth = new DateTimeOffset(DateTime.UtcNow.Year, DateTime.UtcNow.Month, 1, 0, 0, 0, TimeSpan.Zero);
+        DateTimeOffset startOfMonth =
+            new DateTimeOffset(DateTime.UtcNow.Year, DateTime.UtcNow.Month, 1, 0, 0, 0, TimeSpan.Zero);
         DateTimeOffset endOfMonth = startOfMonth.AddMonths(1).AddDays(-1);
 
         try
@@ -173,7 +178,7 @@ public class SalesFeedController : ControllerBase
                 .Select(c => new
                 {
                     c.DataPagamento,
-                    c.Valor ,
+                    c.Valor,
                     c.StatusPagamento
                 })
                 .ToListAsync().ConfigureAwait(true);
@@ -184,7 +189,7 @@ public class SalesFeedController : ControllerBase
                 .Sum(t => t.Valor);
 
             decimal paidAmount = transactions.Where(t => t.StatusPagamento == "Paid")
-                .Sum(t => t.Valor);        
+                .Sum(t => t.Valor);
 
             return Ok(new BillingResponse
             {
@@ -197,7 +202,7 @@ public class SalesFeedController : ControllerBase
                     Period = new Period
                     {
                         StartDate = startOfMonth.ToString("dd-MM-yyyy"),
-                        EndDate =endOfMonth.ToString("dd-MM-yyyy ")
+                        EndDate = endOfMonth.ToString("dd-MM-yyyy ")
                     },
                     TransactionsCount = transactions.Count,
                     PendingAmount = pendingAmount,
@@ -242,7 +247,6 @@ public class SalesFeedController : ControllerBase
 
             var billingDataList = producers.Select(p =>
             {
-                // Map DetailsInfo to ModelDetails
                 ModelDetails modelDetails = null;
                 if (p.InfoModel != null)
                 {
@@ -267,7 +271,7 @@ public class SalesFeedController : ControllerBase
             var resumeData = new BillingDataResume
             {
                 TOTASTALESCONTRACT = producers.Sum(p => p.AmountContract),
-                TOTALCONTRACTS = producers.Count 
+                TOTALCONTRACTS = producers.Count
             };
 
             return Ok(new BillingResponseProducers
@@ -277,7 +281,7 @@ public class SalesFeedController : ControllerBase
                 DATA = billingDataList,
                 RESUME = resumeData
             });
-        
+
         }
         catch (Exception ex)
         {
@@ -296,8 +300,82 @@ public class SalesFeedController : ControllerBase
     }
 
 
-    private async Task<User> UserCaptureByToken()
+    [HttpGet("GetAllBillingDayProducers")]
+    public async Task<IActionResult> GetAllBillingDayProducers( )
     {
+        try
+        {
+            List<Producers> producers = await _producersRepository.GetBillingDayProducers();
+
+            
+                if (producers == null || !producers.Any())
+                {
+                    return Ok(new BillingResponseProducers
+                    {
+                        SUCESS = false,
+                        MESSAGE = "Nenhum registro encontrado para o dia atual",
+                        DATA = null,
+                        RESUME = null
+                    });
+
+                }
+
+            var groupedProducers = producers
+                .GroupBy(p => p.NameProducer)
+                .Select(g => new
+                {
+                    NameProducer = g.Key,
+                    TotalSalesSum = g.Sum(p => p.AmountContract), 
+                    TransactionCount = g.Count(), 
+                    Producers = g.ToList() 
+                });
+
+            
+            var billingDataList = groupedProducers
+                .SelectMany(g => g.Producers.Select(p => new BillingDataProducers
+                {
+                    NAMEPRODUCERS = p.NameProducer,
+                    AMOUNTCONTRACT = p.AmountContract,
+                    TRANSACTIONSCOUNT = g.TransactionCount, 
+                    DATE = p.CreatedAt.ToString("dd/MM/yyyy"),
+                    STATUSCONTRACT = p.StatusContratc.ToString(),
+                    DAYSALESSUM = g.TotalSalesSum 
+                }))
+                .OrderBy(p => p.NAMEPRODUCERS)
+                .ToList();
+
+            var resumeData = new BillingDataResume
+            {
+                TOTASTALESCONTRACT = producers.Sum(p => p.AmountContract),
+                TOTALCONTRACTS = producers.Count
+            };
+
+            return Ok(new BillingResponseProducers
+            {
+                SUCESS = true,
+                MESSAGE = "RENDIMENTO DIÁRIO DOS PRODUTORES:",
+                DATA = billingDataList,
+                RESUME = resumeData,
+            });
+
+        }
+        catch (Exception ex)
+        {
+            return StatusCode(500, new
+            {
+                success = false,
+                message = "Ocorreu um erro ao calcular o faturamento diário.",
+                error = new
+                {
+                    code = "INTERNAL_SERVER_ERROR",
+                }
+            });
+        }
+    }
+
+
+    private async Task<User> UserCaptureByToken()
+       {
         var authorizationHeader = HttpContext.Request.Headers["Authorization"].ToString();
         if (string.IsNullOrEmpty(authorizationHeader) || !authorizationHeader.StartsWith("Bearer "))
         {

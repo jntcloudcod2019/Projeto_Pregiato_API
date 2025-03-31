@@ -18,10 +18,12 @@ namespace Pregiato.API.Response
     {
         public string NAMEPRODUCERS { get; set; }
         public decimal AMOUNTCONTRACT{ get; set; }
-        public int TRANSACTIONSCOUNT { get; set; }
+        public decimal DAYSALESSUM { get; set; }
         public string DATE { get; set; }
         public string STATUSCONTRACT { get; set; }
-        public ModelDetails MODELDETAILS { get; set; }
+        public int TRANSACTIONSCOUNT { get; set; }    
+
+        public ModelDetails? MODELDETAILS { get; set; }
     }
 
     public class BillingDataResume

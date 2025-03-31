@@ -37,5 +37,22 @@ namespace Pregiato.API.Data
             return producers.ToList();
 
         }
+
+        public async Task<List<Producers>> GetBillingDayProducers()
+        {
+            using ModelAgencyContext context = _contextFactory.CreateDbContext();
+            DateTimeOffset startOfDay = new DateTimeOffset(DateTime.UtcNow.Date, TimeSpan.Zero);
+            DateTimeOffset endOfDay = startOfDay.AddDays(1).AddTicks(-1);
+
+            List<Producers> producersList = new List<Producers>();
+
+              producersList = await context.Producers
+                    .AsNoTracking()
+                    .Where(p => p.CreatedAt >= startOfDay && p.CreatedAt <= endOfDay)
+                    .OrderBy(p => p.NameProducer)
+                    .ToListAsync();
+           
+            return producersList;
+        }
     }
 }
