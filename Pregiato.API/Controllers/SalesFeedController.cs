@@ -182,7 +182,9 @@ public class SalesFeedController : ControllerBase
 
         try
         {
-            var transactions = await _context.Payments
+            using ModelAgencyContext context = _contextFactory.CreateDbContext();
+
+            var transactions = await context.Payments
                 .Where(p => p.DataPagamento >= startOfMonth && p.DataPagamento < endOfMonth &&
                             (p.StatusPagamento == "Paid" || p.StatusPagamento == "Pending"))
                 .Select(c => new
