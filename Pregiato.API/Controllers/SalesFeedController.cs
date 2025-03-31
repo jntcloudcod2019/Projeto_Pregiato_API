@@ -31,7 +31,6 @@ public class SalesFeedController : ControllerBase
         _producersRepository = producersRepository;
     }
 
-    [Authorize(Policy = "ManagementPolicyLevel3")]
     [HttpGet("daily")]
     public async Task<IActionResult> GetDailySales()
     {
