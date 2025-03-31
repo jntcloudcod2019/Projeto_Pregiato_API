@@ -133,7 +133,7 @@ namespace Pregiato.API.Controllers
             }
         }
 
-        [Authorize(Policy = "AdminOrManager")]
+        [Authorize(Policy = "AdminOrManager" )]
         [HttpDelete("deleteUser{id}")]
         public async Task<IActionResult> Delete(Guid id)
         {
