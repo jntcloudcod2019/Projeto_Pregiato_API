@@ -84,7 +84,7 @@ public class SalesFeedController : ControllerBase
         }
         catch (Exception ex)
         {
-            // Log do erro seria recomendado aqui
+            
             return StatusCode(500, new
             {
                 success = false,
@@ -98,7 +98,7 @@ public class SalesFeedController : ControllerBase
         }
     }
 
-    [Authorize(Policy = "ManagementPolicyLevel3")]
+    //[Authorize(Policy = "ManagementPolicyLevel3")]
     [HttpGet("weekly")]
     public async Task<IActionResult> GetWeeklySales([FromQuery] string date = null!)
     {
@@ -118,7 +118,9 @@ public class SalesFeedController : ControllerBase
 
         try
         {
-            var transactions = await _context.Payments
+            using ModelAgencyContext context = _contextFactory.CreateDbContext();
+
+            var transactions = await context.Payments
                 .Where(p => p.DataPagamento >= startOfWeek && p.DataPagamento <= endOfWeek &&
                             (p.StatusPagamento == "Paid" || p.StatusPagamento == "Pending"))
                 .Select(c => new
@@ -170,7 +172,7 @@ public class SalesFeedController : ControllerBase
         }
     }
 
-    [Authorize(Policy = "ManagementPolicyLevel3")]
+   // [Authorize(Policy = "ManagementPolicyLevel3")]
     [HttpGet("monthly")]
     public async Task<IActionResult> GetMonthlySales()
     {
@@ -307,7 +309,7 @@ public class SalesFeedController : ControllerBase
 
     }
 
-    [Authorize(Policy = "ManagementPolicyLevel3")]
+   // [Authorize(Policy = "ManagementPolicyLevel3")]
     [HttpGet("GetAllBillingDayProducers")]
     public async Task<IActionResult> GetAllBillingDayProducers( )
     {
