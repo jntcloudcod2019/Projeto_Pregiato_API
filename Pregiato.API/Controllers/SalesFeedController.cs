@@ -289,7 +289,7 @@ public class SalesFeedController : ControllerBase
             return Ok(new BillingResponseProducers
             {
                 SUCESS = true,
-                MESSAGE = "SEU RENDIMENTO DE HOJE:",
+                MESSAGE = "RENDIMENTO DA SELETIVA DE HOJE:",
                 DATA = billingDataList,
                 RESUME = resumeData
             });
@@ -365,7 +365,7 @@ public class SalesFeedController : ControllerBase
             return Ok(new BillingResponseProducers
             {
                 SUCESS = true,
-                MESSAGE = "RENDIMENTO DIÁRIO DOS PRODUTORES:",
+                MESSAGE = "RENDIMENTO DA SELETIVA DE HOJE:",
                 DATA = billingDataList,
                 RESUME = resumeData,
             });

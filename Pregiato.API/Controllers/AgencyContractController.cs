@@ -26,7 +26,7 @@ namespace Pregiato.API.Controllers
         private readonly CustomResponse _customResponse = customResponse;
 
 
-        [Authorize(Policy = "AdminOrManager")]
+     //   [Authorize(Policy = "AdminOrManager")]
         [SwaggerOperation(Summary = "Gera um contrato Termo de comprometimento", Description = "Este endpoint gera o Termo de comprometimento.")]
         [SwaggerResponse(200, "Contrato gerado com sucesso", typeof(string))]
         [SwaggerResponse(400, "Requisição inválida")]
@@ -48,7 +48,7 @@ namespace Pregiato.API.Controllers
         }
 
 
-        [Authorize(Policy = "AdminOrManager")]
+     //   [Authorize(Policy = "AdminOrManager")]
         [SwaggerResponse(200, "Contrato gerado com sucesso", typeof(string))]
         [SwaggerResponse(400, "Requisição inválida.")]
         [SwaggerResponse(404, "Modelo não encontrado")]
@@ -148,7 +148,7 @@ namespace Pregiato.API.Controllers
         }
 
         [Authorize(Policy = "AdminOrManagerOrModel")]
-        [HttpGet("download-contract")]
+     //   [HttpGet("download-contract")]
         public async Task<IActionResult> DownloadContractAsync(int proposalCode)
         {
 
@@ -176,7 +176,7 @@ namespace Pregiato.API.Controllers
         }
 
         [Authorize(Policy = "AdminOrManager")]
-        [HttpPost("upload/payment-receipt")]
+      //  [HttpPost("upload/payment-receipt")]
         public async Task<IActionResult> UploadPaymentReceipt([FromForm] UploadPaymentReceiptRequest request)
         {
             if (request.File == null || request.File.Length == 0)
@@ -200,7 +200,7 @@ namespace Pregiato.API.Controllers
 
 
         [HttpGet("all-contracts")]
-        [Authorize(Policy = "AdminOrManagerOrModel")]
+       // [Authorize(Policy = "AdminOrManagerOrModel")]
         public async Task<IActionResult> GetAllContractsForAgencyAsync()
         {
             try
