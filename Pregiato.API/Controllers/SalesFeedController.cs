@@ -11,6 +11,7 @@ using System.IdentityModel.Tokens.Jwt;
 using System.Security.Claims;
 using Pregiato.API.Interfaces;
 using Pregiato.API.Requests;
+using Pregiato.API.Services.ServiceModels;
 
 
 namespace Pregiato.API.Controllers;
@@ -299,7 +300,7 @@ public class SalesFeedController : ControllerBase
 
     }
 
-
+    [Authorize(Policy = "ManagementPolicyLevel3")]
     [HttpGet("GetAllBillingDayProducers")]
     public async Task<IActionResult> GetAllBillingDayProducers( )
     {
@@ -373,7 +374,6 @@ public class SalesFeedController : ControllerBase
         }
     }
 
-
     private async Task<User> UserCaptureByToken()
        {
         var authorizationHeader = HttpContext.Request.Headers["Authorization"].ToString();
@@ -413,23 +413,15 @@ public class SalesFeedController : ControllerBase
         var email = GetClaimValue("email") ?? GetClaimValue(ClaimTypes.Email);
         var userType = GetClaimValue("role") ?? GetClaimValue(ClaimTypes.Role);
 
-        if (string.IsNullOrEmpty(userId))
-        {
-            throw new UnauthorizedAccessException(JsonSerializer.Serialize(new ErrorResponse
-            {
-                Message = "USUÁRIO NÃO AUTENTICADO - ID DO USUÁRIO FALTANDO NO TOKEN",
-            }));
-        }
-
         using ModelAgencyContext context = _contextFactory.CreateDbContext();
 
         User? user = await context.Users
-            .FirstOrDefaultAsync(u => u.UserId.ToString() == userId);
+            .FirstOrDefaultAsync(u => u.Email.ToString() == email);
 
         if (user == null)
         {
             user = await context.Users
-                .FirstOrDefaultAsync(u => u.NickName == userName || u.Name == userName);
+                .FirstOrDefaultAsync(u => u.Email == userName || u.Email == email);
         }
 
         if (user == null)

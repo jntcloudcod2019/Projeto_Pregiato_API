@@ -153,6 +153,7 @@ builder.Services.AddAuthorization(options =>
 {
     options.AddPolicy("PolicyProducers", policy =>
         policy.RequireRole("Producers"));
+
     options.AddPolicy("AdminOrManager", policy =>
         policy.RequireRole("Administrator", "Manager"));
 
@@ -167,6 +168,9 @@ builder.Services.AddAuthorization(options =>
 
     options.AddPolicy("ManagementPolicyLevel5", policy =>
         policy.RequireRole("Administrator", "Manager", "Producers", "Coordination", "CEO"));
+
+    options.AddPolicy("ManagementPolicyLevel3", policy =>
+        policy.RequireRole("Administrator", "Manager", "CEO"));
 });
 
 
@@ -219,8 +223,7 @@ if (!string.IsNullOrEmpty(pathBase))
         return next();
     });
 }
-app.UseAuthentication();
-app.UseAuthorization();
+
 app.UseRouting();
 app.UseCors("AllowAllOrigins");
 app.UseSwagger();
@@ -229,5 +232,7 @@ app.UseSwaggerUI(c =>
     c.SwaggerEndpoint("/swagger/v1/swagger.json", "Model Agency API v1");
     c.RoutePrefix = "swagger";
 });
+app.UseAuthentication();
+app.UseAuthorization();
 app.MapControllers();
 app.Run();
