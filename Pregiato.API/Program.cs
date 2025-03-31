@@ -180,7 +180,8 @@ builder.Services.AddCors(options =>
         policyBuilder =>
         {
             policyBuilder.AllowAnyOrigin()
-                         .AllowAnyMethod()
+                .WithMethods("GET", "POST", "PUT", "DELETE")
+                .WithHeaders("Authorization", "Content-Type", "X-Requested-With")
                          .AllowAnyHeader();
         });
 });
