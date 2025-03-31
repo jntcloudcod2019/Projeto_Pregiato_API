@@ -64,7 +64,7 @@ namespace Pregiato.API.Controllers
                         UserId = loginUserRequest.IdUser?.ToString() ?? string.Empty,
                         Name = loginUserRequest.NickNAme ?? string.Empty,
                         Email = loginUserRequest.Email.ToUpper() ?? string.Empty,
-                        UserType = loginUserRequest.UserType.ToUpper() ?? string.Empty
+                        UserType = loginUserRequest.UserType ?? string.Empty
                     }
                 });
             }
