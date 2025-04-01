@@ -176,14 +176,13 @@ builder.Services.AddAuthorization(options =>
 
 builder.Services.AddCors(options =>
 {
-    options.AddPolicy("AllowAllOrigins",
-        policyBuilder =>
-        {
-            policyBuilder.AllowAnyOrigin()
-                .WithMethods("GET", "POST", "PUT", "DELETE")
-                .WithHeaders("Authorization", "Content-Type", "X-Requested-With")
-                         .AllowAnyHeader();
-        });
+    options.AddPolicy("DevPolicy", builder =>
+    {
+        builder
+            .AllowAnyOrigin()
+            .AllowAnyMethod()
+            .AllowAnyHeader();
+    });
 });
 
 builder.Services.AddControllers()
@@ -226,7 +225,7 @@ if (!string.IsNullOrEmpty(pathBase))
 }
 
 app.UseRouting();
-app.UseCors("AllowAllOrigins");
+app.UseCors("DevPolicy");
 app.UseSwagger();
 app.UseSwaggerUI(c =>
 {
