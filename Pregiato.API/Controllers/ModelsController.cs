@@ -26,6 +26,7 @@ namespace Pregiato.API.Controllers
         private readonly IUserService _userService;
         private readonly IServiceUtilites _serviceUtilites;
         private readonly IUserRepository _userRepository;
+        private readonly IProducersRepository _producersRepository;
         private readonly ModelAgencyContext _agencyContext;
         private readonly CustomResponse _customResponse;
         private readonly IDbContextFactory<ModelAgencyContext> _contextFactory;
@@ -39,6 +40,7 @@ namespace Pregiato.API.Controllers
                IUserService userService,
                IServiceUtilites serviceUtilites,
                IUserRepository userRepository,
+               IProducersRepository producersRepository,
                IDbContextFactory<ModelAgencyContext> contextFactory)
         {
             _modelRepository = modelRepository ?? throw new ArgumentNullException(nameof(modelRepository));
@@ -49,6 +51,7 @@ namespace Pregiato.API.Controllers
             _userRepository = userRepository;
             _customResponse = customResponse;
             _contextFactory = contextFactory;
+            _producersRepository = producersRepository;
         }
 
         [Authorize(Policy = "GlobalPolitics")]
@@ -71,6 +74,7 @@ namespace Pregiato.API.Controllers
                     });
                 }
 
+               
                 var resultModels = modelsExists.Select(model => new ResulModelsResponse
                 {
                     ID = model.IdModel.ToString(),
@@ -114,8 +118,6 @@ namespace Pregiato.API.Controllers
             }
 
         }
-
-
 
         [Authorize(Policy = "GlobalPolitic")]
         [HttpPost("AddModels")]
@@ -259,6 +261,8 @@ namespace Pregiato.API.Controllers
                     });
                 }
 
+                var producer = await _producersRepository.GetProducersAsync(model.CodProducers);
+
                 var resultModel = new ResulModelsResponse
                 {
                     ID = model.IdModel.ToString(),
@@ -270,7 +274,7 @@ namespace Pregiato.API.Controllers
                     AGE = model.Age,
                     TELEFONEPRINCIPAL = model.TelefonePrincipal,
                     STATUS = model.Status ? "ATIVO" : "DESCONTINUADO",
-                    RESPONSIBLEPRODUCER = model.CodProducers,
+                    RESPONSIBLEPRODUCER = producer.Name.ToUpper() ,
                     ADRESSINFO = string.IsNullOrEmpty(model.Address) && string.IsNullOrEmpty(model.City) && string.IsNullOrEmpty(model.UF)
                         ? null
                         : new AdressInfo
@@ -303,8 +307,6 @@ namespace Pregiato.API.Controllers
                 });
             }
         }
-
-
         [Authorize(Policy = "GlobalPoliticsAgency")]
         [HttpGet("my-contracts")]
         public async Task<IActionResult> GetMyContracts()
@@ -370,7 +372,6 @@ namespace Pregiato.API.Controllers
                 return Ok(listContracts);
             }
         }
-
         [Authorize(Policy = "GlobalPoliticsAgency")]
         [HttpPut("update-dna-property")]
         [ProducesResponseType(StatusCodes.Status204NoContent)]
