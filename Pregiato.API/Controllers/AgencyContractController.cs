@@ -26,7 +26,7 @@ namespace Pregiato.API.Controllers
         private readonly CustomResponse _customResponse = customResponse;
 
 
-     //   [Authorize(Policy = "AdminOrManager")]
+        [Authorize(Policy = "GlobalPolitics")]
         [SwaggerOperation(Summary = "Gera um contrato Termo de comprometimento", Description = "Este endpoint gera o Termo de comprometimento.")]
         [SwaggerResponse(200, "Contrato gerado com sucesso", typeof(string))]
         [SwaggerResponse(400, "Requisição inválida")]
@@ -48,7 +48,7 @@ namespace Pregiato.API.Controllers
         }
 
 
-     //   [Authorize(Policy = "AdminOrManager")]
+        [Authorize(Policy = "AdminOrManager")]
         [SwaggerResponse(200, "Contrato gerado com sucesso", typeof(string))]
         [SwaggerResponse(400, "Requisição inválida.")]
         [SwaggerResponse(404, "Modelo não encontrado")]
@@ -118,16 +118,19 @@ namespace Pregiato.API.Controllers
                 }
 
                 string contentString = await _contractService.ConvertBytesToString(
-                contracts.FirstOrDefault(c => c.TemplateFileName == "PhotographyProductionContractMinority.html" || 
-                c.TemplateFileName == "PhotographyProductionContract.html")?.Content);
+                contracts.FirstOrDefault(c =>
+                                         c.TemplateFileName == "PhotographyProductionContractMinority.html" || 
+                                         c.TemplateFileName == "PhotographyProductionContract.html")?.Content);
 
-                byte[] pdfBytes = await _contractService.ExtractBytesFromString(contentString);
+                byte[] pdfBytes = await _contractService.ExtractBytesFromString(contentString)
+                                                        .ConfigureAwait(true);
 
                 string message = $"CONTRATO PARA {model.Name.ToUpper()}, EMITIDOS COM SUCESSO!";
                 List<ContractSummary> contractsSummary = contracts.Select(c => new ContractSummary
                 {
                     CodProposta = c.CodProposta
-                }).ToList();
+                })
+                .ToList();
 
                 var metadata = new
                 {
@@ -147,7 +150,7 @@ namespace Pregiato.API.Controllers
             }
         }
 
-        [Authorize(Policy = "AdminOrManagerOrModel")]
+        [Authorize(Policy = "ManagementPolicyLevel3")]
         [HttpGet("download-contract")]
         public async Task<IActionResult> DownloadContractAsync(int proposalCode)
         {
@@ -175,7 +178,7 @@ namespace Pregiato.API.Controllers
             return File(pdfBytes, "application/pdf", "contract.pdf");
         }
 
-        [Authorize(Policy = "AdminOrManager")]
+        [Authorize(Policy = "ManagementPolicyLevel3")]
         [HttpPost("upload/payment-receipt")]
         public async Task<IActionResult> UploadPaymentReceipt([FromForm] UploadPaymentReceiptRequest request)
         {
@@ -198,9 +201,8 @@ namespace Pregiato.API.Controllers
         }
 
 
-
+        [Authorize(Policy = "AdminOrManagerOrModel")]
         [HttpGet("all-contracts")]
-       // [Authorize(Policy = "AdminOrManagerOrModel")]
         public async Task<IActionResult> GetAllContractsForAgencyAsync()
         {
             try

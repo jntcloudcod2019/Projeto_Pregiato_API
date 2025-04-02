@@ -59,7 +59,7 @@ namespace Pregiato.API.Controllers
             return Ok(modelsExists);
         }
 
-       // [Authorize(Policy = "GlobalPolitic")]
+        [Authorize(Policy = "GlobalPolitic")]
         [HttpPost("AddModels")]
         [SwaggerOperation("Criar novo modelo.")]
         [ProducesResponseType(typeof(CustomResponse), StatusCodes.Status200OK)]
@@ -70,7 +70,8 @@ namespace Pregiato.API.Controllers
            
             Console.WriteLine($"[PROCESS] {DateTime.Now:yyyy-MM-dd HH:mm:ss} |Validando se model {createModelRequest.Name} | Documento: {createModelRequest.CPF}");
 
-            ModelCheckDto? checkExistence = await _modelRepository.GetModelCheck(createModelRequest);
+            ModelCheckDto? checkExistence = await _modelRepository.GetModelCheck(createModelRequest)
+                                                                  .ConfigureAwait(true);
 
             if (checkExistence != null)
             {
@@ -84,16 +85,19 @@ namespace Pregiato.API.Controllers
                 });
             }
 
-            User producer = await _userRepository.GetByProducersAsync(createModelRequest.Nameproducers);
+            User producer = await _userRepository.GetByProducersAsync(createModelRequest.Nameproducers)
+                                                 .ConfigureAwait(true);
           
             Model model = new Model
             {
-                CodProducers = producer.CodProducers ?? "PMSYSAPI01",
+                CodProducers = producer.CodProducers,
                 Name = createModelRequest.Name,
                 CPF = createModelRequest.CPF,
                 RG = createModelRequest.RG,
                 DateOfBirth = createModelRequest.DateOfBirth,
-                Age = await _serviceUtilites.CalculateAge(createModelRequest.DateOfBirth ?? DateTime.MinValue),
+                Age = await _serviceUtilites
+                    .CalculateAge(createModelRequest.DateOfBirth ?? DateTime.MinValue)
+                    .ConfigureAwait(true),
                 Email = createModelRequest.Email,
                 PostalCode = createModelRequest.PostalCode,
                 Address = createModelRequest.Address,
@@ -110,7 +114,7 @@ namespace Pregiato.API.Controllers
             };
 
             Console.WriteLine($"[PROCESS] {DateTime.Now:yyyy-MM-dd HH:mm:ss} |  Processando cadastro do Moelo: {model.Name} | Documento:{model.CPF}. ");
-            await _modelRepository.AddModelAsync(model);
+            await _modelRepository.AddModelAsync(model).ConfigureAwait(true);
 
             Console.WriteLine($"[INFO] {DateTime.Now:yyyy-MM-dd HH:mm:ss} |  Modelo cadastro: {model.Name} | Documento:{model.CPF}. ");
             await _userService.RegisterUserModelAsync(createModelRequest.Name, createModelRequest.Email, producer.CodProducers);
