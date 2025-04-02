@@ -248,9 +248,11 @@ public class SalesFeedController : ControllerBase
     {
         try
         {
-            var user = await _userService.UserCaptureByToken();
+            var user = await _userService.UserCaptureByToken()
+                                         .ConfigureAwait(true);
 
-            List<Producers> producers = await _producersRepository.GetDailyBillingByProducers(user);
+            List<Producers> producers = await _producersRepository.GetDailyBillingByProducers(user)
+                                                                  .ConfigureAwait(true);
 
             if (producers == null || !producers.Any())
             {
@@ -357,7 +359,6 @@ public class SalesFeedController : ControllerBase
                     TRANSACTIONSCOUNT = g.TransactionCount, 
                     DATE = p.CreatedAt.ToString("dd/MM/yyyy"),
                     STATUSCONTRACT = p.StatusContratc.ToString(),
-                    DAYSALESSUM = g.TotalSalesSum 
                 }))
                 .OrderBy(p => p.NAMEPRODUCERS)
                 .ToList();

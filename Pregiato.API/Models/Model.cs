@@ -1,7 +1,9 @@
 ﻿using System.ComponentModel;
 using System.ComponentModel.DataAnnotations;
+using System.ComponentModel.DataAnnotations.Schema;
 using System.Text.Json;
 using System.Text.Json.Serialization;
+using AutoMapper.Configuration.Annotations;
 using Pregiato.API.System.Text.Json.Serialization;
 using Swashbuckle.AspNetCore.Annotations;
 
@@ -78,6 +80,9 @@ namespace Pregiato.API.Models
 
         public string? CodProducers { get; set; }
 
+        
 
     }
+
+  
 }
