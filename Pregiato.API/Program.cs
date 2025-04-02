@@ -180,6 +180,9 @@ builder.Services.AddAuthorization(options =>
     options.AddPolicy("ManagementPolicyLevel5", policy =>
         policy.RequireRole("ADMINISTRATOR", "MANAGER", "PRODUCERS", "COORDINATION", "CEO"));
 
+    options.AddPolicy("ManagementPolicyLevel4", policy =>
+        policy.RequireRole("ADMINISTRATOR", "MANAGER",  "COORDINATION", "CEO"));
+
     options.AddPolicy("ManagementPolicyLevel3", policy =>
         policy.RequireRole("ADMINISTRATOR", "MANAGER", "CEO"));
 
