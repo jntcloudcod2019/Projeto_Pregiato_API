@@ -148,7 +148,7 @@ namespace Pregiato.API.Controllers
         }
 
         [Authorize(Policy = "AdminOrManagerOrModel")]
-     //   [HttpGet("download-contract")]
+        [HttpGet("download-contract")]
         public async Task<IActionResult> DownloadContractAsync(int proposalCode)
         {
 
@@ -176,7 +176,7 @@ namespace Pregiato.API.Controllers
         }
 
         [Authorize(Policy = "AdminOrManager")]
-      //  [HttpPost("upload/payment-receipt")]
+        [HttpPost("upload/payment-receipt")]
         public async Task<IActionResult> UploadPaymentReceipt([FromForm] UploadPaymentReceiptRequest request)
         {
             if (request.File == null || request.File.Length == 0)

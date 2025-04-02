@@ -59,7 +59,7 @@ namespace Pregiato.API.Controllers
 
                 return Ok(new LoginResponse
                 {
-                    Token = token.ToUpper(),
+                    Token = token,
                     User = new UserInfo
                     {
                         UserId = loginUserRequest.IdUser?.ToString().ToUpper() ?? string.Empty,
@@ -216,7 +216,7 @@ namespace Pregiato.API.Controllers
         }
         
 
-        [Authorize(Policy = "AdminOrManager")]
+       // [Authorize(Policy = "AdminOrManager")]
         [HttpPost("register/producers")]
         public async Task<IActionResult> RegisterUserProducers([FromBody] UserRegisterDto? user)
         {
@@ -346,7 +346,7 @@ namespace Pregiato.API.Controllers
             }
         }
 
-        [Authorize(Policy = "AdminOrManager")]
+       // [Authorize(Policy = "AdminOrManager")]
         [HttpPost("register/CEO")]
         public async Task<IActionResult> RegisterCeo([FromBody] UserRegisterDto? user)
         {

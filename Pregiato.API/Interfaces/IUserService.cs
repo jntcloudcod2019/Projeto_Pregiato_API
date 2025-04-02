@@ -16,6 +16,7 @@ namespace Pregiato.API.Interfaces
         Task<RegistrationResult> RegisterTelemarketingAsync(string username, string email);
         Task<RegistrationResult> RegisterCEOAsync(string username, string email);
         Task<RegistrationResult> RegisterProductionAsync(string username, string email);
+        Task<User> UserCaptureByToken();
         Task<string> GenerateProducerCodeAsync();
 
     }

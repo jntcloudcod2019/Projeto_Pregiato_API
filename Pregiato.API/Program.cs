@@ -8,6 +8,7 @@ using Pregiato.API.Services;
 using System.Text.Json.Serialization;
 using Microsoft.OpenApi.Any;
 using System.Globalization;
+using System.Security.Claims;
 using Pregiato.API.Services.ServiceModels;
 using Pregiato.API.Interfaces;
 using Pregiato.API.Response;
@@ -74,9 +75,22 @@ builder.Services.AddAutoMapper(AppDomain.CurrentDomain.GetAssemblies());
 builder.Services.AddFluentValidationAutoValidation()
     .AddFluentValidationClientsideAdapters()
     .AddValidatorsFromAssemblyContaining<CreateModelRequestValidator>();
-
 builder.Services.Configure<RabbitMQConfig>(builder.Configuration.GetSection("RabbitMQ"));
 
+builder.Services.Configure<RabbitMQConfig>(options =>
+{
+    options.RabbitMqUri = Environment.GetEnvironmentVariable("RABBITMQ_URI")
+                          ?? builder.Configuration["RabbitMQ:Uri"]
+                          ?? "amqps://guest:guest@localhost:5672";
+
+    options.Port = int.TryParse(Environment.GetEnvironmentVariable("RABBITMQ_PORT"), out int port)
+        ? port
+        : (builder.Configuration.GetValue<int?>("RabbitMQ:Port") ?? 5672);
+
+    options.QueueName = Environment.GetEnvironmentVariable("RABBITMQ_QUEUE")
+                        ?? "sqs-inboud-sendfile";
+});
+builder.Services.AddHttpContextAccessor();
 
 builder.Services.AddSwaggerGen(c =>
 {
@@ -115,62 +129,62 @@ builder.Services.AddSwaggerGen(c =>
 });
 
 
-builder.Services.AddAuthentication(JwtBearerDefaults.AuthenticationScheme)
+builder.Services.AddAuthentication(options =>
+    {
+        options.DefaultAuthenticateScheme = JwtBearerDefaults.AuthenticationScheme;
+        options.DefaultChallengeScheme = JwtBearerDefaults.AuthenticationScheme;
+
+    })
     .AddJwtBearer(options =>
     {
         options.TokenValidationParameters = new TokenValidationParameters
         {
             ValidateIssuer = true,
             ValidIssuer = Environment.GetEnvironmentVariable("ISSUER_JWT") ?? "PregiatoAPI",
+
             ValidateAudience = true,
             ValidAudience = Environment.GetEnvironmentVariable("AUDIENCE_JWT") ?? "PregiatoAPIToken",
+
             ValidateLifetime = true,
             ValidateIssuerSigningKey = true,
+
             IssuerSigningKey = new SymmetricSecurityKey(
-                  Encoding.UTF8.GetBytes(
-                  Environment.GetEnvironmentVariable("SECRETKEY_JWT_TOKEN") ??
-                  "3+XcgYxev9TcGXECMBq0ilANarHN68wsDsrhG60icMaACkw9ajU97IYT+cv9IDepqrQjPaj4WUQS3VqOvpmtDw=="))
+                Encoding.UTF8.GetBytes(
+                    Environment.GetEnvironmentVariable("SECRETKEY_JWT_TOKEN") ??
+                    "3+XcgYxev9TcGXECMBq0ilANarHN68wsDsrhG60icMaACkw9ajU97IYT+cv9IDepqrQjPaj4WUQS3VqOvpmtDw=="
+                )
+            ),
+
+            RoleClaimType = ClaimTypes.Role
         };
     });
-
-
-builder.Services.Configure<RabbitMQConfig>(options =>
-{
-    options.RabbitMqUri = Environment.GetEnvironmentVariable("RABBITMQ_URI")
-        ?? builder.Configuration["RabbitMQ:Uri"]
-        ?? "amqps://guest:guest@localhost:5672";
-
-    options.Port = int.TryParse(Environment.GetEnvironmentVariable("RABBITMQ_PORT"), out int port)
-        ? port
-        : (builder.Configuration.GetValue<int?>("RabbitMQ:Port") ?? 5672);
-
-    options.QueueName = Environment.GetEnvironmentVariable("RABBITMQ_QUEUE")
-       ?? "sqs-inboud-sendfile";
-});
 
 
 builder.Services.AddAuthorization(options =>
 {
     options.AddPolicy("PolicyProducers", policy =>
-        policy.RequireRole("Producers"));
+        policy.RequireRole("PRODUCERS"));
 
     options.AddPolicy("AdminOrManager", policy =>
-        policy.RequireRole("Administrator", "Manager"));
+        policy.RequireRole("ADMINISTRATOR", "MANAGER"));
 
     options.AddPolicy("AdminOrManagerOrModel", policy =>
-        policy.RequireRole("Administrator", "Manager", "Model"));
+        policy.RequireRole("ADMINISTRATOR", "MANAGER", "MODEL"));
 
     options.AddPolicy("GlobalPolitics", policy =>
-        policy.RequireRole("Administrator", "Manager", "Telemarketing", "Producers", "Coordination", "CEO", "Production"));
+        policy.RequireRole("ADMINISTRATOR", "MANAGER", "TELEMARKETING", "PRODUCERS", "COORDINATION", "CEO", "PRODUCTION"));
 
     options.AddPolicy("GlobalPoliticsAgency", policy =>
-        policy.RequireRole("Administrator", "Manager", "Telemarketing", "Producers", "Coordination", "CEO", "Production", "Model"));
+        policy.RequireRole("ADMINISTRATOR", "MANAGER", "TELEMARKETING", "Producers", "Coordination", "CEO", "PRODUCTION", "MODEL"));
 
     options.AddPolicy("ManagementPolicyLevel5", policy =>
-        policy.RequireRole("Administrator", "Manager", "Producers", "Coordination", "CEO"));
+        policy.RequireRole("ADMINISTRATOR", "MANAGER", "PRODUCERS", "COORDINATION", "CEO"));
 
     options.AddPolicy("ManagementPolicyLevel3", policy =>
-        policy.RequireRole("Administrator", "Manager", "CEO"));
+        policy.RequireRole("ADMINISTRATOR", "MANAGER", "CEO"));
+
+    options.AddPolicy("ManagementPolicyLevel2", policy =>
+        policy.RequireRole("ADMINISTRATOR", "CEO"));
 });
 
 
@@ -208,7 +222,6 @@ builder.Logging.SetMinimumLevel(LogLevel.Trace);
 
 WebApplication app = builder.Build();
 
-// Configuração do Pipeline de Requisições
 if (app.Environment.IsDevelopment())
 {
     app.UseDeveloperExceptionPage();
@@ -225,13 +238,13 @@ if (!string.IsNullOrEmpty(pathBase))
 }
 
 app.UseRouting();
-app.UseCors("DevPolicy");
 app.UseSwagger();
 app.UseSwaggerUI(c =>
 {
     c.SwaggerEndpoint("/swagger/v1/swagger.json", "Model Agency API v1");
     c.RoutePrefix = "swagger";
 });
+app.UseCors("DevPolicy");
 app.UseAuthentication();
 app.UseAuthorization();
 app.MapControllers();
