@@ -81,7 +81,7 @@ namespace Pregiato.API.Data
                     ContractFilePath = c.ContractFilePath,
                     Content = c.Content
                 })
-                .FirstOrDefaultAsync();
+                .FirstOrDefaultAsync().ConfigureAwait(true);
 
             return contract;
         }
@@ -103,7 +103,7 @@ namespace Pregiato.API.Data
                     ContractFilePath = c.ContractFilePath,
                     CodProposta = c.CodProposta
                 })
-                .ToListAsync();
+                .ToListAsync().ConfigureAwait(true);
         }
     }
 }

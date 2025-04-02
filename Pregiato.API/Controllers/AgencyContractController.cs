@@ -96,8 +96,8 @@ namespace Pregiato.API.Controllers
                 if (createContractModelRequest == null || !ModelState.IsValid)
                 {
                     List<string> erros = ModelState.Values.SelectMany(v => v.Errors)
-                                         .Select(e => e.ErrorMessage)
-                                         .ToList();
+                                                         .Select(e => e.ErrorMessage)
+                                                         .ToList();
                     return ActionResultIndex.Failure($"OS DADOS FORNECIDOS SÃO INVÁLIDOS: {string.Join(", ", erros).ToUpper()}");
                 }
 
@@ -118,29 +118,35 @@ namespace Pregiato.API.Controllers
                 }
 
                 string contentString = await _contractService.ConvertBytesToString(
-                contracts.FirstOrDefault(c =>
-                                         c.TemplateFileName == "PhotographyProductionContractMinority.html" || 
-                                         c.TemplateFileName == "PhotographyProductionContract.html")?.Content);
+                    contracts.FirstOrDefault(c =>
+                        c.TemplateFileName == "PhotographyProductionContractMinority.html" ||
+                        c.TemplateFileName == "PhotographyProductionContract.html")?.Content);
 
                 byte[] pdfBytes = await _contractService.ExtractBytesFromString(contentString)
-                                                        .ConfigureAwait(true);
+                                                         .ConfigureAwait(true);
 
                 string message = $"CONTRATO PARA {model.Name.ToUpper()}, EMITIDOS COM SUCESSO!";
                 List<ContractSummary> contractsSummary = contracts.Select(c => new ContractSummary
                 {
                     CodProposta = c.CodProposta
-                })
-                .ToList();
+                }).ToList();
 
-                var metadata = new
+                var response = new ContractGenerationResponse
                 {
+                    ContractName = "Photography Production Contract",
                     Message = message,
                     Contracts = contractsSummary
                 };
 
-                string metadataJson = JsonSerializer.Serialize(metadata);
+                string metadataJson = JsonSerializer.Serialize(new
+                {
+                    Message = message,
+                    Contracts = contractsSummary
+                });
+
 
                 Response.Headers.Add("X-Contract-Metadata", metadataJson);
+
                 return File(pdfBytes, "application/pdf", "contract.pdf");
             }
             catch (Exception ex)
