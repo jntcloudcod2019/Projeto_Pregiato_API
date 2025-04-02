@@ -356,7 +356,6 @@ public class SalesFeedController : ControllerBase
                 {
                     NAMEPRODUCERS = p.NameProducer,
                     AMOUNTCONTRACT = p.AmountContract,
-                    TRANSACTIONSCOUNT = g.TransactionCount, 
                     DATE = p.CreatedAt.ToString("dd/MM/yyyy"),
                     STATUSCONTRACT = p.StatusContratc.ToString(),
                 }))

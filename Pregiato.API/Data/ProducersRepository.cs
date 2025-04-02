@@ -38,6 +38,16 @@ namespace Pregiato.API.Data
 
         }
 
+        public async Task<User> GetProducersAsync(string codProducers)
+        { 
+            using ModelAgencyContext context = _contextFactory.CreateDbContext();
+           
+            User producer = await context.Users
+                .AsNoTracking()
+                .FirstOrDefaultAsync(u => u.CodProducers == codProducers);
+            return producer;
+        }
+
         public async Task<List<Producers>> GetBillingDayProducers()
         {
             using ModelAgencyContext context = _contextFactory.CreateDbContext();
