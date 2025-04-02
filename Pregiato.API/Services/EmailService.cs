@@ -13,19 +13,7 @@ namespace Pregiato.API.Services
         public EmailService(IEnvironmentVariableProviderEmail envVarProvider, ILogger<EmailService> logger)
         {
             _logger = logger;
-            ////_smtpSettings = new SmtpSettings
-            ////{
-            ////    Server = "smtp.gmail.com",
-            ////    Port = 465,
-            ////    Username = "jonathnfrnnd3@gmail.com",
-            ////    Password = "bssugfuronwdrxsn",
-            ////    UseTls = true
-            ////};
-
-            //if (string.IsNullOrEmpty(_smtpSettings.Server) || string.IsNullOrEmpty(_smtpSettings.Username) || string.IsNullOrEmpty(_smtpSettings.Password))
-            //{
-            //    Console.WriteLine($"[ERROR] {DateTime.Now:yyyy-MM-dd HH:mm:ss} |  Configurações do SMTP não foram carregadas corretamente. Verifique as variáveis de ambiente.");
-            //}
+           
         }
 
         public async Task<string> LoadTemplate(Dictionary<string, string> replacements)

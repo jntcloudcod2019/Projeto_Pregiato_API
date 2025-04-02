@@ -1,5 +1,9 @@
 ﻿using System.IdentityModel.Tokens.Jwt;
+using System.Security.Claims;
 using System.Text.Json;
+using Microsoft.EntityFrameworkCore;
+using Microsoft.EntityFrameworkCore.Internal;
+using Pregiato.API.Data;
 using Pregiato.API.Enums;
 using Pregiato.API.Interfaces;
 using Pregiato.API.Models;
@@ -11,14 +15,18 @@ using Pregiato.API.Services.ServiceModels;
 namespace Pregiato.API.Services
 {
     public class UserService(IUserRepository userRepository, IJwtService jwtService,
-                       IPasswordHasherService passwordHasherService,
-                       IEmailService emailService) : IUserService
+                       IPasswordHasherService passwordHasherService, IDbContextFactory<ModelAgencyContext> contextFactory,
+                       IEmailService emailService, IHttpContextAccessor httpContextAccessor) : IUserService
     {
         private readonly IUserRepository _userRepository = userRepository;
         private readonly IJwtService _jwtService = jwtService;
         private readonly IEmailService _emailService = emailService;
         private readonly IPasswordHasherService _passwordHasherService = passwordHasherService;
+        private readonly IDbContextFactory<ModelAgencyContext> _contextFactory = contextFactory;
         private readonly CustomResponse _customResponse = new CustomResponse();
+        private readonly HttpContext _httpContext;
+        private readonly IHttpContextAccessor _httpContextAccessor = httpContextAccessor;
+
 
         public async Task DeleteUserAsync(Guid id)
         {
@@ -415,7 +423,7 @@ namespace Pregiato.API.Services
                 Email = email,
                 NickName = nikeName,
                 PasswordHash = passwordHash,
-                UserType = UserType.CEO.ToString(),
+                UserType = UserType.Ceo.ToString(),
                 CodProducers = await GenerateProducerCodeAsync()
                     .ConfigureAwait(true),
 
@@ -548,6 +556,55 @@ namespace Pregiato.API.Services
             int randomNumber = random.Next(0, 999999);
             string code = $"{prefix}{randomNumber:000000}";
             return Task.FromResult(code);
+        }
+        public async Task<User> UserCaptureByToken()
+        {
+            // 1. Captura o token do Header
+            var authorizationHeader = _httpContextAccessor.HttpContext?.Request.Headers["Authorization"].ToString();
+
+            if (string.IsNullOrEmpty(authorizationHeader) || !authorizationHeader.StartsWith("Bearer "))
+                throw new UnauthorizedAccessException("TOKEN INVÁLIDO");
+
+            var token = authorizationHeader["Bearer ".Length..].Trim();
+            var handler = new JwtSecurityTokenHandler();
+
+            JwtSecurityToken jwtToken;
+            try
+            {
+                jwtToken = handler.ReadJwtToken(token);
+            }
+            catch
+            {
+                throw new UnauthorizedAccessException("TOKEN MAL FORMADO");
+            }
+
+            // 2. Função utilitária para pegar claims
+            string GetClaimValue(string claimType) =>
+                jwtToken.Claims.FirstOrDefault(c =>
+                    c.Type == claimType || c.Type.EndsWith($"/{claimType}", StringComparison.OrdinalIgnoreCase))?.Value;
+
+            // 3. Extração das claims
+            var email = GetClaimValue("email") ?? GetClaimValue(ClaimTypes.Email);
+            var userTypeFromToken = GetClaimValue("role") ?? GetClaimValue(ClaimTypes.Role);
+
+            if (string.IsNullOrEmpty(email) || string.IsNullOrEmpty(userTypeFromToken))
+                throw new UnauthorizedAccessException("INFORMAÇÕES DO TOKEN INCOMPLETAS");
+
+            // 4. Busca o usuário na base
+            using var context = _contextFactory.CreateDbContext();
+
+            var user = await context.Users.FirstOrDefaultAsync(u => u.Email == email);
+            if (user is null)
+                throw new UnauthorizedAccessException("USUÁRIO NÃO ENCONTRADO");
+
+            // 5. Valida o tipo de usuário (defina os tipos permitidos aqui)
+            //var tiposPermitidos = new[] { UserType.Administrator, UserType.Manager, UserType.Ceo };
+
+            //if (!tiposPermitidos.Contains(userTypeFromToken))
+            //    throw new UnauthorizedAccessException("USUÁRIO SEM PERMISSÃO PARA ESSA OPERAÇÃO");
+
+            // 6. Retorna o usuário validado
+            return user;
         }
     }
 }

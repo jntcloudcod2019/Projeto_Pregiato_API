@@ -12,6 +12,7 @@ using System.Security.Claims;
 using Pregiato.API.Interfaces;
 using Pregiato.API.Requests;
 using Pregiato.API.Services.ServiceModels;
+using Pregiato.API.DTO;
 
 
 namespace Pregiato.API.Controllers;
@@ -23,12 +24,15 @@ public class SalesFeedController : ControllerBase
     private readonly ModelAgencyContext _context;
     private readonly IDbContextFactory<ModelAgencyContext> _contextFactory;
     private readonly IProducersRepository _producersRepository;
+    private readonly IUserService _userService;
 
     public SalesFeedController(IDbContextFactory<ModelAgencyContext> contextFactory,
-        IProducersRepository producersRepository)
+        IProducersRepository producersRepository,
+        IUserService userService)
     {
         _contextFactory = contextFactory;
         _producersRepository = producersRepository;
+        _userService = userService;
     }
 
     [HttpGet("daily")]
@@ -237,13 +241,16 @@ public class SalesFeedController : ControllerBase
         }
     }
 
-    [Authorize(Policy = "ManagementPolicyLevel3")]
+
+
+    [Authorize(Policy = "PolicyProducers")]
     [HttpGet("GetBillingDayByProducers")]
     public async Task<IActionResult> GetBillingDayByProducers()
     {
         try
         {
-            User user = await UserCaptureByToken();
+            var user = await _userService.UserCaptureByToken();
+
             List<Producers> producers = await _producersRepository.GetDailyBillingByProducers(user);
 
             if (producers == null || !producers.Any())
@@ -251,7 +258,7 @@ public class SalesFeedController : ControllerBase
                 return Ok(new BillingResponseProducers
                 {
                     SUCESS = false,
-                    MESSAGE = "Nenhum registro encontrado para o dia atual",
+                    MESSAGE = "NENHUM REGISTRO ENCONTRADO PARA O DIA ATUAL",
                     DATA = null,
                     RESUME = null
                 });
@@ -311,7 +318,7 @@ public class SalesFeedController : ControllerBase
 
     }
 
-   // [Authorize(Policy = "ManagementPolicyLevel3")]
+    [Authorize(Policy = "ManagementPolicyLevel3")]
     [HttpGet("GetAllBillingDayProducers")]
     public async Task<IActionResult> GetAllBillingDayProducers( )
     {
@@ -325,7 +332,7 @@ public class SalesFeedController : ControllerBase
                     return Ok(new BillingResponseProducers
                     {
                         SUCESS = false,
-                        MESSAGE = "Nenhum registro encontrado para o dia atual",
+                        MESSAGE = "NENHUM REGISTRO ENCONTRADO PARA O DIA ATUAL",
                         DATA = null,
                         RESUME = null
                     });
@@ -385,64 +392,5 @@ public class SalesFeedController : ControllerBase
         }
     }
 
-    private async Task<User> UserCaptureByToken()
-       {
-        var authorizationHeader = HttpContext.Request.Headers["Authorization"].ToString();
-        if (string.IsNullOrEmpty(authorizationHeader) || !authorizationHeader.StartsWith("Bearer "))
-        {
-            throw new UnauthorizedAccessException(JsonSerializer.Serialize(new ErrorResponse
-            {
-                Message = "TOKEN INVÁLIDO",
-            }));
-        }
-
-        var token = authorizationHeader.Substring("Bearer ".Length).Trim();
-        var handler = new JwtSecurityTokenHandler();
-        JwtSecurityToken jwtToken;
-
-        try
-        {
-            jwtToken = handler.ReadJwtToken(token);
-        }
-        catch (Exception)
-        {
-            throw new UnauthorizedAccessException(JsonSerializer.Serialize(new ErrorResponse
-            {
-                Message = "TOKEN INVÁLIDO",
-            }));
-        }
-
-        string GetClaimValue(string claimType)
-        {
-            return jwtToken.Claims.FirstOrDefault(c =>
-                c.Type == claimType ||
-                c.Type.EndsWith($"/{claimType}", StringComparison.OrdinalIgnoreCase))?.Value;
-        }
-
-        var userId = GetClaimValue("nameid") ?? GetClaimValue(ClaimTypes.NameIdentifier);
-        var userName = GetClaimValue("unique_name") ?? GetClaimValue(ClaimTypes.Name);
-        var email = GetClaimValue("email") ?? GetClaimValue(ClaimTypes.Email);
-        var userType = GetClaimValue("role") ?? GetClaimValue(ClaimTypes.Role);
-
-        using ModelAgencyContext context = _contextFactory.CreateDbContext();
-
-        User? user = await context.Users
-            .FirstOrDefaultAsync(u => u.Email.ToString() == email);
-
-        if (user == null)
-        {
-            user = await context.Users
-                .FirstOrDefaultAsync(u => u.Email == userName || u.Email == email);
-        }
-
-        if (user == null)
-        {
-            throw new UnauthorizedAccessException(JsonSerializer.Serialize(new ErrorResponse
-            {
-                Message = "USUÁRIO NÃO ENCONTRADO NA BASE DE DADOS",
-            }));
-        }
-
-        return user;
-    }
+    
 }
