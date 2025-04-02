@@ -15,7 +15,7 @@ namespace Pregiato.API.Interfaces
         Task<UserWhitResultRegister> GetByUser(string username, string email);
         Task SaveChangesAsync();
         Task GetByUserAsync(LoginUserRequest loginRequest);
-
+        Task<IEnumerable<User>> GetProducers();
         Task<User> GetByProducersAsync(string Name);
     }
 }
