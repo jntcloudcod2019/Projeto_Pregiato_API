@@ -15,6 +15,7 @@ using Pregiato.API.Interfaces;
 
 namespace Pregiato.API.Controllers
 {
+    using static iText.StyledXmlParser.Jsoup.Select.Evaluator;
     using Alias = string;
 
     [ApiController]
@@ -50,14 +51,71 @@ namespace Pregiato.API.Controllers
             _contextFactory = contextFactory;
         }
 
-        [Authorize(Policy = "GlobalPolitic")]
+        [Authorize(Policy = "GlobalPolitics")]
         [HttpGet("GetAllModels")]
         [SwaggerOperation("Retorna todos os modelos cadastrados.")]
         public async Task<IActionResult> GetAllModels()
         {
-            IEnumerable<Model> modelsExists = await _modelRepository.GetAllModelAsync();
-            return Ok(modelsExists);
+
+            try
+            {
+                IEnumerable<Model> modelsExists = await _modelRepository.GetAllModelAsync();
+
+                if (modelsExists == null || !modelsExists.Any())
+                {
+                    return Ok(new ModelsResponse
+                    {
+                        SUCESS = false,
+                        MESSAGE = "NENHUM MODELO ENCONTRADO.",
+                        DATA = null
+                    });
+                }
+
+                var resultModels = modelsExists.Select(model => new ResulModelsResponse
+                {
+                    ID = model.IdModel.ToString(),
+                    NAME = model.Name,
+                    CPF = model.CPF,
+                    RG = model.RG,
+                    DATEOFBIRTH = model.DateOfBirth,
+                    EMAIL = model.Email,
+                    AGE = model.Age,
+                    TELEFONEPRINCIPAL = model.TelefonePrincipal,
+                    STATUS = model.Status ? "ATIVO" : "DESCONTINUADO", 
+                    RESPONSIBLEPRODUCER = model.CodProducers,
+                    ADRESSINFO = new AdressInfo 
+                    {
+                        ADDRESS = model.Address,
+                        NUMBERADDRESS = model.NumberAddress,
+                        POSTALCODE = model.PostalCode, 
+                        CITY = model.City,
+                        UF = model.UF
+                    }
+                }).ToList();
+
+                return Ok(new ModelsResponse
+                {
+                    SUCESS = true,
+                    DATA = resultModels
+                });
+            }
+            catch (Exception ex)
+            {
+                return StatusCode(500, new
+                {
+                    success = false,
+                    message = "OCORREU UM ERRO AO BUSCAR OS MODELOS.",
+                    error = new
+                    {
+                        code = "INTERNAL_SERVER_ERROR",
+                        details = ex.Message
+                    }
+                });
+            }
+
         }
+
+
 
         [Authorize(Policy = "GlobalPolitic")]
         [HttpPost("AddModels")]
@@ -182,31 +240,68 @@ namespace Pregiato.API.Controllers
         //    });
         //}
 
-        [Authorize(Policy = "GlobalPolitic")]
+        [Authorize(Policy = "GlobalPolitics")]
         [HttpGet("findModel")]
         public async Task<IActionResult> FindModel([FromQuery] Alias query)
         {
-            Model? model = await _modelRepository.GetModelByCriteriaAsync(query);
 
-            if (model == null)
+            try
             {
-                return NotFound("Modelo não encontrado.");
+                Model model = await _modelRepository.GetModelByCriteriaAsync(query);
+
+                if (model == null)
+                {
+                    return Ok(new ModelsResponse
+                    {
+                        SUCESS = false,
+                        MESSAGE = $"MODELO COM ID {query.ToUpper()} NÃO ENCONTRADO.",
+                        DATA = null
+                    });
+                }
+
+                var resultModel = new ResulModelsResponse
+                {
+                    ID = model.IdModel.ToString(),
+                    NAME = model.Name,
+                    CPF = model.CPF,
+                    RG = model.RG,
+                    DATEOFBIRTH = model.DateOfBirth,
+                    EMAIL = model.Email,
+                    AGE = model.Age,
+                    TELEFONEPRINCIPAL = model.TelefonePrincipal,
+                    STATUS = model.Status ? "ATIVO" : "DESCONTINUADO",
+                    RESPONSIBLEPRODUCER = model.CodProducers,
+                    ADRESSINFO = string.IsNullOrEmpty(model.Address) && string.IsNullOrEmpty(model.City) && string.IsNullOrEmpty(model.UF)
+                        ? null
+                        : new AdressInfo
+                        {
+                            ADDRESS = model.Address,
+                            NUMBERADDRESS = model.NumberAddress,
+                            POSTALCODE = model.PostalCode,
+                            CITY = model.City,
+                            UF = model.UF
+                        }
+                };
+                
+                return Ok(new ModelsResponse
+                {
+                    SUCESS = true,
+                    DATA = new List<ResulModelsResponse> { resultModel } 
+                });
             }
-
-            return Ok(new
+            catch (Exception ex)
             {
-                model.IdModel,
-                model.Name,
-                model.CPF,
-                model.RG,
-                model.Address,
-                model.NumberAddress,
-                model.BankAccount,
-                model.PostalCode,
-                model.Complement,
-                model.TelefonePrincipal,
-                model.TelefoneSecundario
-            });
+                return StatusCode(500, new
+                {
+                    success = false,
+                    message = "Ocorreu um erro ao buscar o modelo.",
+                    error = new
+                    {
+                        code = "INTERNAL_SERVER_ERROR",
+                        details = ex.Message
+                    }
+                });
+            }
         }
 
 
@@ -275,7 +370,6 @@ namespace Pregiato.API.Controllers
                 return Ok(listContracts);
             }
         }
-
 
         [Authorize(Policy = "GlobalPoliticsAgency")]
         [HttpPut("update-dna-property")]
