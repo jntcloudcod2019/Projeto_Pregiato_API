@@ -55,12 +55,12 @@ namespace Pregiato.API.Data
         public async Task<Model?> GetModelByCriteriaAsync(string query)
         {
             return await _context.Models
-           .Where(m => m.CPF == query ||
-                      m.RG == query ||
-                      m.Name.Contains(query) ||
-                      m.IdModel.ToString() == query)
-          
-           .FirstOrDefaultAsync();
+                .AsNoTracking()
+                .Where(m => m.CPF == query ||
+                            m.RG == query ||
+                            m.Email == query ||
+                            m.IdModel.ToString() == query)
+                .FirstOrDefaultAsync().ConfigureAwait(true);
         }
 
         public async Task<Model> GetModelAllAsync(string? idModel, string? cpf, string? rg)

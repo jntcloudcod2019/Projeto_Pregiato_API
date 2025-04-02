@@ -35,6 +35,7 @@ public class SalesFeedController : ControllerBase
         _userService = userService;
     }
 
+    [Authorize(Policy = "ManagementPolicyLevel3")]
     [HttpGet("daily")]
     public async Task<IActionResult> GetDailySales()
     {
@@ -47,7 +48,7 @@ public class SalesFeedController : ControllerBase
             using ModelAgencyContext context = _contextFactory.CreateDbContext();
 
             var transactions = await context.Payments
-                .AsNoTracking()  // Adicionado para melhor performance
+                .AsNoTracking()  
                 .Where(p => p.DataPagamento >= startOfDay &&
                            p.DataPagamento <= endOfDay &&
                            (p.StatusPagamento == "Paid" || p.StatusPagamento == "Pending"))
@@ -70,7 +71,7 @@ public class SalesFeedController : ControllerBase
             return Ok(new BillingResponse
             {
                 Success = true,
-                Message = $"Faturamento do dia {startOfDay.ToString("dd-MM-yyyy")}.",
+                Message = $"FATURAMENTO DO DIA {startOfDay.ToString("dd-MM-yyyy")}.",
                 Data = new BillingData
                 {
                     TotalSales = totalSales,
@@ -92,7 +93,7 @@ public class SalesFeedController : ControllerBase
             return StatusCode(500, new
             {
                 success = false,
-                message = "Ocorreu um erro ao calcular o faturamento diário.",
+                message = "OCORREU UM ERRO AO CALCULAR O FATURAMENTO DIÁRIO.",
                 error = new
                 {
                     code = "INTERNAL_SERVER_ERROR",
@@ -102,7 +103,7 @@ public class SalesFeedController : ControllerBase
         }
     }
 
-    //[Authorize(Policy = "ManagementPolicyLevel3")]
+    [Authorize(Policy = "ManagementPolicyLevel3")]
     [HttpGet("weekly")]
     public async Task<IActionResult> GetWeeklySales([FromQuery] string date = null!)
     {
@@ -145,7 +146,7 @@ public class SalesFeedController : ControllerBase
             {
                 Success = true,
                 Message =
-                    $"Faturamento da semana de {startOfWeek.ToString("dd-MM-yyyy")} a {endOfWeek.ToString("dd-MM-yyyy")}.",
+                    $"FATURAMENTO SEMANAL {startOfWeek.ToString("dd-MM-yyyy")} a {endOfWeek.ToString("dd-MM-yyyy")}.",
                 Data = new BillingData
                 {
                     TotalSales = totalSales,
@@ -176,7 +177,7 @@ public class SalesFeedController : ControllerBase
         }
     }
 
-   // [Authorize(Policy = "ManagementPolicyLevel3")]
+    [Authorize(Policy = "ManagementPolicyLevel3")]
     [HttpGet("monthly")]
     public async Task<IActionResult> GetMonthlySales()
     {
@@ -240,8 +241,6 @@ public class SalesFeedController : ControllerBase
             });
         }
     }
-
-
 
     [Authorize(Policy = "PolicyProducers")]
     [HttpGet("GetBillingDayByProducers")]
@@ -307,7 +306,7 @@ public class SalesFeedController : ControllerBase
             return StatusCode(500, new
             {
                 success = false,
-                message = "Ocorreu um erro ao calcular o faturamento diário.",
+                message = "OCORREU UM ERRO AO CALCULAR O FATURAMENTO DIÁRIO.",
                 error = new
                 {
                     code = "INTERNAL_SERVER_ERROR",
@@ -383,7 +382,7 @@ public class SalesFeedController : ControllerBase
             return StatusCode(500, new
             {
                 success = false,
-                message = "Ocorreu um erro ao calcular o faturamento diário.",
+                message = "OCORREU UM ERRO AO CALCULAR O FATURAMENTO DIÁRIO.",
                 error = new
                 {
                     code = "INTERNAL_SERVER_ERROR",
@@ -392,5 +391,4 @@ public class SalesFeedController : ControllerBase
         }
     }
 
-    
 }

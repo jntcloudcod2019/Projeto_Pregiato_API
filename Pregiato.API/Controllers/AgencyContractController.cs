@@ -26,7 +26,7 @@ namespace Pregiato.API.Controllers
         private readonly CustomResponse _customResponse = customResponse;
 
 
-     //   [Authorize(Policy = "AdminOrManager")]
+        [Authorize(Policy = "GlobalPolitics")]
         [SwaggerOperation(Summary = "Gera um contrato Termo de comprometimento", Description = "Este endpoint gera o Termo de comprometimento.")]
         [SwaggerResponse(200, "Contrato gerado com sucesso", typeof(string))]
         [SwaggerResponse(400, "Requisição inválida")]
@@ -48,7 +48,7 @@ namespace Pregiato.API.Controllers
         }
 
 
-     //   [Authorize(Policy = "AdminOrManager")]
+        [Authorize(Policy = "AdminOrManager")]
         [SwaggerResponse(200, "Contrato gerado com sucesso", typeof(string))]
         [SwaggerResponse(400, "Requisição inválida.")]
         [SwaggerResponse(404, "Modelo não encontrado")]
@@ -83,7 +83,7 @@ namespace Pregiato.API.Controllers
             return Ok($"Termo de Concessão de direito de imagem para: {model.Name}, gerado com sucesso. Código da Proposta: {contract.CodProposta}.");
         }
 
-      //[Authorize(Policy = "AdminOrManager")]
+        [Authorize(Policy = "GlobalPolitics")]
         [SwaggerOperation("Processo de gerar contrato de Agenciamento e Fotoprgrafia.")]
         [ProducesResponseType(typeof(ApiResponse<object>), StatusCodes.Status200OK)]
         [ProducesResponseType(typeof(ApiResponse<object>), StatusCodes.Status404NotFound)]
@@ -98,36 +98,39 @@ namespace Pregiato.API.Controllers
                     List<string> erros = ModelState.Values.SelectMany(v => v.Errors)
                                          .Select(e => e.ErrorMessage)
                                          .ToList();
-                    return ActionResultIndex.Failure($"Os dados fornecidos são inválidos: {string.Join(", ", erros)}");
+                    return ActionResultIndex.Failure($"OS DADOS FORNECIDOS SÃO INVÁLIDOS: {string.Join(", ", erros).ToUpper()}");
                 }
 
-                Console.WriteLine($"Buscando dados do modelo {createContractModelRequest.ModelIdentification}");
+                Console.WriteLine($"BUSCANDO DADOS DO MODELO {createContractModelRequest.ModelIdentification}");
 
                 Model? model = await _modelRepository.GetModelByCriteriaAsync(createContractModelRequest.ModelIdentification);
 
                 if (model == null)
                 {
-                    return ActionResultIndex.Failure("Modelo não encontrado com os critérios fornecidos.");
+                    return ActionResultIndex.Failure("MODELO NÃO ENCONTRADO COM OS CRITÉRIOS FORNECIDOS.");
                 }
 
                 List<ContractBase> contracts = await _contractService.GenerateAllContractsAsync(createContractModelRequest, model);
 
                 if (contracts == null || !contracts.Any())
                 {
-                    return ActionResultIndex.Failure("Nenhum contrato foi gerado.");
+                    return ActionResultIndex.Failure("NENHUM CONTRATO FOI GERADO.");
                 }
 
                 string contentString = await _contractService.ConvertBytesToString(
-                contracts.FirstOrDefault(c => c.TemplateFileName == "PhotographyProductionContractMinority.html" || 
-                c.TemplateFileName == "PhotographyProductionContract.html")?.Content);
+                contracts.FirstOrDefault(c =>
+                                         c.TemplateFileName == "PhotographyProductionContractMinority.html" || 
+                                         c.TemplateFileName == "PhotographyProductionContract.html")?.Content);
 
-                byte[] pdfBytes = await _contractService.ExtractBytesFromString(contentString);
+                byte[] pdfBytes = await _contractService.ExtractBytesFromString(contentString)
+                                                        .ConfigureAwait(true);
 
-                string message = $"Contrato para {model.Name}, emitidos com sucesso!";
+                string message = $"CONTRATO PARA {model.Name.ToUpper()}, EMITIDOS COM SUCESSO!";
                 List<ContractSummary> contractsSummary = contracts.Select(c => new ContractSummary
                 {
                     CodProposta = c.CodProposta
-                }).ToList();
+                })
+                .ToList();
 
                 var metadata = new
                 {
@@ -142,40 +145,40 @@ namespace Pregiato.API.Controllers
             }
             catch (Exception ex)
             {
-                Console.WriteLine($"Erro ao gerar contratos: {ex.Message}");
-                return ActionResultIndex.Failure($"Ocorreu um erro na operação: {ex.Message}", isSpeakOnOperation: true);
+                Console.WriteLine($"ERRO AO GERAR CONTRATOS: {ex.Message}");
+                return ActionResultIndex.Failure($"OCORREU UM ERRO NA OPERAÇÃO: {ex.Message}", isSpeakOnOperation: true);
             }
         }
 
-        [Authorize(Policy = "AdminOrManagerOrModel")]
+        [Authorize(Policy = "ManagementPolicyLevel3")]
         [HttpGet("download-contract")]
         public async Task<IActionResult> DownloadContractAsync(int proposalCode)
         {
 
-            ContractDTO? contract = await contractRepository.DownloadContractAsync(proposalCode);
+            ContractDTO? contract = await contractRepository.DownloadContractAsync(proposalCode).ConfigureAwait(true);
 
             if (contract == null)
             {
-                return NotFound("Contrato não encontrado.");
+                return NotFound("CONTRATO NÃO ENCONTRADO.");
             }
 
-            string contentString = await _contractService.ConvertBytesToString(contract.Content);
+            string contentString = await _contractService.ConvertBytesToString(contract.Content).ConfigureAwait(true);
 
             byte[] pdfBytes;
 
             try
             {
-                pdfBytes = await _contractService.ExtractBytesFromString(contentString);
+                pdfBytes = await _contractService.ExtractBytesFromString(contentString).ConfigureAwait(true);
             }
             catch (Exception ex)
             {
-                return BadRequest($"Erro ao processar o conteúdo do contrato: {ex.Message}");
+                return BadRequest($"ERRO AO PROCESSAR O CONTEÚDO DO CONTRATO: {ex.Message}");
             }
 
             return File(pdfBytes, "application/pdf", "contract.pdf");
         }
 
-        [Authorize(Policy = "AdminOrManager")]
+        [Authorize(Policy = "ManagementPolicyLevel3")]
         [HttpPost("upload/payment-receipt")]
         public async Task<IActionResult> UploadPaymentReceipt([FromForm] UploadPaymentReceiptRequest request)
         {
@@ -198,9 +201,8 @@ namespace Pregiato.API.Controllers
         }
 
 
-
+        [Authorize(Policy = "ManagementPolicyLevel3")]
         [HttpGet("all-contracts")]
-       // [Authorize(Policy = "AdminOrManagerOrModel")]
         public async Task<IActionResult> GetAllContractsForAgencyAsync()
         {
             try
@@ -209,7 +211,7 @@ namespace Pregiato.API.Controllers
 
                 if (contracts == null || !contracts.Any())
                 {
-                    return ActionResultIndex.Failure("Nenhum contrato encontrado na base de dados.");
+                    return ActionResultIndex.Failure("NENHUM CONTRATO ENCONTRADO NA BASE DE DADOS.");
                 }
                 return ActionResultIndex.Success(
                     data: new
@@ -217,13 +219,13 @@ namespace Pregiato.API.Controllers
                         TotalContracts = contracts.Count,
                         Contracts = contracts
                     },
-                    message: "Todos os contratos foram recuperados com sucesso!"
+                    message: "TODOS OS CONTRATOS FORAM RECUPERADOS COM SUCESSO!"
                 );
             }
             catch (Exception ex)
             {
-                Console.WriteLine($"Erro ao recuperar contratos: {ex.Message}");
-                return ActionResultIndex.Failure($"Erro ao recuperar os contratos: {ex.Message}", isSpeakOnOperation: true);
+                Console.WriteLine($"ERRO AO RECUPERAR CONTRATOS: {ex.Message.ToUpper()}");
+                return ActionResultIndex.Failure($"ERRO AO RECUPERAR OS CONTRATOS: {ex.Message.ToUpper()}", isSpeakOnOperation: true);
             }
         }
     }

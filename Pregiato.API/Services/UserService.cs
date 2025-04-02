@@ -107,7 +107,7 @@ namespace Pregiato.API.Services
                 throw new Exception($"Erro durante o processo de autenticação. {ex.Message}");
             }
         }
-        public async Task<RegistrationResult> RegisterUserModelAsync(string username, string email)
+        public async Task<RegistrationResult> RegisterUserModelAsync(string username, string email, string CodProducers)
         {
             Console.WriteLine($"[PROCESS] {DateTime.Now:yyyy-MM-dd HH:mm:ss} |  Validando se o USER_MODEL: {username}, já está cadastrado... ");
 
@@ -149,8 +149,7 @@ namespace Pregiato.API.Services
                 NickName = nikeName,
                 PasswordHash = passwordHash,
                 UserType = UserType.Model.ToString(),
-                CodProducers = await GenerateProducerCodeAsync()
-                                    .ConfigureAwait(true),
+                CodProducers = CodProducers
                 
             };
 
