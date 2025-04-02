@@ -113,11 +113,11 @@ namespace Pregiato.API.Controllers
             await _modelRepository.AddModelAsync(model);
 
             Console.WriteLine($"[INFO] {DateTime.Now:yyyy-MM-dd HH:mm:ss} |  Modelo cadastro: {model.Name} | Documento:{model.CPF}. ");
-            await _userService.RegisterUserModelAsync(createModelRequest.Name, createModelRequest.Email);
+            await _userService.RegisterUserModelAsync(createModelRequest.Name, createModelRequest.Email, producer.CodProducers);
 
             return Ok(new ModelResponse
             {
-                Mensage = "Cadastro do modelo criado com sucesso.",
+                Mensage = "CADASTRO DO MODELO CRIADO COM SUCESSO.",
                 Model = new ModelInfo
                 {
                     Name = model.Name

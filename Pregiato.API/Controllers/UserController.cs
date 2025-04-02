@@ -185,7 +185,7 @@ namespace Pregiato.API.Controllers
 
         [Authorize(Policy = "ManagementPolicyLevel5")]
         [HttpPost("register/Model")]
-        public async Task<IActionResult> RegisterModel([FromBody] UserRegisterDto user)
+        public async Task<IActionResult> RegisterModel([FromBody] CreateuserModelRequest user)
         {
             try
             {
@@ -195,7 +195,8 @@ namespace Pregiato.API.Controllers
                     return BadRequest(errorResponse);
                 }
 
-                var result = await _userService.RegisterUserModelAsync(user.Username, user.Email).ConfigureAwait(true);
+
+                var result = await _userService.RegisterUserModelAsync(user.Username, user.Email, user.NomeProducers).ConfigureAwait(true);
 
                 if (result == RegistrationResult.UserAlreadyExists)
                 {

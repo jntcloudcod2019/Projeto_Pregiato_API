@@ -488,15 +488,17 @@ namespace Pregiato.API.Services
         }
         public async Task<Producers> ProcessProducersAsync(ContractBase contract, Model model )
         {
-            User? nameProducer = await _contextFactory.CreateDbContext().Users
+            using ModelAgencyContext context = _contextFactory.CreateDbContext();
+
+            User? user = await context.Users
                 .AsNoTracking()
-                .Where(c => c.CodProducers == model.CodProducers)
-                .FirstOrDefaultAsync();
-            
+                .FirstOrDefaultAsync(u => u.CodProducers == model.CodProducers);
+
+
             Producers producers = new Producers
             {
                 CodProducers = model.CodProducers,
-                NameProducer = nameProducer?.Name,
+                NameProducer = user.Name,
                 ContractId = contract.ContractId,
                 
                 AmountContract = contract?.ValorContrato ?? 0,

@@ -7,7 +7,7 @@ namespace Pregiato.API.Interfaces
     public interface IUserService
     {
         Task<RegistrationResult> RegisterUserAsync(string username, string email);
-        Task<RegistrationResult> RegisterUserModelAsync(string username, string email);
+        Task<RegistrationResult> RegisterUserModelAsync(string username, string email, string codProducers);
         Task<string> AuthenticateUserAsync(LoginUserRequest? loginRequest);
         Task<RegistrationResult> RegisterUserProducersAsync(string username, string email);
         Task<RegistrationResult> RegisterUserAdministratorAsync(string username, string email);

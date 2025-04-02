@@ -83,7 +83,7 @@ namespace Pregiato.API.Controllers
             return Ok($"Termo de Concessão de direito de imagem para: {model.Name}, gerado com sucesso. Código da Proposta: {contract.CodProposta}.");
         }
 
-      //[Authorize(Policy = "AdminOrManager")]
+        [Authorize(Policy = "GlobalPolitics")]
         [SwaggerOperation("Processo de gerar contrato de Agenciamento e Fotoprgrafia.")]
         [ProducesResponseType(typeof(ApiResponse<object>), StatusCodes.Status200OK)]
         [ProducesResponseType(typeof(ApiResponse<object>), StatusCodes.Status404NotFound)]
@@ -98,23 +98,23 @@ namespace Pregiato.API.Controllers
                     List<string> erros = ModelState.Values.SelectMany(v => v.Errors)
                                          .Select(e => e.ErrorMessage)
                                          .ToList();
-                    return ActionResultIndex.Failure($"Os dados fornecidos são inválidos: {string.Join(", ", erros)}");
+                    return ActionResultIndex.Failure($"OS DADOS FORNECIDOS SÃO INVÁLIDOS: {string.Join(", ", erros).ToUpper()}");
                 }
 
-                Console.WriteLine($"Buscando dados do modelo {createContractModelRequest.ModelIdentification}");
+                Console.WriteLine($"BUSCANDO DADOS DO MODELO {createContractModelRequest.ModelIdentification}");
 
                 Model? model = await _modelRepository.GetModelByCriteriaAsync(createContractModelRequest.ModelIdentification);
 
                 if (model == null)
                 {
-                    return ActionResultIndex.Failure("Modelo não encontrado com os critérios fornecidos.");
+                    return ActionResultIndex.Failure("MODELO NÃO ENCONTRADO COM OS CRITÉRIOS FORNECIDOS.");
                 }
 
                 List<ContractBase> contracts = await _contractService.GenerateAllContractsAsync(createContractModelRequest, model);
 
                 if (contracts == null || !contracts.Any())
                 {
-                    return ActionResultIndex.Failure("Nenhum contrato foi gerado.");
+                    return ActionResultIndex.Failure("NENHUM CONTRATO FOI GERADO.");
                 }
 
                 string contentString = await _contractService.ConvertBytesToString(
@@ -123,7 +123,7 @@ namespace Pregiato.API.Controllers
 
                 byte[] pdfBytes = await _contractService.ExtractBytesFromString(contentString);
 
-                string message = $"Contrato para {model.Name}, emitidos com sucesso!";
+                string message = $"CONTRATO PARA {model.Name.ToUpper()}, EMITIDOS COM SUCESSO!";
                 List<ContractSummary> contractsSummary = contracts.Select(c => new ContractSummary
                 {
                     CodProposta = c.CodProposta
@@ -142,8 +142,8 @@ namespace Pregiato.API.Controllers
             }
             catch (Exception ex)
             {
-                Console.WriteLine($"Erro ao gerar contratos: {ex.Message}");
-                return ActionResultIndex.Failure($"Ocorreu um erro na operação: {ex.Message}", isSpeakOnOperation: true);
+                Console.WriteLine($"ERRO AO GERAR CONTRATOS: {ex.Message}");
+                return ActionResultIndex.Failure($"OCORREU UM ERRO NA OPERAÇÃO: {ex.Message}", isSpeakOnOperation: true);
             }
         }
 
