@@ -20,8 +20,6 @@ namespace Pregiato.API.Response
         public decimal AMOUNTCONTRACT{ get; set; }
         public string DATE { get; set; }
         public string STATUSCONTRACT { get; set; }
-        public int TRANSACTIONSCOUNT { get; set; }    
-
         public ModelDetails? MODELDETAILS { get; set; }
     }
 
