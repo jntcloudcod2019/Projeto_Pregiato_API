@@ -14,6 +14,7 @@ using Pregiato.API.Services;
 using Microsoft.IdentityModel.Tokens;
 using Pregiato.API.Enums;
 using Serilog;
+using Pregiato.API.Data;
 
 namespace Pregiato.API.Controllers
 {
@@ -76,7 +77,7 @@ namespace Pregiato.API.Controllers
                     Message = "ERRO INTERNO NO SERVIDOR."
 
                 });
-               
+
             }
         }
 
@@ -135,7 +136,7 @@ namespace Pregiato.API.Controllers
             }
         }
 
-        [Authorize(Policy = "AdminOrManager" )]
+        [Authorize(Policy = "AdminOrManager")]
         [HttpDelete("deleteUser{id}")]
         public async Task<IActionResult> Delete(Guid id)
         {
@@ -163,7 +164,8 @@ namespace Pregiato.API.Controllers
                     return BadRequest(errorResponse);
                 }
 
-                var result = await _userService.RegisterUserAdministratorAsync(user.Username, user.Email).ConfigureAwait(true);
+                var result = await _userService.RegisterUserAdministratorAsync(user.Username, user.Email)
+                    .ConfigureAwait(true);
 
                 if (result == RegistrationResult.UserAlreadyExists)
                 {
@@ -196,7 +198,8 @@ namespace Pregiato.API.Controllers
                 }
 
 
-                var result = await _userService.RegisterUserModelAsync(user.Username, user.Email, user.NomeProducers).ConfigureAwait(true);
+                var result = await _userService.RegisterUserModelAsync(user.Username, user.Email, user.NomeProducers)
+                    .ConfigureAwait(true);
 
                 if (result == RegistrationResult.UserAlreadyExists)
                 {
@@ -207,7 +210,7 @@ namespace Pregiato.API.Controllers
 
                 var successMessage = $"USUÁRIO {user.Username} CADASTRADO COM SUCESSO.";
                 var successResponse = ApiResponse<object>.Success(null, successMessage);
-                return Ok(successResponse); 
+                return Ok(successResponse);
             }
             catch (Exception exception)
             {
@@ -215,9 +218,9 @@ namespace Pregiato.API.Controllers
                 return BadRequest(errorResponse);
             }
         }
-        
 
-       // [Authorize(Policy = "AdminOrManager")]
+
+        [Authorize(Policy = "AdminOrManager")]
         [HttpPost("register/producers")]
         public async Task<IActionResult> RegisterUserProducers([FromBody] UserRegisterDto? user)
         {
@@ -229,7 +232,8 @@ namespace Pregiato.API.Controllers
                     return BadRequest(errorResponse);
                 }
 
-                var result = await _userService.RegisterUserProducersAsync(user.Username, user.Email).ConfigureAwait(true);
+                var result = await _userService.RegisterUserProducersAsync(user.Username, user.Email)
+                    .ConfigureAwait(true);
 
                 if (result == RegistrationResult.UserAlreadyExists)
                 {
@@ -262,7 +266,8 @@ namespace Pregiato.API.Controllers
                     return BadRequest(errorResponse);
                 }
 
-                var result = await _userService.RegisterUserCoordinationAsync(user.Username, user.Email).ConfigureAwait(true);
+                var result = await _userService.RegisterUserCoordinationAsync(user.Username, user.Email)
+                    .ConfigureAwait(true);
 
                 if (result == RegistrationResult.UserAlreadyExists)
                 {
@@ -327,7 +332,8 @@ namespace Pregiato.API.Controllers
                     return BadRequest(errorResponse);
                 }
 
-                var result = await _userService.RegisterTelemarketingAsync(user.Username, user.Email).ConfigureAwait(true);
+                var result = await _userService.RegisterTelemarketingAsync(user.Username, user.Email)
+                    .ConfigureAwait(true);
 
                 if (result == RegistrationResult.UserAlreadyExists)
                 {
@@ -347,7 +353,7 @@ namespace Pregiato.API.Controllers
             }
         }
 
-       // [Authorize(Policy = "AdminOrManager")]
+        [Authorize(Policy = "AdminOrManager")]
         [HttpPost("register/CEO")]
         public async Task<IActionResult> RegisterCeo([FromBody] UserRegisterDto? user)
         {
@@ -413,5 +419,57 @@ namespace Pregiato.API.Controllers
 
         }
 
+
+
+        [Authorize(Policy = "GlobalPolitics")]
+        [HttpGet("GetUsersProducers")]
+        public async Task<IActionResult> GetProducers()
+        {
+            try
+            {
+
+                IEnumerable<User> producers = await _userRepository.GetProducers();
+
+
+                if (producers == null || !producers.Any())
+                {
+                    return Ok(new ProducersResponse
+                    {
+                        SUCESS = false,
+                        MESSAGE = "NENHUM PRODUTOR ENCONTRADO.",
+                        DATA = null
+                    });
+                }
+
+
+                var resulProducers = producers.Select(produc => new ResulProducersResponse
+                {
+                    ID = produc.UserId.ToString(),
+                    NAME = produc.Name,
+                    CODPRODUCER = produc.CodProducers
+                }).ToList();
+
+
+                return Ok(new ProducersResponse
+                {
+                    SUCESS = true,
+                    MESSAGE = "Produtores encontrados com sucesso.",
+                    DATA = resulProducers
+                });
+            }
+            catch (Exception ex)
+            {
+                return StatusCode(500, new
+                {
+                    success = false,
+                    message = "OCORREU UM ERRO AO BUSCAR OS PRODUTORES.",
+                    error = new
+                    {
+                        code = "INTERNAL_SERVER_ERROR",
+                        details = ex.Message
+                    }
+                });
+            }
+        }
     }
 }

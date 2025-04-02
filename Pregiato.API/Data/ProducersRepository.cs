@@ -14,14 +14,14 @@ namespace Pregiato.API.Data
 
         public async Task SaveProducersAsync(Producers proceducers)
         {
-            using ModelAgencyContext context = _contextFactory.CreateDbContext();
+            using ModelAgencyContext context = await _contextFactory.CreateDbContextAsync().ConfigureAwait(false);
             context.Producers.Add(proceducers);
-            await context.SaveChangesAsync();
+            await context.SaveChangesAsync().ConfigureAwait(true);
         }
 
         public async Task<List<Producers>> GetDailyBillingByProducers(User user)
         {
-            using ModelAgencyContext context = _contextFactory.CreateDbContext();
+            using ModelAgencyContext context = await _contextFactory.CreateDbContextAsync().ConfigureAwait(false);
            
             DateTimeOffset startOfDay = new DateTimeOffset(DateTime.UtcNow.Date, TimeSpan.Zero);
             DateTimeOffset endOfDay = startOfDay.AddDays(1).AddTicks(-1);
@@ -40,7 +40,7 @@ namespace Pregiato.API.Data
 
         public async Task<User> GetProducersAsync(string codProducers)
         { 
-            using ModelAgencyContext context = _contextFactory.CreateDbContext();
+            using ModelAgencyContext context = await _contextFactory.CreateDbContextAsync().ConfigureAwait(false);
            
             User producer = await context.Users
                 .AsNoTracking()
@@ -50,17 +50,18 @@ namespace Pregiato.API.Data
 
         public async Task<List<Producers>> GetBillingDayProducers()
         {
-            using ModelAgencyContext context = _contextFactory.CreateDbContext();
-            DateTimeOffset startOfDay = new DateTimeOffset(DateTime.UtcNow.Date, TimeSpan.Zero);
-            DateTimeOffset endOfDay = startOfDay.AddDays(1).AddTicks(-1);
+            await using ModelAgencyContext context = await _contextFactory.CreateDbContextAsync().ConfigureAwait(false);
+            var startOfDay = new DateTimeOffset(DateTime.UtcNow.Date, TimeSpan.Zero);
+            var endOfDay = startOfDay.AddDays(1).AddTicks(-1);
 
-            List<Producers> producersList = new List<Producers>();
+            var producersList = new List<Producers>();
+            if (producersList == null) throw new ArgumentNullException(nameof(producersList));
 
-              producersList = await context.Producers
+            producersList = await context.Producers
                     .AsNoTracking()
                     .Where(p => p.CreatedAt >= startOfDay && p.CreatedAt <= endOfDay)
                     .OrderBy(p => p.NameProducer)
-                    .ToListAsync();
+                    .ToListAsync().ConfigureAwait(true);
            
             return producersList;
         }
