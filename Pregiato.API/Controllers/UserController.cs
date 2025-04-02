@@ -136,7 +136,7 @@ namespace Pregiato.API.Controllers
             }
         }
 
-        [Authorize(Policy = "AdminOrManager")]
+        [Authorize(Policy = "ManagementPolicyLevel2")]
         [HttpDelete("deleteUser{id}")]
         public async Task<IActionResult> Delete(Guid id)
         {
@@ -220,7 +220,7 @@ namespace Pregiato.API.Controllers
         }
 
 
-        [Authorize(Policy = "AdminOrManager")]
+        [Authorize(Policy = "ManagementPolicyLevel4")]
         [HttpPost("register/producers")]
         public async Task<IActionResult> RegisterUserProducers([FromBody] UserRegisterDto? user)
         {
@@ -254,7 +254,7 @@ namespace Pregiato.API.Controllers
         }
 
 
-        [Authorize(Policy = "AdminOrManager")]
+        [Authorize(Policy = "ManagementPolicyLevel3")]
         [HttpPost("register/Coordination")]
         public async Task<IActionResult> RegisterCoordination([FromBody] UserRegisterDto? user)
         {
@@ -287,7 +287,7 @@ namespace Pregiato.API.Controllers
             }
         }
 
-        [Authorize(Policy = "AdminOrManager")]
+        [Authorize(Policy = "ManagementPolicyLevel3")]
         [HttpPost("register/Manager")]
         public async Task<IActionResult> RegisterManager([FromBody] UserRegisterDto? user)
         {
@@ -320,7 +320,7 @@ namespace Pregiato.API.Controllers
         }
 
 
-        [Authorize(Policy = "AdminOrManager")]
+        [Authorize(Policy = "ManagementPolicyLevel4")]
         [HttpPost("register/Telemarketing")]
         public async Task<IActionResult> RegisterTelemarking([FromBody] UserRegisterDto? user)
         {
@@ -353,7 +353,7 @@ namespace Pregiato.API.Controllers
             }
         }
 
-        [Authorize(Policy = "AdminOrManager")]
+        [Authorize(Policy = "ManagementPolicyLevel2")]
         [HttpPost("register/CEO")]
         public async Task<IActionResult> RegisterCeo([FromBody] UserRegisterDto? user)
         {
@@ -386,7 +386,7 @@ namespace Pregiato.API.Controllers
             }
         }
 
-        [Authorize(Policy = "AdminOrManager")]
+        [Authorize(Policy = "ManagementPolicyLevel4")]
         [HttpPost("register/Production")]
         public async Task<IActionResult> RegisterProduction([FromBody] UserRegisterDto user)
         {
@@ -419,17 +419,15 @@ namespace Pregiato.API.Controllers
 
         }
 
-
-
-        [Authorize(Policy = "GlobalPolitics")]
+        [AllowAnonymous]
         [HttpGet("GetUsersProducers")]
         public async Task<IActionResult> GetProducers()
         {
             try
             {
 
-                IEnumerable<User> producers = await _userRepository.GetProducers();
 
+                IEnumerable<User> producers = await _userRepository.GetProducers();
 
                 if (producers == null || !producers.Any())
                 {
@@ -440,7 +438,6 @@ namespace Pregiato.API.Controllers
                         DATA = null
                     });
                 }
-
 
                 var resulProducers = producers.Select(produc => new ResulProducersResponse
                 {
