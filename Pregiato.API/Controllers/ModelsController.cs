@@ -12,6 +12,8 @@ using System.Security.Claims;
 using System.Text.Json;
 using Pregiato.API.DTO;
 using Pregiato.API.Interfaces;
+using iText.Commons.Actions.Contexts;
+using PuppeteerSharp;
 
 namespace Pregiato.API.Controllers
 {
@@ -119,7 +121,7 @@ namespace Pregiato.API.Controllers
 
         }
 
-        [Authorize(Policy = "GlobalPolitic")]
+        [Authorize(Policy = "GlobalPolitics")]
         [HttpPost("AddModels")]
         [SwaggerOperation("Criar novo modelo.")]
         [ProducesResponseType(typeof(CustomResponse), StatusCodes.Status200OK)]
@@ -372,72 +374,58 @@ namespace Pregiato.API.Controllers
                 return Ok(listContracts);
             }
         }
+
         [Authorize(Policy = "GlobalPoliticsAgency")]
         [HttpPut("update-dna-property")]
         [ProducesResponseType(StatusCodes.Status204NoContent)]
         [ProducesResponseType(StatusCodes.Status401Unauthorized)]
         [ProducesResponseType(StatusCodes.Status400BadRequest)]
         [ProducesResponseType(StatusCodes.Status500InternalServerError)]
-        public async Task<IActionResult> UpdateDnaData([FromBody] UpdateDnaPropertyRequest request)
+        public async Task<IActionResult> UpdateDnaData([FromBody] ModelDnaData requestDNA)
         {
-            if (Alias.IsNullOrEmpty(request?.PropertyName) || request.Values == null || !request.Values.Any())
-                return BadRequest("Nome da propriedade ou valores inválidos.");
 
+            if (requestDNA == null)
+            {
+                return BadRequest("Dados inválidos.");
+            }
+
+            var user = await _userService.UserCaptureByToken().ConfigureAwait(true);
+            if (user == null)
+            {
+                return BadRequest("USUÁRIO NÃO ENCONTRADO.");
+            }
+
+            string jsonDna = JsonSerializer.Serialize(requestDNA, new JsonSerializerOptions
+            {
+                PropertyNamingPolicy = JsonNamingPolicy.CamelCase,
+                WriteIndented = false
+            });
+
+            JsonDocument dnaDocument;
             try
             {
-                var token = HttpContext.Request.Headers["Authorization"]
-                    .FirstOrDefault()?.Split("Bearer ").Last();
-
-                if (Alias.IsNullOrEmpty(token))
-                    return Unauthorized("Token não fornecido");
-
-                var username = new JwtSecurityTokenHandler()
-                    .ReadJwtToken(token)
-                    .Claims
-                    .FirstOrDefault(c => c.Type == ClaimTypes.Name)?
-                    .Value;
-
-                if (Alias.IsNullOrEmpty(username))
-                    return Unauthorized("Token inválido");
-
-                await using var context = await _contextFactory.CreateDbContextAsync().ConfigureAwait(true);
-
-                context.Users.AsNoTracking();
-                var user = await context.Users.FirstOrDefaultAsync(u => u.Name == username).ConfigureAwait(true);
-
-                if (user == null)
-                    return Unauthorized("Usuário não encontrado");
-
-                var model = await context.Models
-                    .FirstOrDefaultAsync(m => m.Email == user.Email).ConfigureAwait(true);
-
-                if (model == null)
-                    return Unauthorized("Modelo não encontrado");
-
-                Alias propertyJson = JsonSerializer.Serialize(request.Values);
-
-                var sql = @"
-                    UPDATE ""Model"" m 
-                    SET ""DNA"" = jsonb_set(m.""DNA"", ARRAY[@propertyName], @propertyJson::jsonb, true),
-                        ""UpdatedAt"" = @updatedAt
-                    WHERE m.""Email"" = @email"
-                ;
-                if (sql == null) throw new ArgumentNullException(nameof(sql));
-
-                await context.Database.ExecuteSqlRawAsync(
-                    sql,
-                    new NpgsqlParameter("@propertyName", request.PropertyName),
-                    new NpgsqlParameter("@propertyJson", propertyJson),
-                    new NpgsqlParameter("@updatedAt", DateTime.UtcNow),
-                    new NpgsqlParameter("@email", user.Email)
-                ).ConfigureAwait(true);
-
-                return NoContent();
+                dnaDocument = JsonDocument.Parse(jsonDna);
             }
-            catch (Exception ex)
+            catch (JsonException ex)
             {
-                return StatusCode(500, $"Erro interno: {ex.Message}");
+                return BadRequest($"Erro ao processar o JSON: {ex.Message}");
             }
+
+
+            using ModelAgencyContext context = _contextFactory.CreateDbContext();
+
+            var model = await context.Models
+                .FirstOrDefaultAsync(m => m.Email == user.Email).ConfigureAwait(true);
+
+            if (model == null)
+            {
+                return NotFound("Modelo não encontrado para o e-mail do usuário logado.");
+            }
+
+            model.DNA = dnaDocument;
+            context.Entry(model).Property(m => m.DNA).IsModified = true;
+            await context.SaveChangesAsync().ConfigureAwait(true);
+            return Ok();
         }
     }
 }

@@ -239,14 +239,15 @@ if (!string.IsNullOrEmpty(pathBase))
         return next();
     });
 }
-
 app.UseRouting();
+
 app.UseSwagger();
 app.UseSwaggerUI(c =>
 {
     c.SwaggerEndpoint("/swagger/v1/swagger.json", "Model Agency API v1");
     c.RoutePrefix = "swagger";
 });
+
 app.UseCors("DevPolicy");
 app.UseAuthentication();
 app.UseAuthorization();
