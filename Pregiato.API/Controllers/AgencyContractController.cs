@@ -155,24 +155,24 @@ namespace Pregiato.API.Controllers
         public async Task<IActionResult> DownloadContractAsync(int proposalCode)
         {
 
-            ContractDTO? contract = await contractRepository.DownloadContractAsync(proposalCode);
+            ContractDTO? contract = await contractRepository.DownloadContractAsync(proposalCode).ConfigureAwait(true);
 
             if (contract == null)
             {
-                return NotFound("Contrato não encontrado.");
+                return NotFound("CONTRATO NÃO ENCONTRADO.");
             }
 
-            string contentString = await _contractService.ConvertBytesToString(contract.Content);
+            string contentString = await _contractService.ConvertBytesToString(contract.Content).ConfigureAwait(true);
 
             byte[] pdfBytes;
 
             try
             {
-                pdfBytes = await _contractService.ExtractBytesFromString(contentString);
+                pdfBytes = await _contractService.ExtractBytesFromString(contentString).ConfigureAwait(true);
             }
             catch (Exception ex)
             {
-                return BadRequest($"Erro ao processar o conteúdo do contrato: {ex.Message}");
+                return BadRequest($"ERRO AO PROCESSAR O CONTEÚDO DO CONTRATO: {ex.Message}");
             }
 
             return File(pdfBytes, "application/pdf", "contract.pdf");
@@ -201,7 +201,7 @@ namespace Pregiato.API.Controllers
         }
 
 
-        [Authorize(Policy = "AdminOrManagerOrModel")]
+        [Authorize(Policy = "ManagementPolicyLevel3")]
         [HttpGet("all-contracts")]
         public async Task<IActionResult> GetAllContractsForAgencyAsync()
         {
@@ -211,7 +211,7 @@ namespace Pregiato.API.Controllers
 
                 if (contracts == null || !contracts.Any())
                 {
-                    return ActionResultIndex.Failure("Nenhum contrato encontrado na base de dados.");
+                    return ActionResultIndex.Failure("NENHUM CONTRATO ENCONTRADO NA BASE DE DADOS.");
                 }
                 return ActionResultIndex.Success(
                     data: new
@@ -219,13 +219,13 @@ namespace Pregiato.API.Controllers
                         TotalContracts = contracts.Count,
                         Contracts = contracts
                     },
-                    message: "Todos os contratos foram recuperados com sucesso!"
+                    message: "TODOS OS CONTRATOS FORAM RECUPERADOS COM SUCESSO!"
                 );
             }
             catch (Exception ex)
             {
-                Console.WriteLine($"Erro ao recuperar contratos: {ex.Message}");
-                return ActionResultIndex.Failure($"Erro ao recuperar os contratos: {ex.Message}", isSpeakOnOperation: true);
+                Console.WriteLine($"ERRO AO RECUPERAR CONTRATOS: {ex.Message.ToUpper()}");
+                return ActionResultIndex.Failure($"ERRO AO RECUPERAR OS CONTRATOS: {ex.Message.ToUpper()}", isSpeakOnOperation: true);
             }
         }
     }

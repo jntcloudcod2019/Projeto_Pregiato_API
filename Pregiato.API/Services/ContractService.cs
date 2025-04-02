@@ -145,7 +145,6 @@ namespace Pregiato.API.Services
             int maxCodProposta = await _contextFactory.CreateDbContext().Contracts.MaxAsync(c => (int?)c.CodProposta) ?? 109;
             return maxCodProposta + 1;
         }
-
         public async Task<ContractBase>  GenerateContractAsync(CreateContractModelRequest createContractModelRequest, Model model, string contractType, Dictionary<string, string> parameters, int codProposta)
         {
             parameters ??= new Dictionary<string, string>();
@@ -191,7 +190,6 @@ namespace Pregiato.API.Services
 
             return contract;
         }
-
         public async Task<List<ContractBase>> GenerateAllContractsAsync(CreateContractModelRequest createContractModelRequest, Model model)
         {
 
@@ -414,7 +412,6 @@ namespace Pregiato.API.Services
 
             return contract;
         }
-
         public async Task<string?> GenerateProducerCodeContractAsync()
         {
             const string prefix = "PMCA";
@@ -424,7 +421,6 @@ namespace Pregiato.API.Services
             string code = $"{prefix}{randomNumber:000000}";
             return (code).ToString();
         }
-
         public async Task<IActionResult> GetMyContracts(string type = "files")
         {
             string username = await _jwtService.GetAuthenticatedUsernameAsync().ConfigureAwait(true);
@@ -515,7 +511,6 @@ namespace Pregiato.API.Services
             await _producersRepository.SaveProducersAsync(producers).ConfigureAwait(true);
             return producers;
         }
-
         public async Task<ContractWithProducers> DefineContractAsync
             (ContractBase contract, CreateContractModelRequest contractModelRequest, Model model, string contractType)
         {
@@ -552,7 +547,6 @@ namespace Pregiato.API.Services
                 Producers = producersProcess
             };
         }
-
         public async Task<ContractBase> DefineContractAgencyAsync(ContractBase contract,
             CreateContractModelRequest contractModelRequest, Model model, string? contractType)
         {
