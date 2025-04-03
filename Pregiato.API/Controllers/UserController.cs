@@ -151,7 +151,7 @@ namespace Pregiato.API.Controllers
             }
         }
 
-        [Authorize(Policy = "AdminOrManager")]
+        [Authorize(Policy = "ManagementPolicyLevel3")]
         [HttpPost("register/Administrator")]
         public async Task<IActionResult> RegisterAdministrator([FromBody] UserRegisterDto user)
         {
