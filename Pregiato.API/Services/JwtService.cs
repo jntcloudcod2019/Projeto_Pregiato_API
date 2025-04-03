@@ -21,7 +21,7 @@ namespace Pregiato.API.Services
         private readonly string _issuer = Environment.GetEnvironmentVariable("ISSUER_JWT") ?? "PregiatoAPI";
         private readonly string _audience = Environment.GetEnvironmentVariable("AUDIENCE_JWT") ?? "PregiatoAPIToken";
         private readonly IConfiguration _configuration = configuration;
-        private readonly TimeSpan _tokenExpiry = TimeSpan.FromHours(4);
+        private readonly TimeSpan _tokenExpiry = TimeSpan.FromHours(1);
 
         public async Task<string> GenerateToken(LoginUserRequest? user)
         {
