@@ -56,7 +56,7 @@ namespace Pregiato.API.Controllers
             _producersRepository = producersRepository;
         }
 
-        [Authorize(Policy = "GlobalPolitics")]
+        //[Authorize(Policy = "GlobalPolitics")]
         [HttpGet("GetAllModels")]
         [SwaggerOperation("Retorna todos os modelos cadastrados.")]
         public async Task<IActionResult> GetAllModels()
@@ -66,39 +66,71 @@ namespace Pregiato.API.Controllers
             {
                 IEnumerable<Model> modelsExists = await _modelRepository.GetAllModelAsync().ConfigureAwait(true);
 
-                if (modelsExists == null || !modelsExists.Any())
+                var resultModels = modelsExists.Select(model =>
                 {
-                    return Ok(new ModelsResponse
-                    {
-                        SUCESS = false,
-                        MESSAGE = "NENHUM MODELO ENCONTRADO.",
-                        DATA = null
-                    });
-                }
+                    ModelDnaData attributes;
 
-               
-                var resultModels = modelsExists.Select(model => new ResulModelsResponse
-                {
-                    ID = model.IdModel.ToString(),
-                    NAME = model.Name,
-                    CPF = model.CPF,
-                    RG = model.RG,
-                    DATEOFBIRTH = model.DateOfBirth,
-                    EMAIL = model.Email,
-                    AGE = model.Age,
-                    TELEFONEPRINCIPAL = model.TelefonePrincipal,
-                    STATUS = model.Status ? "ATIVO" : "DESCONTINUADO", 
-                    RESPONSIBLEPRODUCER = model.CodProducers,
-                    DNA = model.DNA,
-                    ADRESSINFO = new AdressInfo 
+                    if (model.DNA != null)
                     {
-                        ADDRESS = model.Address,
-                        NUMBERADDRESS = model.NumberAddress,
-                        POSTALCODE = model.PostalCode, 
-                        CITY = model.City,
-                        UF = model.UF
+                        try
+                        {
+                            attributes = model.DNA.Deserialize<ModelDnaData>() ?? new ModelDnaData();
+                        }
+                        catch
+                        {
+                            attributes = new ModelDnaData(); // se der erro, instancia vazia
+                        }
                     }
-                    
+                    else
+                    {
+                        attributes = new ModelDnaData(); // se DNA for null, instancia vazia
+                    }
+
+                    // Garantindo que nenhuma propriedade interna fique null:
+                    attributes.Appearance ??= new Appearance
+                    {
+                        Eyes = new EyeAttributes(),
+                        Hair = new HairAttributes(),
+                        Skin = new SkinAttributes { Marks = new List<string>() },
+                        Face = new FaceAttributes(),
+                        Smile = new SmileAttributes(),
+                        Body = new BodyAttributes()
+                    };
+                    attributes.EyeAttributes ??= new EyeAttributes();
+                    attributes.HairAttributes ??= new HairAttributes();
+                    attributes.SkinAttributes ??= new SkinAttributes { Marks = new List<string>() };
+                    attributes.FaceAttributesm ??= new FaceAttributes();
+                    attributes.SmileAttributes ??= new SmileAttributes();
+                    attributes.BodyAttributes ??= new BodyAttributes();
+                    attributes.AdditionalAttributes ??= new AdditionalAttributes
+                    {
+                        Skills = new List<string>(),
+                        Experience = new List<string>()
+                    };
+                    attributes.PhysicalCharacteristics ??= new PhysicalCharacteristics();
+
+                    return new ResulModelsResponse
+                    {
+                        ID = model.IdModel.ToString(),
+                        NAME = model.Name,
+                        CPF = model.CPF,
+                        RG = model.RG,
+                        DATEOFBIRTH = model.DateOfBirth,
+                        EMAIL = model.Email,
+                        AGE = model.Age,
+                        TELEFONEPRINCIPAL = model.TelefonePrincipal,
+                        STATUS = model.Status ? "ATIVO" : "DESCONTINUADO",
+                        RESPONSIBLEPRODUCER = model.CodProducers,
+                        ADRESSINFO = new AdressInfo
+                        {
+                            ADDRESS = model.Address,
+                            NUMBERADDRESS = model.NumberAddress,
+                            POSTALCODE = model.PostalCode,
+                            CITY = model.City,
+                            UF = model.UF
+                        },
+                        MODELATTRIBUTES = attributes
+                    };
                 }).ToList();
 
                 return Ok(new ModelsResponse
@@ -378,7 +410,7 @@ namespace Pregiato.API.Controllers
         }
 
         [Authorize(Policy = "GlobalPoliticsAgency")]
-        [HttpPut("update-dna-property/{}")]
+        [HttpPut("update-dna-property")]
         [ProducesResponseType(StatusCodes.Status204NoContent)]
         [ProducesResponseType(StatusCodes.Status401Unauthorized)]
         [ProducesResponseType(StatusCodes.Status400BadRequest)]
@@ -400,7 +432,8 @@ namespace Pregiato.API.Controllers
             string jsonDna = JsonSerializer.Serialize(requestDNA, new JsonSerializerOptions
             {
                 PropertyNamingPolicy = JsonNamingPolicy.CamelCase,
-                WriteIndented = false
+                WriteIndented = false,
+
             });
 
             JsonDocument dnaDocument;
