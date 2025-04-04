@@ -35,7 +35,7 @@ public class SalesFeedController : ControllerBase
         _userService = userService;
     }
 
-    [Authorize(Policy = "ManagementPolicyLevel3")]
+    [Authorize(Policy = "ManagementPolicyLevel2")]
     [HttpGet("daily")]
     public async Task<IActionResult> GetDailySales()
     {
@@ -103,7 +103,7 @@ public class SalesFeedController : ControllerBase
         }
     }
 
-    [Authorize(Policy = "ManagementPolicyLevel3")]
+    [Authorize(Policy = "ManagementPolicyLevel2")]
     [HttpGet("weekly")]
     public async Task<IActionResult> GetWeeklySales([FromQuery] string date = null!)
     {
@@ -177,7 +177,7 @@ public class SalesFeedController : ControllerBase
         }
     }
 
-    [Authorize(Policy = "ManagementPolicyLevel3")]
+    [Authorize(Policy = "ManagementPolicyLevel2")]
     [HttpGet("monthly")]
     public async Task<IActionResult> GetMonthlySales()
     {
@@ -319,7 +319,7 @@ public class SalesFeedController : ControllerBase
 
     }
 
-    [Authorize(Policy = "ManagementPolicyLevel3")]
+    [Authorize(Policy = "ManagementPolicyLevel2")]
     [HttpGet("GetAllBillingDayProducers")]
     public async Task<IActionResult> GetAllBillingDayProducers( )
     {

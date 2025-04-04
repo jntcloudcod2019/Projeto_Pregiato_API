@@ -9,6 +9,9 @@ using Pregiato.API.Interfaces;
 using Pregiato.API.Response;
 using Pregiato.API.Models;
 using Pregiato.API.Services.ServiceModels;
+using Pregiato.API.Services;
+using Microsoft.EntityFrameworkCore;
+using System.Net.NetworkInformation;
 namespace Pregiato.API.Controllers
 {
     [ApiController]
@@ -17,16 +20,19 @@ namespace Pregiato.API.Controllers
           IContractService contractService,
           IModelRepository modelRepository,
           IContractRepository contractRepository,
+          IUserService userService,
+          IDbContextFactory<ModelAgencyContext> contextFactory,
           ModelAgencyContext context,
+         
           CustomResponse customResponse) : ControllerBase
     {
+        private readonly ModelAgencyContext _context = context ?? throw new ArgumentNullException(nameof(context));
+        private readonly IUserService _userService = userService ?? throw new ArgumentNullException(nameof(userService));
         private readonly IContractService _contractService = contractService ?? throw new ArgumentNullException(nameof(contractService));
         private readonly IModelRepository _modelRepository = modelRepository ?? throw new ArgumentNullException(nameof(modelRepository));
-        private readonly ModelAgencyContext _context = context ?? throw new ArgumentNullException(nameof(context));
-        private readonly CustomResponse _customResponse = customResponse;
+        private readonly IDbContextFactory<ModelAgencyContext> _contextFactory = contextFactory ??  throw new ArgumentNullException(nameof(contextFactory));
 
-
-        [Authorize(Policy = "GlobalPolitics")]
+        [Authorize(Policy = "ManagementPolicyContracts")]
         [SwaggerOperation(Summary = "Gera um contrato Termo de comprometimento", Description = "Este endpoint gera o Termo de comprometimento.")]
         [SwaggerResponse(200, "Contrato gerado com sucesso", typeof(string))]
         [SwaggerResponse(400, "Requisição inválida")]
@@ -48,7 +54,7 @@ namespace Pregiato.API.Controllers
         }
 
 
-        [Authorize(Policy = "AdminOrManager")]
+        [Authorize(Policy = "PolicyGenerateContracts")]
         [SwaggerResponse(200, "Contrato gerado com sucesso", typeof(string))]
         [SwaggerResponse(400, "Requisição inválida.")]
         [SwaggerResponse(404, "Modelo não encontrado")]
@@ -83,7 +89,7 @@ namespace Pregiato.API.Controllers
             return Ok($"Termo de Concessão de direito de imagem para: {model.Name}, gerado com sucesso. Código da Proposta: {contract.CodProposta}.");
         }
 
-        [Authorize(Policy = "ManagementPolicyLevel5")]
+        [Authorize(Policy = "PolicyGenerateContracts")]
         [SwaggerOperation("Processo de gerar contrato de Agenciamento e Fotoprgrafia.")]
         [ProducesResponseType(typeof(ApiResponse<object>), StatusCodes.Status200OK)]
         [ProducesResponseType(typeof(ApiResponse<object>), StatusCodes.Status404NotFound)]
@@ -156,7 +162,7 @@ namespace Pregiato.API.Controllers
             }
         }
 
-        [Authorize(Policy = "ManagementPolicyLevel3")]
+        [Authorize(Policy = "PolicyGenerateContracts")]
         [HttpGet("download-contract")]
         public async Task<IActionResult> DownloadContractAsync(int proposalCode)
         {
@@ -184,7 +190,7 @@ namespace Pregiato.API.Controllers
             return File(pdfBytes, "application/pdf", "contract.pdf");
         }
 
-        [Authorize(Policy = "ManagementPolicyLevel3")]
+        [Authorize(Policy = "PolicyGenerateContracts")]
         [HttpPost("upload/payment-receipt")]
         public async Task<IActionResult> UploadPaymentReceipt([FromForm] UploadPaymentReceiptRequest request)
         {
@@ -207,7 +213,7 @@ namespace Pregiato.API.Controllers
         }
 
 
-        [Authorize(Policy = "ManagementPolicyLevel4")]
+        [Authorize(Policy = "ManagementPolicyLevel3")]
         [HttpGet("all-contracts")]
         public async Task<IActionResult> GetAllContractsForAgencyAsync()
         {
@@ -234,5 +240,47 @@ namespace Pregiato.API.Controllers
                 return ActionResultIndex.Failure($"ERRO AO RECUPERAR OS CONTRATOS: {ex.Message.ToUpper()}", isSpeakOnOperation: true);
             }
         }
+
+        [Authorize(Policy = "PolicyProducers")]
+        [HttpGet("all-contracts-producers")]
+        public async Task<IActionResult> GetAllContractsForProducers()
+        {
+            try
+            {
+                var user = await _userService.UserCaptureByToken().ConfigureAwait(true);
+
+                if (user.CodProducers == null && user.UserType == UserType.Producers)
+                {
+                    return BadRequest("USUÁRIO NÃO ENCONTRADO OU NÃO É UM PRODUTOR.");
+                }
+
+                List<ContractSummaryDTO> contracts = await contractRepository
+                        .GetAllContractsForProducersAsync(user.CodProducers)
+                        .ConfigureAwait(true);
+
+                    if (!contracts.Any())
+                    {
+                        return ActionResultIndex.Failure("NENHUM CONTRATO ENCONTRADO NA BASE DE DADOS.");
+                    }
+
+                    return ActionResultIndex.Success(
+                        data: new
+                        {
+                            TotalContracts = contracts.Count,
+                            Contracts = contracts
+                        },
+                        message: "TODOS OS CONTRATOS FORAM RECUPERADOS COM SUCESSO!"
+                    );
+                
+            }
+            catch (Exception ex)
+            {
+                Console.WriteLine($"ERRO AO RECUPERAR CONTRATOS: {ex.Message.ToUpper()}");
+                return ActionResultIndex.Failure($"ERRO AO RECUPERAR OS CONTRATOS: {ex.Message.ToUpper()}",
+                    isSpeakOnOperation: true);
+            }
+
+        }
     }
+    
 }

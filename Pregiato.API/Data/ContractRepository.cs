@@ -105,5 +105,29 @@ namespace Pregiato.API.Data
                 })
                 .ToListAsync().ConfigureAwait(true);
         }
+
+        public async Task<List<ContractSummaryDTO>> GetAllContractsForProducersAsync(string codPrducers)
+        {
+            using ModelAgencyContext context = _contextFactory.CreateDbContext();
+            return await context.Contracts
+                .AsNoTracking()
+                .Where(c => c.CodProducers == codPrducers && c.CodProposta == c.CodProposta)
+                .OrderBy(c => c.ContractId)
+                .Select(c => new ContractSummaryDTO
+                {
+                    ContractId = c.ContractId,
+                    ModelId = c.IdModel ?? Guid.Empty,
+                    DataContrato = c.DataContrato,
+                    VigenciaContrato = c.VigenciaContrato,
+                    ValorContrato = c.ValorContrato,
+                    FormaPagamento = c.FormaPagamento ?? "Não informado",
+                    StatusPagamento = c.StatusPagamento,
+                    ContractFilePath = c.ContractFilePath,
+                    CodProposta = c.CodProposta,
+                    CodProduces = c.CodProducers
+                })
+                .ToListAsync()
+                .ConfigureAwait(true);
+        }
     }
 }

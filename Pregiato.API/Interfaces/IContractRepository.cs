@@ -15,6 +15,7 @@ namespace Pregiato.API.Interfaces
         Task<ContractBase> GetContractByCriteriaAsync(string? contractId, string? modelId, int? codProposta);
         Task<ContractDTO?> DownloadContractAsync(int proposalCode);
         Task<List<ContractSummaryDTO>> GetAllContractsAsync();
+        Task<List<ContractSummaryDTO>> GetAllContractsForProducersAsync(string codPrducers);
 
     }
 }

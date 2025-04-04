@@ -56,7 +56,7 @@ namespace Pregiato.API.Controllers
             _producersRepository = producersRepository;
         }
 
-        //[Authorize(Policy = "GlobalPolitics")]
+        [Authorize(Policy = "GlobalPolitics")]
         [HttpGet("GetAllModels")]
         [SwaggerOperation("Retorna todos os modelos cadastrados.")]
         public async Task<IActionResult> GetAllModels()
@@ -78,15 +78,14 @@ namespace Pregiato.API.Controllers
                         }
                         catch
                         {
-                            attributes = new ModelDnaData(); // se der erro, instancia vazia
+                            attributes = new ModelDnaData();
                         }
                     }
                     else
                     {
-                        attributes = new ModelDnaData(); // se DNA for null, instancia vazia
+                        attributes = new ModelDnaData(); 
                     }
 
-                    // Garantindo que nenhuma propriedade interna fique null:
                     attributes.Appearance ??= new Appearance
                     {
                         Eyes = new EyeAttributes(),
@@ -118,6 +117,7 @@ namespace Pregiato.API.Controllers
                         DATEOFBIRTH = model.DateOfBirth,
                         EMAIL = model.Email,
                         AGE = model.Age,
+                        MODELATTRIBUTES = attributes,
                         TELEFONEPRINCIPAL = model.TelefonePrincipal,
                         STATUS = model.Status ? "ATIVO" : "DESCONTINUADO",
                         RESPONSIBLEPRODUCER = model.CodProducers,
@@ -129,7 +129,7 @@ namespace Pregiato.API.Controllers
                             CITY = model.City,
                             UF = model.UF
                         },
-                        MODELATTRIBUTES = attributes
+                        
                     };
                 }).ToList();
 
@@ -183,7 +183,34 @@ namespace Pregiato.API.Controllers
 
             User producer = await _userRepository.GetByProducersAsync(createModelRequest.Nameproducers)
                                                  .ConfigureAwait(true);
-          
+
+            var defaultDnaData = new ModelDnaData
+            {
+                Dna = "InfoModel",
+                Appearance = new Appearance
+                {
+                    Eyes = new EyeAttributes(),
+                    Hair = new HairAttributes(),
+                    Skin = new SkinAttributes { Marks = new List<string>() },
+                    Face = new FaceAttributes(),
+                    Smile = new SmileAttributes(),
+                    Body = new BodyAttributes()
+                },
+                EyeAttributes = new EyeAttributes(),
+                HairAttributes = new HairAttributes(),
+                SkinAttributes = new SkinAttributes { Marks = new List<string>() },
+                FaceAttributesm = new FaceAttributes(),
+                SmileAttributes = new SmileAttributes(),
+                BodyAttributes = new BodyAttributes(),
+                AdditionalAttributes = new AdditionalAttributes
+                {
+                    Skills = new List<string>(),
+                    Experience = new List<string>()
+                },
+                PhysicalCharacteristics = new PhysicalCharacteristics()
+            };
+
+           
             Model model = new Model
             {
                 CodProducers = producer.CodProducers,
@@ -204,6 +231,7 @@ namespace Pregiato.API.Controllers
                 City = createModelRequest.City,
                 UF = createModelRequest.UF,
                 Status = true,
+                DNA = JsonDocument.Parse(JsonSerializer.Serialize(defaultDnaData)),
                 TelefonePrincipal = createModelRequest.TelefonePrincipal,
                 TelefoneSecundario = createModelRequest.TelefoneSecundario
 
@@ -225,7 +253,7 @@ namespace Pregiato.API.Controllers
             });
         }
 
-        [Authorize(Policy = "GlobalPolitic")]
+        [Authorize(Policy = "ManagementPolicyLevel4")]
         [HttpDelete("DeleteModel{id}")]
         [SwaggerOperation("Deletar cadastro de modelos.")]
         public async Task<IActionResult> DeleteModel(Guid id)
@@ -239,44 +267,37 @@ namespace Pregiato.API.Controllers
             return NoContent();
         }
 
-        //[Authorize(Policy = "AdminOrManagerOrModel")]
-        //[HttpGet("modelFeedJobs")]
-        //public async Task<IActionResult> GetModelFeed()
-        //{
-        //    var username = await _jwtService.GetAuthenticatedUsernameAsync();
-        //    if (string.IsNullOrEmpty(username))
-        //    {
-        //        return new UnauthorizedResult();
-        //    }
+        [Authorize(Policy = "GlobalPolitics")]
+        [HttpGet("modelFeedJobs")]
+        public async Task<IActionResult> GetModelFeed()
+        {
+            var username = await _userService
+                 .UserCaptureByToken()
+                 .ConfigureAwait(true);
+                
 
-        //    var model = await _agencyContext.Models
-        //        .FirstOrDefaultAsync(m => m.Name == username);
+            var model = await _agencyContext.Models
+                .FirstOrDefaultAsync(m => m.Email== username.Email)
+                .ConfigureAwait(true);
 
 
-        //    if (model == null)
-        //    {
-        //        return Unauthorized("Usuário não encontrado na base de dados.");
-        //    }
+            var feed = await _agencyContext.ModelJobs
+           .Where(mj => mj.ModelId == model.IdModel )
+           .Select(mj => new
+           {
+               mj.ModelId,
+               mj.JobDate,
+               mj.Location,
+               mj.Time,
+               mj.AdditionalDescription
+           })
+           .ToListAsync();
 
-        //    var feed = await _agencyContext.ModelJobs
-        //   .Where(mj => mj.IdModel == model.IdModel && mj.Status == "Pending")
-        //   .Select(mj => new
-        //   {
-        //       mj.IdModel,
-        //       mj.JobId,
-        //       mj.JobDate,
-        //       mj.Location,
-        //       mj.Time,
-        //       mj.AdditionalDescription,
-        //       mj.Status
-        //   })
-        //   .ToListAsync();
-
-        //    return Ok(new
-        //    {
-        //        Feed = feed
-        //    });
-        //}
+            return Ok(new
+            {
+                Feed = feed
+            });
+        }
 
         [Authorize(Policy = "GlobalPolitics")]
         [HttpGet("findModel")]
@@ -343,6 +364,7 @@ namespace Pregiato.API.Controllers
                 });
             }
         }
+       
         [Authorize(Policy = "GlobalPoliticsAgency")]
         [HttpGet("my-contracts")]
         public async Task<IActionResult> GetMyContracts()
@@ -370,7 +392,7 @@ namespace Pregiato.API.Controllers
             }
             var username = usernameClaim.Value;
 
-            var schforModel = await _userRepository.GetByUsernameAsync(username);
+            var schforModel = await _userRepository.GetByUsernameAsync(username).ConfigureAwait(true);
             
             var model = await _agencyContext.Models
                 .FirstOrDefaultAsync(m => m.Email == schforModel!.Email).ConfigureAwait(true);
@@ -410,12 +432,62 @@ namespace Pregiato.API.Controllers
         }
 
         [Authorize(Policy = "GlobalPoliticsAgency")]
+        [HttpPut("update-dna-property/{idModel}")]
+        [ProducesResponseType(StatusCodes.Status204NoContent)]
+        [ProducesResponseType(StatusCodes.Status400BadRequest)]
+        [ProducesResponseType(StatusCodes.Status404NotFound)]
+        [ProducesResponseType(StatusCodes.Status500InternalServerError)]
+        public async Task<IActionResult> UpdateDnaData(
+            [FromRoute] Guid idModel,
+            [FromBody] ModelDnaData requestDNA)
+        {
+            if (requestDNA == null)
+            {
+                return BadRequest("DADOS INVÁLIDOS.");
+            }
+
+            string jsonDna = JsonSerializer.Serialize(requestDNA, new JsonSerializerOptions
+            {
+                PropertyNamingPolicy = JsonNamingPolicy.CamelCase,
+                WriteIndented = false
+            });
+
+            JsonDocument dnaDocument;
+            try
+            {
+                dnaDocument = JsonDocument.Parse(jsonDna);
+            }
+            catch (JsonException ex)
+            {
+                return BadRequest($"ERRO AO PROCESSAR O JSON: {ex.Message}");
+            }
+
+            using var context = _contextFactory.CreateDbContext();
+
+            var model = await context.Models
+                .FirstOrDefaultAsync(m => m.IdModel == idModel)
+                .ConfigureAwait(true);
+
+            if (model == null)
+            {
+                return NotFound("MODELO NÃO ENCONTRADO COM O ID INFORMADO.");
+            }
+
+            model.DNA = dnaDocument;
+            context.Entry(model).Property(m => m.DNA).IsModified = true;
+
+            await context.SaveChangesAsync().ConfigureAwait(true);
+
+            return NoContent(); 
+        }
+
+        [Authorize(Policy = "GlobalPoliticsAgency")]
         [HttpPut("update-dna-property")]
         [ProducesResponseType(StatusCodes.Status204NoContent)]
         [ProducesResponseType(StatusCodes.Status401Unauthorized)]
         [ProducesResponseType(StatusCodes.Status400BadRequest)]
         [ProducesResponseType(StatusCodes.Status500InternalServerError)]
-        public async Task<IActionResult> UpdateDnaData([FromBody] ModelDnaData requestDNA)
+        public async Task<IActionResult> UpdateDnaDataAuthenticated ([FromBody] ModelDnaData requestDNA)
         {
 
             if (requestDNA == null)
@@ -462,10 +534,6 @@ namespace Pregiato.API.Controllers
             await context.SaveChangesAsync().ConfigureAwait(true);
             return Ok();
         }
-
-
-
-
 
     }
 }
