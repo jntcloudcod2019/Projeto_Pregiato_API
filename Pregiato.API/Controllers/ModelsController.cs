@@ -378,7 +378,7 @@ namespace Pregiato.API.Controllers
         }
 
         [Authorize(Policy = "GlobalPoliticsAgency")]
-        [HttpPut("update-dna-property")]
+        [HttpPut("update-dna-property/{}")]
         [ProducesResponseType(StatusCodes.Status204NoContent)]
         [ProducesResponseType(StatusCodes.Status401Unauthorized)]
         [ProducesResponseType(StatusCodes.Status400BadRequest)]
