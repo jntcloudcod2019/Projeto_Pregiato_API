@@ -469,6 +469,7 @@ namespace Pregiato.API.Controllers
             }
         }
 
+        [Authorize("GlobalPolitics")]
         [HttpGet("GetUsers")]
         public async Task<IActionResult> GetUsers()
         {
