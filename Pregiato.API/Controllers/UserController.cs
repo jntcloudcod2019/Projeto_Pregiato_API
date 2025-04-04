@@ -136,7 +136,7 @@ namespace Pregiato.API.Controllers
             }
         }
 
-        [Authorize(Policy = "ManagementPolicyLevel2")]
+        [Authorize(Policy = "ManagementPolicyLevel3")]
         [HttpDelete("deleteUser{id}")]
         public async Task<IActionResult> Delete(Guid id)
         {
@@ -151,7 +151,7 @@ namespace Pregiato.API.Controllers
             }
         }
 
-        [Authorize(Policy = "ManagementPolicyLevel3")]
+        [Authorize(Policy = "ManagementPolicyLevel2")]
         [HttpPost("register/Administrator")]
         public async Task<IActionResult> RegisterAdministrator([FromBody] UserRegisterDto user)
         {
@@ -185,7 +185,7 @@ namespace Pregiato.API.Controllers
             }
         }
 
-        [Authorize(Policy = "ManagementPolicyLevel5")]
+        [Authorize(Policy = "GlobalPolitics")]
         [HttpPost("register/Model")]
         public async Task<IActionResult> RegisterModel([FromBody] CreateuserModelRequest user)
         {
@@ -287,7 +287,7 @@ namespace Pregiato.API.Controllers
             }
         }
 
-        [Authorize(Policy = "ManagementPolicyLevel3")]
+        [Authorize(Policy = "ManagementPolicyLevel2")]
         [HttpPost("register/Manager")]
         public async Task<IActionResult> RegisterManager([FromBody] UserRegisterDto? user)
         {
@@ -318,7 +318,6 @@ namespace Pregiato.API.Controllers
                 return BadRequest(errorResponse);
             }
         }
-
 
         [Authorize(Policy = "ManagementPolicyLevel4")]
         [HttpPost("register/Telemarketing")]
@@ -353,7 +352,7 @@ namespace Pregiato.API.Controllers
             }
         }
 
-        [Authorize(Policy = "ManagementPolicyLevel3")]
+        [Authorize(Policy = "PolicyCEO")]
         [HttpPost("register/CEO")]
         public async Task<IActionResult> RegisterCeo([FromBody] UserRegisterDto? user)
         {

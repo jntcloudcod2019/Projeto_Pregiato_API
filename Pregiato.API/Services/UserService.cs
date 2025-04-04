@@ -546,7 +546,6 @@ namespace Pregiato.API.Services
             Console.WriteLine($"Usuário {user.NickName} cadastrado com sucesso.");
             return RegistrationResult.Success;
         }
-
         public Task<string> GenerateProducerCodeAsync()
         {
             const string prefix = "PM";
@@ -558,7 +557,7 @@ namespace Pregiato.API.Services
         }
         public async Task<User> UserCaptureByToken()
         {
-            // 1. Captura o token do Header
+
             var authorizationHeader = _httpContextAccessor.HttpContext?.Request.Headers["Authorization"].ToString();
 
             if (string.IsNullOrEmpty(authorizationHeader) || !authorizationHeader.StartsWith("Bearer "))
@@ -577,19 +576,16 @@ namespace Pregiato.API.Services
                 throw new UnauthorizedAccessException("TOKEN MAL FORMADO");
             }
 
-            // 2. Função utilitária para pegar claims
             string GetClaimValue(string claimType) =>
                 jwtToken.Claims.FirstOrDefault(c =>
                     c.Type == claimType || c.Type.EndsWith($"/{claimType}", StringComparison.OrdinalIgnoreCase))?.Value;
 
-            // 3. Extração das claims
             var email = GetClaimValue("email") ?? GetClaimValue(ClaimTypes.Email);
             var userTypeFromToken = GetClaimValue("role") ?? GetClaimValue(ClaimTypes.Role);
 
             if (string.IsNullOrEmpty(email) || string.IsNullOrEmpty(userTypeFromToken))
                 throw new UnauthorizedAccessException("INFORMAÇÕES DO TOKEN INCOMPLETAS");
 
-            // 4. Busca o usuário na base
             using var context = _contextFactory.CreateDbContext();
 
             var user = await context.Users.FirstOrDefaultAsync(u => u.Email == email);

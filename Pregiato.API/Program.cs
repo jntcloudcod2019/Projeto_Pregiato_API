@@ -165,8 +165,8 @@ builder.Services.AddAuthorization(options =>
     options.AddPolicy("PolicyProducers", policy =>
         policy.RequireRole("PRODUCERS"));
 
-    options.AddPolicy("AdminOrManager", policy =>
-        policy.RequireRole("ADMINISTRATOR", "MANAGER"));
+    options.AddPolicy("PolicyCEO", policy =>
+        policy.RequireRole("CEO"));
 
     options.AddPolicy("AdminOrManagerOrModel", policy =>
         policy.RequireRole("ADMINISTRATOR", "MANAGER", "MODEL"));

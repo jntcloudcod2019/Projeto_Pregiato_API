@@ -13,5 +13,6 @@ namespace Pregiato.API.Services.ServiceModels
         public string? StatusPagamento { get; set; }
         public string? ContractFilePath { get; set; }
         public int CodProposta { get; set; }
+        public string CodProduces { get; set; }
     }
 }
