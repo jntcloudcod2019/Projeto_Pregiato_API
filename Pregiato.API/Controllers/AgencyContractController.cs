@@ -83,7 +83,7 @@ namespace Pregiato.API.Controllers
             return Ok($"Termo de Concessão de direito de imagem para: {model.Name}, gerado com sucesso. Código da Proposta: {contract.CodProposta}.");
         }
 
-        [Authorize(Policy = "GlobalPolitics")]
+        [Authorize(Policy = "ManagementPolicyLevel5")]
         [SwaggerOperation("Processo de gerar contrato de Agenciamento e Fotoprgrafia.")]
         [ProducesResponseType(typeof(ApiResponse<object>), StatusCodes.Status200OK)]
         [ProducesResponseType(typeof(ApiResponse<object>), StatusCodes.Status404NotFound)]
@@ -207,7 +207,7 @@ namespace Pregiato.API.Controllers
         }
 
 
-        [Authorize(Policy = "ManagementPolicyLevel3")]
+        [Authorize(Policy = "ManagementPolicyLevel4")]
         [HttpGet("all-contracts")]
         public async Task<IActionResult> GetAllContractsForAgencyAsync()
         {
