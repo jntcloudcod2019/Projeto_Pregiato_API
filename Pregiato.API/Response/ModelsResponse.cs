@@ -1,4 +1,5 @@
-﻿using System.Text.Json;
+﻿using Pregiato.API.Models;
+using System.Text.Json;
 
 namespace Pregiato.API.Response
 {
@@ -18,12 +19,11 @@ namespace Pregiato.API.Response
         public DateTime? DATEOFBIRTH { get; set; }
         public string EMAIL { get; set; }
         public int AGE { get; set; }
+        public ModelDnaData MODELATTRIBUTES { get; set; }
         public string? TELEFONEPRINCIPAL { get; set; }
         public string STATUS { get; set; }
         public string RESPONSIBLEPRODUCER { get; set; }
         public AdressInfo? ADRESSINFO { get; set; }
-
-        public  JsonDocument? DNA { get; set; }
     }
 
     public class AdressInfo
