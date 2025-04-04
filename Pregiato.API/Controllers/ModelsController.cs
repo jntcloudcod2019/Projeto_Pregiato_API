@@ -89,6 +89,7 @@ namespace Pregiato.API.Controllers
                     TELEFONEPRINCIPAL = model.TelefonePrincipal,
                     STATUS = model.Status ? "ATIVO" : "DESCONTINUADO", 
                     RESPONSIBLEPRODUCER = model.CodProducers,
+                    DNA = model.DNA,
                     ADRESSINFO = new AdressInfo 
                     {
                         ADDRESS = model.Address,
@@ -97,6 +98,7 @@ namespace Pregiato.API.Controllers
                         CITY = model.City,
                         UF = model.UF
                     }
+                    
                 }).ToList();
 
                 return Ok(new ModelsResponse

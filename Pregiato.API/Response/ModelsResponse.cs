@@ -1,4 +1,6 @@
-﻿namespace Pregiato.API.Response
+﻿using System.Text.Json;
+
+namespace Pregiato.API.Response
 {
     public class ModelsResponse
     {
@@ -20,6 +22,8 @@
         public string STATUS { get; set; }
         public string RESPONSIBLEPRODUCER { get; set; }
         public AdressInfo? ADRESSINFO { get; set; }
+
+        public  JsonDocument? DNA { get; set; }
     }
 
     public class AdressInfo
