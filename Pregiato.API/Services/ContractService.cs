@@ -92,14 +92,14 @@ namespace Pregiato.API.Services
             try
             {
                
-                IBrowser browser = await _browserService.GetBrowserAsync();
+                IBrowser browser = await _browserService.GetBrowserAsync().ConfigureAwait(true);
 
-                await using IPage? page = await browser.NewPageAsync();
+                await using IPage? page = await browser.NewPageAsync().ConfigureAwait(true);
 
                 await page.SetContentAsync(populatedHtml, new NavigationOptions
                 {
                     WaitUntil = [WaitUntilNavigation.Networkidle0]
-                });
+                }).ConfigureAwait(true);
 
                 PdfOptions pdfOptions = new PdfOptions
                 {
@@ -114,11 +114,11 @@ namespace Pregiato.API.Services
                     }
                 };
 
-                return await page.PdfDataAsync(pdfOptions);
+                return await page.PdfDataAsync(pdfOptions).ConfigureAwait(true);
             }
             catch (Exception ex)
             {
-                Console.Error.WriteLine($"Erro ao converter HTML para PDF: {ex.Message}");
+                await Console.Error.WriteLineAsync($"Erro ao converter HTML para PDF: {ex.Message}").ConfigureAwait(true);
                 throw;
             }
         }

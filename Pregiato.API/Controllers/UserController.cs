@@ -468,5 +468,55 @@ namespace Pregiato.API.Controllers
                 });
             }
         }
+
+
+        [HttpGet("GetUsers")]
+        public async Task<IActionResult> GetUsers()
+        {
+            IEnumerable<User?> usersResult = await _userRepository.GetAllUserAsync()
+                .ConfigureAwait(true);
+            try
+            {
+                var enumerable = usersResult.ToList();
+                if (!enumerable.Any())
+                {
+                    return Ok(new UsersResponse
+                    {
+                        SUCESS = false,
+                        MESSAGE = "NENHUM USUÁRIO ENCONTRADO",
+                        DATA = null 
+                    });
+                }
+
+                var users = enumerable.Select(user => new ResultUsersResponse
+                {
+                    ID = user.UserId.ToString(),
+                    NAME = user.Name,
+                    CODPRODUCERS = user.CodProducers,
+                    EMAIL = user.Email,
+                    POSITION = user.UserType
+                }).ToList();
+
+                return Ok(new UsersResponse
+                {
+                    SUCESS = true,
+                    DATA = users
+                });
+            }
+            
+            catch (Exception ex)
+            {
+                return StatusCode(500, new
+                {
+                    success = false,
+                    message = "OCORREU UM ERRO AO BUSCAR OS MODELOS.",
+                    error = new
+                    {
+                        code = "INTERNAL_SERVER_ERROR",
+                        details = ex.Message
+                    }
+                });
+            }
+        }
     }
 }

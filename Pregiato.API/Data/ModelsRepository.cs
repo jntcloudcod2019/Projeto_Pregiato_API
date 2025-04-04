@@ -37,7 +37,7 @@ namespace Pregiato.API.Data
 
         public async Task<IEnumerable<Model>> GetAllModelAsync()
         {
-           return await _context.Models.ToListAsync();  
+           return await _context.Models.ToListAsync().ConfigureAwait(true);  
         }
 
         public async Task<Model> GetByIdModelAsync(Guid id)
@@ -49,7 +49,7 @@ namespace Pregiato.API.Data
         public async Task UpdateModelAsync(Model model)
         {
            _context.Models.Update(model);
-            await _context.SaveChangesAsync();
+            await _context.SaveChangesAsync().ConfigureAwait(true);
         }
 
         public async Task<Model?> GetModelByCriteriaAsync(string query)
@@ -78,7 +78,7 @@ namespace Pregiato.API.Data
                     m.CPF == inputModel.CPF &&
                     m.Name == inputModel.Name &&
                     m.RG == inputModel.RG &&
-                    m.Email == inputModel.Email);
+                    m.Email == inputModel.Email).ConfigureAwait(true);
             return existingModel;
         }
 
