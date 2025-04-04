@@ -118,5 +118,11 @@ namespace Pregiato.API.Data
                 .AsNoTracking()
                 .SingleOrDefaultAsync(u => EF.Functions.Like(u.Name.Trim(), name.Trim()));
         }
+
+        public async Task<IEnumerable<User>> GetUsersAsync()
+        {
+
+            return await context.Users.ToListAsync().ConfigureAwait(true);
+        }
     }
 }

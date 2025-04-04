@@ -64,7 +64,7 @@ namespace Pregiato.API.Controllers
 
             try
             {
-                IEnumerable<Model> modelsExists = await _modelRepository.GetAllModelAsync();
+                IEnumerable<Model> modelsExists = await _modelRepository.GetAllModelAsync().ConfigureAwait(true);
 
                 if (modelsExists == null || !modelsExists.Any())
                 {

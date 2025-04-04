@@ -6,7 +6,6 @@ namespace Pregiato.API.Requests
     public class LoginUserRequest
     {
         [Required]
-        [JsonPropertyName("FULLNAME")]
         public string? NickNAme { get; set; }
 
         [Required]

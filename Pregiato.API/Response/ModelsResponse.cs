@@ -4,7 +4,7 @@
     {
         public bool SUCESS { get; set; }
         public string MESSAGE { get; set; }
-        public List<ResulModelsResponse> DATA { get; set; }
+        public List<ResulModelsResponse>? DATA { get; set; }
     }
 
     public class ResulModelsResponse
