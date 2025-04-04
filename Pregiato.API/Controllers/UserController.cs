@@ -469,7 +469,6 @@ namespace Pregiato.API.Controllers
             }
         }
 
-
         [HttpGet("GetUsers")]
         public async Task<IActionResult> GetUsers()
         {
