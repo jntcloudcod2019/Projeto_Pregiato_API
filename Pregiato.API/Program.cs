@@ -20,7 +20,8 @@ using Pregiato.API.System.Text.Json.Serialization;
 using Pregiato.API.Validator;
 
 WebApplicationBuilder builder = WebApplication.CreateBuilder(args);
-string connectionString = Environment.GetEnvironmentVariable( "Host=191.101.235.250;Port=5432;Database=pregiato;Username=pregiato;Password=pregiato123");  // "Host=switchback.proxy.rlwy.net;Port=17959;Database=railway;Username=postgres;Password=KilSBJzUHEPxvtzCahmrrZzlJZVejnYC;SSL Mode=Require;Trust Server Certificate=true;";
+string connectionString = Environment.GetEnvironmentVariable("SECRET_KEY_DATABASE") ??
+                          "Host=191.101.235.250;Port=5432;Database=pregiato;Username=pregiato;Password=pregiato123";  // "Host=switchback.proxy.rlwy.net;Port=17959;Database=railway;Username=postgres;Password=KilSBJzUHEPxvtzCahmrrZzlJZVejnYC;SSL Mode=Require;Trust Server Certificate=true;";
 string secretKey = Environment.GetEnvironmentVariable("SECRETKEY_JWT_TOKEN") ?? "3+XcgYxev9TcGXECMBq0ilANarHN68wsDsrhG60icMaACkw9ajU97IYT+cv9IDepqrQjPaj4WUQS3VqOvpmtDw==";
 string pathBase = Environment.GetEnvironmentVariable("PATH_BASE");
 
