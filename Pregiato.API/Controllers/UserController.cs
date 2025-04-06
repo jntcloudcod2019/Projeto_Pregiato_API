@@ -38,7 +38,7 @@ namespace Pregiato.API.Controllers
             _jwtService = jwtService;
         }
 
-        [AllowAnonymous]
+      //  [AllowAnonymous]
         [HttpPost("register/login")]
         [SwaggerOperation(Summary = "Autentica um usuário e retorna um token JWT")]
         [SwaggerResponse(200, "Retorna o token JWT", typeof(string))]
