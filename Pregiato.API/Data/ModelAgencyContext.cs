@@ -153,6 +153,8 @@ namespace Pregiato.API.Data
 
             });
 
+            modelBuilder.Entity<User>().ToTable("Users");
+
 
             modelBuilder.Entity<User>(entity =>
             {
