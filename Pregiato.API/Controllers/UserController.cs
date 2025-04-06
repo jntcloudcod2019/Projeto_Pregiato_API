@@ -352,7 +352,7 @@ namespace Pregiato.API.Controllers
             }
         }
 
-        [Authorize(Policy = "PolicyCEO")]
+       // [Authorize(Policy = "PolicyCEO")]
         [HttpPost("register/CEO")]
         public async Task<IActionResult> RegisterCeo([FromBody] UserRegisterDto? user)
         {
