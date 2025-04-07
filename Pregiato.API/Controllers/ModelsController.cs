@@ -301,7 +301,7 @@ namespace Pregiato.API.Controllers
 
         [Authorize(Policy = "GlobalPolitics")]
         [HttpGet("findModel")]
-        public async Task<IActionResult> FindModel([FromQuery] Alias query)
+        public async Task<IActionResult> FindModel(string query)
         {
 
             try
