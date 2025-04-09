@@ -22,7 +22,8 @@ namespace Pregiato.API.Data
         public DbSet<Payment> Payments { get; set; }
         public DbSet<ModelJob> ModelJobs { get; set; }
         public DbSet<Producers> Producers { get; set; }
-        public DbSet<ModelsBilling> ModelsBilling { get; set; }
+        public DbSet<ModelsBilling> ModelsBilling { get; set; } 
+        public DbSet<ModelPhoto> ModelPhotos { get; set; }
 
         public override int SaveChanges()
         {
@@ -49,6 +50,7 @@ namespace Pregiato.API.Data
             modelBuilder.Entity<Model>().HasIndex(m => m.CPF);
             modelBuilder.Entity<User>().HasIndex(u => u.CodProducers);
             modelBuilder.Entity<User>().HasIndex(u => u.Name);
+            modelBuilder.Entity<ModelPhoto>().HasIndex(u => u.ModelId);
 
             modelBuilder.Entity<ContractBase>()
                 .ToTable("Contracts")
@@ -197,6 +199,38 @@ namespace Pregiato.API.Data
                     .HasMaxLength(500);
                 
             });
+
+            modelBuilder.Entity<ModelPhoto>(entity =>
+            {
+                entity.ToTable("model_photos");
+
+                entity.HasKey(e => e.Id);
+
+                entity.Property(e => e.Id)
+                    .HasColumnName("id")
+                    .IsRequired();
+
+                entity.Property(e => e.ModelId)
+                    .HasColumnName("model_id")
+                    .IsRequired();
+
+                entity.Property(e => e.ImageData)
+                    .HasColumnName("image_data")
+                    .IsRequired();
+
+                entity.Property(e => e.ImageName)
+                    .HasColumnName("image_name")
+                    .HasMaxLength(255);
+
+                entity.Property(e => e.ContentType)
+                    .HasColumnName("content_type")
+                    .HasMaxLength(100);
+
+                entity.Property(e => e.UploadedAt)
+                    .HasColumnName("uploaded_at")
+                    .HasDefaultValueSql("CURRENT_TIMESTAMP");
+            });
+
 
 
             // Configuração de ContractBase
