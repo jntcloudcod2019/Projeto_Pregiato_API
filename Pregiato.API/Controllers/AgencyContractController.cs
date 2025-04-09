@@ -162,7 +162,7 @@ namespace Pregiato.API.Controllers
             }
         }
 
-        [Authorize(Policy = "PolicyGenerateContracts")]
+        //[Authorize(Policy = "PolicyGenerateContracts")]
         [HttpGet("download-contract")]
         public async Task<IActionResult> DownloadContractAsync(int proposalCode)
         {
