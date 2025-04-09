@@ -299,7 +299,7 @@ namespace Pregiato.API.Controllers
             });
         }
 
-        [Authorize(Policy = "GlobalPolitics")]
+        //[Authorize(Policy = "GlobalPolitics")]
         [HttpGet("findModel")]
         public async Task<IActionResult> FindModel(string query)
         {
@@ -536,7 +536,7 @@ namespace Pregiato.API.Controllers
         }
 
 
-        [HttpPost("upload")]
+        [HttpPost("uploadPhotoModel")]
         public async Task<IActionResult> Upload([FromForm] ModelPhotoUploadDto dto)
         {
 
@@ -584,6 +584,71 @@ namespace Pregiato.API.Controllers
             });
         }
 
+        [HttpGet("GetPhotoModel/{modelId}")]
+        public async Task<IActionResult> GetByModel(Guid modelId)
+        {
+            var photos = await _agencyContext.ModelPhotos
+                .Where(p => p.ModelId == modelId)
+                .Select(p => new {
+                    p.Id,
+                    p.ImageName,
+                    p.ContentType,
+                    p.UploadedAt
+                })
+                .ToListAsync()
+                .ConfigureAwait(true);
+
+            return Ok(photos);
+        }
+
+
+        [HttpPatch("EditeRegisterModel/{id}")]
+        public async Task<IActionResult> UpdatePartial(Guid id, [FromBody] UpdateModelPartialDto dto)
+        {
+            var modelexistc = await _agencyContext.Models.FindAsync(id).ConfigureAwait(true);
+            if (modelexistc == null)
+            {
+                return NotFound(new
+                {
+                    success = false,
+                    message = "Modelo não encontrado."
+                });
+            }
+
+            var model = new Model { IdModel = id };
+
+            _agencyContext.Models.Attach(model);
+
+            if (dto.Name != null)
+            {
+                model.Name = dto.Name;
+                _agencyContext.Entry(model).Property(m => m.Name).IsModified = true;
+            }
+
+            if (dto.Email != null)
+            {
+                model.Email = dto.Email;
+                _agencyContext.Entry(model).Property(m => m.Email).IsModified = true;
+            }
+
+            if (dto.Status.HasValue)
+            {
+                model.Status = dto.Status.Value;
+                _agencyContext.Entry(model).Property(m => m.Status).IsModified = true;
+            }
+
+
+            model.UpdatedAt = DateTime.UtcNow;
+            _agencyContext.Entry(model).Property(m => m.UpdatedAt).IsModified = true;
+
+            var changes = await _agencyContext.SaveChangesAsync();
+
+            return Ok(new
+            {
+                success = true,
+                message = $"Modelo atualizado com sucesso ({changes} campo(s) alterado(s))."
+            });
+        }
     }
 }
 
