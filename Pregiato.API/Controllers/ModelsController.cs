@@ -535,6 +535,55 @@ namespace Pregiato.API.Controllers
             return Ok();
         }
 
+
+        [HttpPost("upload")]
+        public async Task<IActionResult> Upload([FromForm] ModelPhotoUploadDto dto)
+        {
+
+            if (dto.File == null || dto.File.Length == 0)
+            {
+                return BadRequest(new
+                {
+                    success = false,
+                    message = "Arquivo inválido ou ausente."
+                });
+            }
+
+            var modelExists = await _modelRepository.GetModelByCriteriaAsync
+                (dto.ModelId.ToString())
+                .ConfigureAwait(true);
+
+            if (modelExists == null)
+                return NotFound(new
+                {
+                    success = false,
+                    message = "Modelo não encontrado."
+                });
+
+
+            using var ms = new MemoryStream();
+            await dto.File.CopyToAsync(ms).ConfigureAwait(true);
+
+            var photo = new ModelPhoto
+            {
+                Id = Guid.NewGuid(),
+                ModelId = dto.ModelId,
+                ImageData = ms.ToArray(),
+                ImageName = dto.File.FileName,
+                ContentType = dto.File.ContentType
+            };
+
+            await _agencyContext.ModelPhotos.AddAsync(photo).ConfigureAwait(true);
+            await _agencyContext.SaveChangesAsync().ConfigureAwait(true);
+
+            return Ok(new
+            {
+                success = true,
+                message = "Foto enviada com sucesso.",
+                photoId = photo.Id
+            });
+        }
+
     }
 }
 
