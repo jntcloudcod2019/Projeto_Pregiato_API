@@ -15,6 +15,7 @@ using Pregiato.API.Interfaces;
 using iText.Commons.Actions.Contexts;
 using iText.Kernel.Pdf.Colorspace.Shading;
 using PuppeteerSharp;
+using Pregiato.API.Services.ServiceModels;
 
 namespace Pregiato.API.Controllers
 {
@@ -379,35 +380,62 @@ namespace Pregiato.API.Controllers
         public async Task<IActionResult> GetMyContracts()
         {
 
-            var username = await _userService.UserCaptureByToken();
-            var schforModel = await _userRepository.GetByUsernameAsync(username.Email).ConfigureAwait(true);
-            
-            var model = await _agencyContext.Models
-                .FirstOrDefaultAsync(m => m.Email == schforModel!.Email).ConfigureAwait(true);
-           
-
-            var contracts = await _agencyContext.Contracts
-                .Where(c => c.IdModel == model.IdModel)
-                .Select(c => new
-                {
-                    c.IdModel,
-                    c.ContractFilePath,
-                    c.Content
-                })
-                .ToListAsync().ConfigureAwait(true);
-
+            try
             {
-                var listContracts = contracts.Select(c =>
+                var username = await _userService.UserCaptureByToken().ConfigureAwait(true);
+
+                var schforModel = await _userRepository.GetByUsernameAsync(username.Email).ConfigureAwait(true);
+                if (schforModel is null)
                 {
-                    byte[] fileBytes = c.Content ?? [];
-                    return new
-                    {
-                        ModelId = c.IdModel,
-                        ContractFilePath = c.ContractFilePath,
-                        ContentBase64 = fileBytes.Length > 0 ? Convert.ToBase64String(fileBytes) : null
-                    };
+                    return BadRequest("USUÁRIO NÃO ENCONTRADO NA BASE DE DADOS.");
+                }
+
+                var model = await _agencyContext.Models
+                    .FirstOrDefaultAsync(m => m.Email == schforModel.Email)
+                    .ConfigureAwait(true);
+
+                if (model is null)
+                {
+                    return BadRequest("MODELO NÃO ENCONTRADO PARA O USUÁRIO.");
+                }
+
+                var contracts = await _agencyContext.Contracts
+                    .Where(c => c.IdModel == model.IdModel)
+                    .ToListAsync().ConfigureAwait(true);
+
+                if (!contracts.Any())
+                {
+                    return ActionResultIndex.Failure("NENHUM CONTRATO ENCONTRADO NA BASE DE DADOS.");
+                }
+
+                var contractsDto = contracts.Select(c => new ContractSummaryDTO
+                {
+                    ContractId = c.ContractId,
+                    ModelId = c.IdModel,
+                    DataContrato = c.DataContrato,
+                    VigenciaContrato = c.VigenciaContrato,
+                    ValorContrato = c.ValorContrato,
+                    FormaPagamento = c.FormaPagamento,
+                    StatusPagamento = c.StatusPagamento,
+                    ContractFilePath = c.ContractFilePath,
+                    CodProposta = c.CodProposta,
+                    CodProduces = c.CodProducers
                 }).ToList();
-                return Ok(listContracts);
+
+                return ActionResultIndex.Success(
+                    data: new
+                    {
+                        TotalContracts = contractsDto.Count,
+                        Contracts = contractsDto
+                    },
+                    message: "TODOS OS CONTRATOS FORAM RECUPERADOS COM SUCESSO!"
+                    );
+            }
+            catch (Exception ex)
+            {
+                Console.WriteLine($"ERRO AO RECUPERAR CONTRATOS: {ex.Message.ToUpper()}");
+                return ActionResultIndex.Failure($"ERRO AO RECUPERAR OS CONTRATOS: {ex.Message.ToUpper()}",
+                isSpeakOnOperation: true);
             }
         }
 
