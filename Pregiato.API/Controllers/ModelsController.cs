@@ -13,6 +13,7 @@ using System.Text.Json;
 using Pregiato.API.DTO;
 using Pregiato.API.Interfaces;
 using iText.Commons.Actions.Contexts;
+using iText.Kernel.Pdf.Colorspace.Shading;
 using PuppeteerSharp;
 
 namespace Pregiato.API.Controllers
@@ -186,7 +187,7 @@ namespace Pregiato.API.Controllers
 
             var defaultDnaData = new ModelDnaData
             {
-                Dna = "InfoModel",
+                Dna = "DNA",
                 Appearance = new Appearance
                 {
                     Eyes = new EyeAttributes(),
@@ -318,6 +319,9 @@ namespace Pregiato.API.Controllers
                     });
                 }
 
+
+                var resultDNA = model.DNA.Deserialize<ModelDnaData>() ?? new ModelDnaData();
+
                 var producer = await _producersRepository.GetProducersAsync(model.CodProducers);
 
                 var user = await _userRepository.GetByUsernameAsync(model.Email).ConfigureAwait(true);
@@ -344,7 +348,9 @@ namespace Pregiato.API.Controllers
                             POSTALCODE = model.PostalCode,
                             CITY = model.City,
                             UF = model.UF
-                        }
+                        },
+                    MODELATTRIBUTES =  JsonDocument.Parse(JsonSerializer.Serialize(resultDNA)),
+
                 };
                 
                 return Ok(new ModelsResponse
