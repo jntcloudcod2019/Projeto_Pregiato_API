@@ -58,10 +58,8 @@ namespace Pregiato.API.Controllers
             _producersRepository = producersRepository;
         }
 
-       /// <summary>
-       /// [Authorize(Policy = "GlobalPolitics")]
-       /// </summary>
-       /// <returns></returns>
+        
+        [Authorize(Policy = "GlobalPolitics")]
         [HttpGet("GetAllModels")]
         [SwaggerOperation("Retorna todos os modelos cadastrados.")]
         public async Task<IActionResult> GetAllModels()
@@ -88,7 +86,7 @@ namespace Pregiato.API.Controllers
                     }
                     else
                     {
-                        attributes = new ModelDnaData(); 
+                        attributes = new ModelDnaData();
                     }
 
                     attributes.Appearance ??= new Appearance
@@ -113,6 +111,8 @@ namespace Pregiato.API.Controllers
                     };
                     attributes.PhysicalCharacteristics ??= new PhysicalCharacteristics();
 
+                    var attributesJson = JsonSerializer.SerializeToDocument(attributes);
+
                     return new ResulModelsResponse
                     {
                         ID = model.IdModel.ToString(),
@@ -122,7 +122,7 @@ namespace Pregiato.API.Controllers
                         DATEOFBIRTH = model.DateOfBirth,
                         EMAIL = model.Email,
                         AGE = model.Age,
-                        MODELATTRIBUTES = attributes,
+                        MODELATTRIBUTES = attributesJson, 
                         TELEFONEPRINCIPAL = model.TelefonePrincipal,
                         STATUS = model.Status ? "ATIVO" : "DESCONTINUADO",
                         RESPONSIBLEPRODUCER = model.CodProducers,
@@ -134,9 +134,9 @@ namespace Pregiato.API.Controllers
                             CITY = model.City,
                             UF = model.UF
                         },
-                        
                     };
                 }).ToList();
+
 
                 return Ok(new ModelsResponse
                 {
