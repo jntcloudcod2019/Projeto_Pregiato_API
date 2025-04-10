@@ -599,17 +599,25 @@ namespace Pregiato.API.Controllers
         public async Task<IActionResult> GetByModel(Guid modelId)
         {
             var photos = await _agencyContext.ModelPhotos
-                .Where(p => p.ModelId == modelId)
-                .Select(p => new {
-                    p.Id,
-                    p.ImageName,
-                    p.ContentType,
-                    p.UploadedAt
-                })
+                .Where(p => p.ModelId == modelId && p.ImageData != null)
                 .ToListAsync()
-                .ConfigureAwait(true);
+                .ConfigureAwait(false);
 
-            return Ok(photos);
+            if (!photos.Any())
+            {
+                return NotFound("Nenhuma foto encontrada para o modelo informado.");
+            }
+
+            var response = photos.Select(p => new PhotoModelResponse
+            {
+                Id = p.Id,
+                ImageName = p.ImageName,
+                ContentType = p.ContentType,
+                UploadedAt = p.UploadedAt,
+                ImageBase64 = $"data:{p.ContentType};base64,{Convert.ToBase64String(p.ImageData!)}"
+            }).ToList();
+
+            return Ok(response);
         }
 
 
