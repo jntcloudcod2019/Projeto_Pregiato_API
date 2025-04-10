@@ -22,8 +22,8 @@ namespace Pregiato.API.Models
         [JsonPropertyName("skinAttributes")]
         public SkinAttributes SkinAttributes { get; set; }
 
-        [JsonPropertyName("faceAttributesm")]
-        public FaceAttributes FaceAttributesm { get; set; }
+        [JsonPropertyName("faceAttributes")]
+        public FaceAttributes FaceAttributes { get; set; }
 
         [JsonPropertyName("smileAttributes")]
         public SmileAttributes SmileAttributes { get; set; }
