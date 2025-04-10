@@ -4,15 +4,8 @@ using Microsoft.EntityFrameworkCore;
 using Pregiato.API.Data;
 using Pregiato.API.Models;
 using Pregiato.API.Response;
-using System.IdentityModel.Tokens.Jwt;
-using System.Text.Json;
-using System.Drawing.Printing;
-using System.IdentityModel.Tokens.Jwt;
-using System.Security.Claims;
 using Pregiato.API.Interfaces;
-using Pregiato.API.Requests;
-using Pregiato.API.Services.ServiceModels;
-using Pregiato.API.DTO;
+
 
 
 namespace Pregiato.API.Controllers;
