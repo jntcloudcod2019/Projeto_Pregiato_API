@@ -16,6 +16,7 @@ using iText.Commons.Actions.Contexts;
 using iText.Kernel.Pdf.Colorspace.Shading;
 using PuppeteerSharp;
 using Pregiato.API.Services.ServiceModels;
+using System.Text.Json.Serialization;
 
 namespace Pregiato.API.Controllers
 {
@@ -59,7 +60,7 @@ namespace Pregiato.API.Controllers
         }
 
         
-        [Authorize(Policy = "GlobalPolitics")]
+       // [Authorize(Policy = "GlobalPolitics")]
         [HttpGet("GetAllModels")]
         [SwaggerOperation("Retorna todos os modelos cadastrados.")]
         public async Task<IActionResult> GetAllModels()
@@ -77,7 +78,15 @@ namespace Pregiato.API.Controllers
                     {
                         try
                         {
-                            attributes = model.DNA.Deserialize<ModelDnaData>() ?? new ModelDnaData();
+                            var options = new JsonSerializerOptions
+                            {
+                                PropertyNameCaseInsensitive = true,
+                                AllowTrailingCommas = true,
+                                ReadCommentHandling = JsonCommentHandling.Skip,
+                                DefaultIgnoreCondition = JsonIgnoreCondition.WhenWritingNull
+                            };
+
+                             attributes = JsonSerializer.Deserialize<ModelDnaData>(model.DNA.RootElement.GetRawText(), options);
                         }
                         catch
                         {
@@ -101,7 +110,7 @@ namespace Pregiato.API.Controllers
                     attributes.EyeAttributes ??= new EyeAttributes();
                     attributes.HairAttributes ??= new HairAttributes();
                     attributes.SkinAttributes ??= new SkinAttributes { Marks = new List<string>() };
-                    attributes.FaceAttributesm ??= new FaceAttributes();
+                    attributes.FaceAttributes ??= new FaceAttributes();
                     attributes.SmileAttributes ??= new SmileAttributes();
                     attributes.BodyAttributes ??= new BodyAttributes();
                     attributes.AdditionalAttributes ??= new AdditionalAttributes
@@ -126,6 +135,7 @@ namespace Pregiato.API.Controllers
                         TELEFONEPRINCIPAL = model.TelefonePrincipal,
                         STATUS = model.Status ? "ATIVO" : "DESCONTINUADO",
                         RESPONSIBLEPRODUCER = model.CodProducers,
+                        
                         ADRESSINFO = new AdressInfo
                         {
                             ADDRESS = model.Address,
@@ -204,7 +214,7 @@ namespace Pregiato.API.Controllers
                 EyeAttributes = new EyeAttributes(),
                 HairAttributes = new HairAttributes(),
                 SkinAttributes = new SkinAttributes { Marks = new List<string>() },
-                FaceAttributesm = new FaceAttributes(),
+                FaceAttributes = new FaceAttributes(),
                 SmileAttributes = new SmileAttributes(),
                 BodyAttributes = new BodyAttributes(),
                 AdditionalAttributes = new AdditionalAttributes
