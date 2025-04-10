@@ -313,14 +313,14 @@ namespace Pregiato.API.Controllers
                     return Ok(new ModelsResponse
                     {
                         SUCESS = false,
-                        MESSAGE = $"MODELO COM ID {query.ToUpper()} NÃO ENCONTRADO.",
+                        MESSAGE = $"MODELO COM {query.ToUpper()} NÃO ENCONTRADO.",
                         DATA = null
                     });
                 }
 
                 var producer = await _producersRepository.GetProducersAsync(model.CodProducers);
 
-                var user = await _userRepository.GetByUsernameAsync(model.Email);
+                var user = await _userRepository.GetByUsernameAsync(model.Email).ConfigureAwait(true);
 
                 var resultModel = new ResulModelsResponse
                 {
@@ -434,7 +434,7 @@ namespace Pregiato.API.Controllers
             }
         }
 
-        [Authorize(Policy = "GlobalPoliticsAgency")]
+       // [Authorize(Policy = "GlobalPoliticsAgency")]
         [HttpPut("update-dna-property/{idModel}")]
         [ProducesResponseType(StatusCodes.Status204NoContent)]
         [ProducesResponseType(StatusCodes.Status400BadRequest)]
