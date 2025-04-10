@@ -13,6 +13,7 @@ namespace Pregiato.API.Response
     public class ResulModelsResponse
     {
         public string ID { get; set; }
+        public string IDUSER { get; set; }
         public string NAME { get; set; }
         public string CPF { get; set; }
         public string RG { get; set; }
