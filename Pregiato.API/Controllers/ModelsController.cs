@@ -374,7 +374,7 @@ namespace Pregiato.API.Controllers
             }
         }
        
-        [Authorize(Policy = "GlobalPoliticsAgency")]
+       // [Authorize(Policy = "GlobalPoliticsAgency")]
         [HttpGet("my-contracts")]
         public async Task<IActionResult> GetMyContracts()
         {
