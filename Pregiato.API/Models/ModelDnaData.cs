@@ -1,4 +1,5 @@
 ﻿using System.ComponentModel.DataAnnotations.Schema;
+using System.Text.Json;
 using System.Text.Json.Serialization;
 
 namespace Pregiato.API.Models
@@ -35,6 +36,11 @@ namespace Pregiato.API.Models
 
         [JsonPropertyName("physicalCharacteristics")]
         public PhysicalCharacteristics PhysicalCharacteristics { get; set; }
+
+        public static implicit operator JsonDocument(ModelDnaData v)
+        {
+            throw new NotImplementedException();
+        }
     }
 
     public class Appearance
