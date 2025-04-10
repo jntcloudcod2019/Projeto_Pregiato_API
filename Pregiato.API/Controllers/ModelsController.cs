@@ -373,47 +373,18 @@ namespace Pregiato.API.Controllers
                 });
             }
         }
-       
-       // [Authorize(Policy = "GlobalPoliticsAgency")]
+
+        //[Authorize(Policy = "GlobalPoliticsAgency")]
         [HttpGet("my-contracts")]
         public async Task<IActionResult> GetMyContracts()
         {
-            Alias authorizationHeader = HttpContext.Request.Headers["Authorization"].ToString();
-            if (Alias.IsNullOrEmpty(authorizationHeader) || !authorizationHeader.StartsWith("Bearer "))
-            {
-                return Unauthorized("Token de autenticação não fornecido ou inválido.");
-            }
-            Alias token = authorizationHeader.Substring("Bearer ".Length).Trim();
-            JwtSecurityTokenHandler handler = new JwtSecurityTokenHandler();
-            JwtSecurityToken jwtToken;
-            try
-            {
-                jwtToken = handler.ReadJwtToken(token);
-            }
-            catch (Exception)
-            {
-                return Unauthorized("Token inválido.");
-            }
-            var usernameClaim = jwtToken.Claims.FirstOrDefault(c => c.Type == "http://schemas.xmlsoap.org/ws/2005/05/identity/claims/name");
-            if (usernameClaim == null)
-            {
-                return Unauthorized("Usuário não autenticado.");
-            }
-            var username = usernameClaim.Value;
 
-            var schforModel = await _userRepository.GetByUsernameAsync(username).ConfigureAwait(true);
+            var username = await _userService.UserCaptureByToken();
+            var schforModel = await _userRepository.GetByUsernameAsync(username.Email).ConfigureAwait(true);
             
             var model = await _agencyContext.Models
                 .FirstOrDefaultAsync(m => m.Email == schforModel!.Email).ConfigureAwait(true);
-            if (model == null)
-            {
-                return Unauthorized("Usuário não encontrado na base de dados.");
-            }
-            Claim? roleClaim = jwtToken.Claims.FirstOrDefault(c => c.Type == "http://schemas.microsoft.com/ws/2008/06/identity/claims/role");
-            if (roleClaim == null || roleClaim.Value != "Model")
-            {
-                return Forbid("Permissão insuficiente.");
-            }
+           
 
             var contracts = await _agencyContext.Contracts
                 .Where(c => c.IdModel == model.IdModel)
