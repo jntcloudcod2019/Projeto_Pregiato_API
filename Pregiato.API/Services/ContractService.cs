@@ -125,7 +125,9 @@ namespace Pregiato.API.Services
         public async Task SaveContractAsync(ContractBase contract, Stream pdfStream, string cpfModelo)
         {
             using MemoryStream memoryStream = new MemoryStream();
-            await pdfStream.CopyToAsync(memoryStream);
+
+            await pdfStream.CopyToAsync(memoryStream).ConfigureAwait(true);
+
             byte[] pdfBytes = memoryStream.ToArray();
 
             var jsonObject = new
@@ -137,7 +139,12 @@ namespace Pregiato.API.Services
             byte[] jsonBytes = JsonSerializer.SerializeToUtf8Bytes(jsonObject);
 
             contract.Content = jsonBytes;
-            contract.ContractFilePath = $"Model_CPF:{cpfModelo}_{DateTime.UtcNow:dd-MM-yyyy}.pdf";
+
+            string nameContract = contract.TemplateFileName.Contains('.')
+                ? contract.TemplateFileName.Substring(0, contract.TemplateFileName.LastIndexOf('.'))
+                : contract.TemplateFileName;
+
+            contract.ContractFilePath = $"Model_CPF:{cpfModelo}_{nameContract}_{DateTime.UtcNow:dd-MM-yyyy}.pdf";
             await _contractRepository.SaveContractAsync(contract);         
         }
         private async Task<int> GetNextCodPropostaAsync()
@@ -145,7 +152,8 @@ namespace Pregiato.API.Services
             int maxCodProposta = await _contextFactory.CreateDbContext().Contracts.MaxAsync(c => (int?)c.CodProposta) ?? 109;
             return maxCodProposta + 1;
         }
-        public async Task<ContractBase>  GenerateContractAsync(CreateContractModelRequest createContractModelRequest, Model model, string contractType, Dictionary<string, string> parameters, int codProposta)
+        public async Task<ContractBase>  GenerateContractAsync
+                    (CreateContractModelRequest createContractModelRequest, Model model, string contractType, Dictionary<string, string> parameters, int codProposta)
         {
             parameters ??= new Dictionary<string, string>();
 

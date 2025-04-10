@@ -441,8 +441,8 @@ namespace Pregiato.API.Controllers
                 isSpeakOnOperation: true);
             }
         }
-
-       // [Authorize(Policy = "GlobalPoliticsAgency")]
+        
+        //[Authorize(Policy = "GlobalPoliticsAgency")]
         [HttpPut("update-dna-property/{idModel}")]
         [ProducesResponseType(StatusCodes.Status204NoContent)]
         [ProducesResponseType(StatusCodes.Status400BadRequest)]
@@ -476,8 +476,8 @@ namespace Pregiato.API.Controllers
             using var context = _contextFactory.CreateDbContext();
 
             var model = await context.Models
-                .FirstOrDefaultAsync(m => m.IdModel == idModel)
-                .ConfigureAwait(true);
+                            .FirstOrDefaultAsync(m => m.IdModel == idModel)
+                            .ConfigureAwait(true);
 
             if (model == null)
             {
@@ -485,6 +485,7 @@ namespace Pregiato.API.Controllers
             }
 
             model.DNA = dnaDocument;
+            model.UpdatedAt = DateTime.UtcNow;
             context.Entry(model).Property(m => m.DNA).IsModified = true;
 
             await context.SaveChangesAsync().ConfigureAwait(true);
@@ -492,7 +493,7 @@ namespace Pregiato.API.Controllers
             return NoContent(); 
         }
 
-        [Authorize(Policy = "GlobalPoliticsAgency")]
+       // [Authorize(Policy = "GlobalPoliticsAgency")]
         [HttpPut("update-dna-property")]
         [ProducesResponseType(StatusCodes.Status204NoContent)]
         [ProducesResponseType(StatusCodes.Status401Unauthorized)]
@@ -526,7 +527,7 @@ namespace Pregiato.API.Controllers
             }
             catch (JsonException ex)
             {
-                return BadRequest($"Erro ao processar o JSON: {ex.Message}");
+                return BadRequest($"ERRO AO PROCESSAR O JSON: {ex.Message}");
             }
 
 
@@ -537,10 +538,11 @@ namespace Pregiato.API.Controllers
 
             if (model == null)
             {
-                return NotFound("Modelo não encontrado para o e-mail do usuário logado.");
+                return NotFound("MODELO NÃO ENCONTRADO PARA O E-MAIL DO USUÁRIO LOGADO.");
             }
 
             model.DNA = dnaDocument;
+            model.UpdatedAt = DateTime.UtcNow;
             context.Entry(model).Property(m => m.DNA).IsModified = true;
             await context.SaveChangesAsync().ConfigureAwait(true);
             return Ok();
@@ -556,7 +558,7 @@ namespace Pregiato.API.Controllers
                 return BadRequest(new
                 {
                     success = false,
-                    message = "Arquivo inválido ou ausente."
+                    message = "ARQUIVO INVÁLIDO OU AUSENTE."
                 });
             }
 
@@ -568,7 +570,7 @@ namespace Pregiato.API.Controllers
                 return NotFound(new
                 {
                     success = false,
-                    message = "Modelo não encontrado."
+                    message = "MODELO NÃO ENCONTRADO."
                 });
 
 
@@ -584,14 +586,17 @@ namespace Pregiato.API.Controllers
                 ContentType = dto.File.ContentType
             };
 
+            photo.UploadedAt = DateTime.UtcNow;
             await _agencyContext.ModelPhotos.AddAsync(photo).ConfigureAwait(true);
             await _agencyContext.SaveChangesAsync().ConfigureAwait(true);
 
-            return Ok(new
+            return Ok(new PhotoModelResponse
             {
-                success = true,
-                message = "Foto enviada com sucesso.",
-                photoId = photo.Id
+                Id = photo.Id,
+                ImageName = photo.ImageName,
+                ContentType = photo.ContentType,
+                ImageBase64 = $"data:{photo.ContentType};base64,{Convert.ToBase64String(photo.ImageData!)}"
+
             });
         }
 
@@ -615,6 +620,7 @@ namespace Pregiato.API.Controllers
                 ContentType = p.ContentType,
                 UploadedAt = p.UploadedAt,
                 ImageBase64 = $"data:{p.ContentType};base64,{Convert.ToBase64String(p.ImageData!)}"
+ 
             }).ToList();
 
             return Ok(response);
@@ -624,38 +630,99 @@ namespace Pregiato.API.Controllers
         [HttpPatch("EditeRegisterModel/{id}")]
         public async Task<IActionResult> UpdatePartial(Guid id, [FromBody] UpdateModelPartialDto dto)
         {
-            var modelexistc = await _agencyContext.Models.FindAsync(id).ConfigureAwait(true);
-            if (modelexistc == null)
+           
+            var exists = await _agencyContext.Models.AnyAsync(m => m.IdModel == id);
+            if (!exists)
             {
                 return NotFound(new
                 {
                     success = false,
-                    message = "Modelo não encontrado."
+                    message = "MODELO NÃO ENCONTRADO."
                 });
             }
 
             var model = new Model { IdModel = id };
+            _agencyContext.Attach(model);
 
-            _agencyContext.Models.Attach(model);
+            string PlaceholderString = "string";
 
-            if (dto.Name != null)
+            if (dto.Name != null  && dto.Name != PlaceholderString)
             {
                 model.Name = dto.Name;
                 _agencyContext.Entry(model).Property(m => m.Name).IsModified = true;
             }
 
-            if (dto.Email != null)
+            if (dto.Email != null && dto.Email != PlaceholderString)
             {
                 model.Email = dto.Email;
                 _agencyContext.Entry(model).Property(m => m.Email).IsModified = true;
             }
 
-            if (dto.Status.HasValue)
+            if (dto.CPF != null && dto.CPF != PlaceholderString)
             {
-                model.Status = dto.Status.Value;
-                _agencyContext.Entry(model).Property(m => m.Status).IsModified = true;
+                model.CPF = dto.CPF;
+                _agencyContext.Entry(model).Property(m => m.CPF).IsModified = true;
             }
 
+            if (dto.RG != null && dto.RG != PlaceholderString)
+            {
+                model.RG = dto.RG;
+                _agencyContext.Entry(model).Property(m => m.RG).IsModified = true;
+            }
+
+            if (dto.PostalCode != null && dto.PostalCode != PlaceholderString)
+            {
+                model.PostalCode = dto.PostalCode;
+                _agencyContext.Entry(model).Property(m => m.PostalCode).IsModified = true;
+            }
+
+            if (dto.Address != null && dto.Address != PlaceholderString)
+            {
+                model.Address = dto.Address;
+                _agencyContext.Entry(model).Property(m => m.Address).IsModified = true;
+            }
+
+            if (dto.NumberAddress != null && dto.NumberAddress != PlaceholderString)
+            {
+                model.NumberAddress = dto.NumberAddress;
+                _agencyContext.Entry(model).Property(m => m.NumberAddress).IsModified = true;
+            }
+
+            if (dto.Complement != null && dto.Complement != PlaceholderString)
+            {
+                model.Complement = dto.Complement;
+                _agencyContext.Entry(model).Property(m => m.Complement).IsModified = true;
+            }
+
+            if (dto.Neighborhood != null && dto.Neighborhood != PlaceholderString)
+            {
+                model.Neighborhood = dto.Neighborhood;
+                _agencyContext.Entry(model).Property(m => m.Neighborhood).IsModified = true;
+            }
+
+            if (dto.City != null && dto.City != PlaceholderString)
+            {
+                model.City = dto.City;
+                _agencyContext.Entry(model).Property(m => m.City).IsModified = true;
+            }
+
+            if (dto.TelefonePrincipal != null && dto.TelefonePrincipal != PlaceholderString)
+            {
+                model.TelefonePrincipal = dto.TelefonePrincipal;
+                _agencyContext.Entry(model).Property(m => m.TelefonePrincipal).IsModified = true;
+            }
+
+            if (dto.TelefoneSecundario != null && dto.TelefoneSecundario != PlaceholderString)
+            {
+                model.TelefoneSecundario = dto.TelefoneSecundario;
+                _agencyContext.Entry(model).Property(m => m.TelefoneSecundario).IsModified = true;
+            }
+
+            if (dto.Age.HasValue && dto.Age > 0)
+            {
+                model.Age = dto.Age.Value;
+                _agencyContext.Entry(model).Property(m => m.Age).IsModified = true;
+            }
 
             model.UpdatedAt = DateTime.UtcNow;
             _agencyContext.Entry(model).Property(m => m.UpdatedAt).IsModified = true;
@@ -665,7 +732,7 @@ namespace Pregiato.API.Controllers
             return Ok(new
             {
                 success = true,
-                message = $"Modelo atualizado com sucesso ({changes} campo(s) alterado(s))."
+                message = $"MODELO ATUALIZADO COM SUCESSO ({changes} CAMPO(S) ALTERADO(S))."
             });
         }
     }
