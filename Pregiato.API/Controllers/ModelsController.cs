@@ -320,9 +320,12 @@ namespace Pregiato.API.Controllers
 
                 var producer = await _producersRepository.GetProducersAsync(model.CodProducers);
 
+                var user = await _userRepository.GetByUsernameAsync(model.Email);
+
                 var resultModel = new ResulModelsResponse
                 {
                     ID = model.IdModel.ToString(),
+                    IDUSER = user.UserId.ToString(),
                     NAME = model.Name,
                     CPF = model.CPF,
                     RG = model.RG,
