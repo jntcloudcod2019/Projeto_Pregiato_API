@@ -58,7 +58,10 @@ namespace Pregiato.API.Controllers
             _producersRepository = producersRepository;
         }
 
-        [Authorize(Policy = "GlobalPolitics")]
+       /// <summary>
+       /// [Authorize(Policy = "GlobalPolitics")]
+       /// </summary>
+       /// <returns></returns>
         [HttpGet("GetAllModels")]
         [SwaggerOperation("Retorna todos os modelos cadastrados.")]
         public async Task<IActionResult> GetAllModels()
