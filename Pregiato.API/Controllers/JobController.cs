@@ -34,7 +34,6 @@ namespace Pregiato.API.Controllers
             Job jobModel = new Job
             {
               Status = "Pending",
-              IdModel = new Guid(),
               JobDate = jobRequest.JobDate,
               Location = jobRequest.Location,
               Description = jobRequest.Description,                      
