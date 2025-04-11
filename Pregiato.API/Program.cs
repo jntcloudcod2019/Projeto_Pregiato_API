@@ -18,6 +18,7 @@ using Npgsql;
 using Pregiato.API.System.Text.Json;
 using Pregiato.API.System.Text.Json.Serialization;
 using Pregiato.API.Validator;
+using Prometheus;
 
 WebApplicationBuilder builder = WebApplication.CreateBuilder(args);
 string connectionString = Environment.GetEnvironmentVariable("SECRET_KEY_DATABASE") ??
@@ -252,5 +253,7 @@ app.UseSwaggerUI(c =>
 app.UseCors("DevPolicy");
 app.UseAuthentication();
 app.UseAuthorization();
+app.UseMetricServer(); 
+app.UseHttpMetrics();
 app.MapControllers();
 app.Run();
