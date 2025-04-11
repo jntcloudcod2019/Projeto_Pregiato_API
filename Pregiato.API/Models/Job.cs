@@ -6,7 +6,6 @@ namespace Pregiato.API.Models
     {
         [Key]
         public Guid JobId { get; set; }
-        public Guid IdModel { get; set; }
 
         [StringLength(500, ErrorMessage = "A descrição deve ter no máximo 500 caracteres.")]
         public string Description { get; set; }
@@ -23,7 +22,6 @@ namespace Pregiato.API.Models
         public decimal Amount { get; set; }
         public DateTime CreatedAt { get; set; } = DateTime.UtcNow;
 
-      
         public DateTime UpdatedAt { get; set; } = DateTime.UtcNow;
 
 

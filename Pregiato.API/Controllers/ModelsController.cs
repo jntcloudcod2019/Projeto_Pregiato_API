@@ -98,6 +98,8 @@ namespace Pregiato.API.Controllers
                         attributes = new ModelDnaData();
                     }
 
+
+
                     attributes.Appearance ??= new Appearance
                     {
                         Eyes = new EyeAttributes(),

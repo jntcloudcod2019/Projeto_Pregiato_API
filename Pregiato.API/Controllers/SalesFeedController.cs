@@ -235,7 +235,8 @@ public class SalesFeedController : ControllerBase
         }
     }
 
-    [Authorize(Policy = "PolicyProducers")]
+    [Authorize(Policy = "PolicyProducers" )]
+    [Authorize(Policy = "ManagementPolicyLevel2")]
     [HttpGet("GetBillingDayByProducers")]
     public async Task<IActionResult> GetBillingDayByProducers()
     {
