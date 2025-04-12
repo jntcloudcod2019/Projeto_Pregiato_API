@@ -18,6 +18,7 @@ namespace Pregiato.API.Interfaces
         Task<IEnumerable<User>> GetProducers();
         Task<User> GetByProducersAsync(string Name);
         Task<IEnumerable<User>> GetUsersAsync();
+        Task<User> GetByUserForCodproducers(string codProducers);
 
     }
 }
