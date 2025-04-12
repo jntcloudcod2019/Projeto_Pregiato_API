@@ -5,6 +5,7 @@ using Pregiato.API.Models;
 using Pregiato.API.Requests;
 using Pregiato.API.Services.ServiceModels;
 using System.Globalization;
+using Microsoft.OpenApi.Writers;
 
 namespace Pregiato.API.Services;
 
@@ -46,6 +47,7 @@ public class PaymentService(IDbContextFactory<ModelAgencyContext> contextFactory
                 StatusPagamento = StatusPagamento.Create(payment.StatusPagamento),
                 AutorizationNumber = payment.AutorizationNumber,
                 Provider = payment.Provider,
+               
             };
 
             if (payment.MetodoPagamento == MetodoPagamento.CartaoCredito)
@@ -80,18 +82,25 @@ public class PaymentService(IDbContextFactory<ModelAgencyContext> contextFactory
 
             else if (payment.MetodoPagamento == MetodoPagamento.Pix)
             {
-                //Incluir validação do comprovante 
-                // if (payment.Comprovante == null || payment.Comprovante.Length == 0)
-                return "Faça o upload do comprovante após gerar o contrato!";
+                if(payment.ProofPix == null)
+                    return "Faça o upload do comprovante após gerar o contrato!";
+                paymentContract.Comprovante = payment.ProofPix;
+                paymentContract.QuantidadeParcela = payment.QuantidadeParcela;
+                paymentContract.FinalCartao = payment.FinalCartao ?? "N/A";
+                paymentContract.DataAcordoPagamento = payment.DataAcordoPagamento.Value.ToUniversalTime();
+
             }
 
             else if (payment.MetodoPagamento == MetodoPagamento.LinkPagamento)
             {
-                if (string.IsNullOrEmpty(payment.FinalCartao))
-                    throw new ArgumentException(
-                        "Os últimos 4 dígitos do cartão são obrigatórios para Link de Pagamento.");
+                //if (string.IsNullOrEmpty(payment.FinalCartao))
+                //    throw new ArgumentException(
+                //        "Os últimos 4 dígitos do cartão são obrigatórios para Link de Pagamento.");
 
                 paymentContract.FinalCartao = payment.FinalCartao;
+                paymentContract.QuantidadeParcela = payment.QuantidadeParcela;
+                paymentContract.FinalCartao = payment.FinalCartao ?? "N/A";
+                paymentContract.DataAcordoPagamento = payment.DataAcordoPagamento.Value.ToUniversalTime();
             }
 
             if (payment.StatusPagamento == "Pending" && payment.DataAcordoPagamento == null)

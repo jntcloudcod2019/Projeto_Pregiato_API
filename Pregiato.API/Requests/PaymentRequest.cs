@@ -4,6 +4,7 @@ using Swashbuckle.AspNetCore.Annotations;
 using System.ComponentModel;
 using System.ComponentModel.DataAnnotations;
 using System.Text.Json.Serialization;
+using Pregiato.API.System.Text.Json;
 using Pregiato.API.System.Text.Json.Serialization;
 
 namespace Pregiato.API.Requests
@@ -32,9 +33,14 @@ namespace Pregiato.API.Requests
         [DisplayFormat(DataFormatString = "{dd-MM-yyyy}", ApplyFormatInEditMode = true)]
         public DateTime? DataAcordoPagamento { get; set; } = null;
 
-        [JsonIgnore]
-        public Guid ContractId { get; set; }
+        [JsonPropertyName("PROOFPIX")]
+        [JsonConverter(typeof(JsonByteArrayConverter))]
+        public byte[]? ProofPix { get; set; }
+
         public ProviderEnum? Provider { get; set; }
         public string? AutorizationNumber { get; set; }
+
+      
     }
+
 }
