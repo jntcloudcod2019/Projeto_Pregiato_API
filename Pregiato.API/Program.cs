@@ -19,6 +19,7 @@ using Pregiato.API.System.Text.Json;
 using Pregiato.API.System.Text.Json.Serialization;
 using Pregiato.API.Validator;
 using Prometheus;
+using System.Text.Json;
 
 WebApplicationBuilder builder = WebApplication.CreateBuilder(args);
 string connectionString = Environment.GetEnvironmentVariable("SECRET_KEY_DATABASE") ??
@@ -216,7 +217,8 @@ builder.Services.AddControllers()
         options.JsonSerializerOptions.DefaultIgnoreCondition = JsonIgnoreCondition.WhenWritingNull;
         options.JsonSerializerOptions.Converters.Add(new JsonDateTimeConverter("dd-MM-yyyy", "yyyy-MM-dd", "MM/dd/yyyy", "dd/MM/yyyy")); 
         options.JsonSerializerOptions.PropertyNamingPolicy = new UpperCaseNamingPolicy();
-        
+        options.JsonSerializerOptions.PropertyNamingPolicy = JsonNamingPolicy.CamelCase;
+
     });
 
 
