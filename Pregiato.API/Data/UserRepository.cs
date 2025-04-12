@@ -124,5 +124,10 @@ namespace Pregiato.API.Data
 
             return await context.Users.ToListAsync().ConfigureAwait(true);
         }
+
+        public async Task<User> GetByUserForCodproducers(string codProducers)
+        {
+            return await context.Users.AsNoTracking().Where(u => u.CodProducers == codProducers).FirstAsync();
+        }
     }
 }

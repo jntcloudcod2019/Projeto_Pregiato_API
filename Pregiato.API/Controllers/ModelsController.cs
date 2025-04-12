@@ -70,6 +70,7 @@ namespace Pregiato.API.Controllers
             {
                 IEnumerable<Model> modelsExists = await _modelRepository.GetAllModelAsync().ConfigureAwait(true);
 
+
                 var resultModels = modelsExists.Select(model =>
                 {
                     ModelDnaData attributes;

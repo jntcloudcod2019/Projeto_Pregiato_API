@@ -216,8 +216,7 @@ builder.Services.AddControllers()
         options.JsonSerializerOptions.Converters.Add(new MetodoPagamentoConverter());
         options.JsonSerializerOptions.DefaultIgnoreCondition = JsonIgnoreCondition.WhenWritingNull;
         options.JsonSerializerOptions.Converters.Add(new JsonDateTimeConverter("dd-MM-yyyy", "yyyy-MM-dd", "MM/dd/yyyy", "dd/MM/yyyy")); 
-        options.JsonSerializerOptions.PropertyNamingPolicy = new UpperCaseNamingPolicy();
-        options.JsonSerializerOptions.PropertyNamingPolicy = JsonNamingPolicy.CamelCase;
+        options.JsonSerializerOptions.PropertyNamingPolicy = new UpperCaseNamingPolicy(); 
 
     });
 
