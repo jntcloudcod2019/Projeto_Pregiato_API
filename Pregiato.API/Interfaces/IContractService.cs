@@ -7,7 +7,7 @@ namespace Pregiato.API.Interfaces
 {
     public interface IContractService
     {
-     Task<ContractBase> GenerateContractAsync(CreateContractModelRequest createContractModelRequest, Model model, string contractType, Dictionary<string, string> parameters, int codProposta);
+     Task<ContractBase> GenerateContractAsync(CreateContractModelRequest createContractModelRequest, Model model, string contractType, Dictionary<string, string> parameters);
      Task<List<ContractBase>> GenerateAllContractsAsync(CreateContractModelRequest createContractModelRequest, Model model);
      Task SaveContractAsync(ContractBase contract, Stream pdfStream, string cpfModelo);
      Task<ContractBase> GenerateContractCommitmentTerm(CreateRequestCommitmentTerm createRequestContractImageRights, string querymodel);

@@ -10,25 +10,19 @@ namespace Pregiato.API.Controllers
 {
     [ApiController]
     [Route("api/[controller]")]
-    public class JobController : ControllerBase
+    public class JobController(IJobRepository jobRepository, ModelAgencyContext agencyContext)
+        : ControllerBase
     {
-        private readonly IJobRepository _jobRepository;
-        private readonly ModelAgencyContext _agencyContext;
+        private readonly ModelAgencyContext _agencyContext = agencyContext ?? throw new ArgumentNullException(nameof(agencyContext));
 
-        public JobController(IJobRepository jobRepository, ModelAgencyContext agencyContext)
-        {
-            _jobRepository = jobRepository;
-            _agencyContext = agencyContext ?? throw new ArgumentNullException(nameof(agencyContext));
-        }
-
-        [Authorize(Policy = "AdminOrManager")]
-        [HttpPost("creatJob")]
+        [Authorize(Policy = "ManagementPolicyLevel5")]
+        [HttpPost("CreatJob")]
         [SwaggerOperation("Criação de Job")]
         public async Task <IActionResult> AddJobModel( [FromBody] JobRequest jobRequest)
         {
             if (!ModelState.IsValid)
             {
-                return BadRequest($"Erro ao criar Job, favor reviar os campos de preenchimento.");
+                return BadRequest($"ERRO AO CRIAR JOB, FAVOR REVISAR OS CAMPOS DE PREENCHIMENTO.");
             }
 
             Job jobModel = new Job
@@ -38,37 +32,39 @@ namespace Pregiato.API.Controllers
               Location = jobRequest.Location,
               Description = jobRequest.Description,                      
              };               
-            await _jobRepository.AddAJobsync(jobModel);  
+            await jobRepository.AddAJobsync(jobModel).ConfigureAwait(true);  
             return Ok(jobModel);                         
         }
 
-        [Authorize(Policy = "AdminOrManager")]
-        [HttpPost("assign-job-to-model")]
+        [Authorize(Policy = "ManagementPolicyLevel5")]
+        [HttpPost("Assign-job-to-model")]
         public async Task<IActionResult> AssignJobToModel([FromBody] AssignJobToModelRequest request)
         {
 
             if (request == null)
             {
-                return BadRequest("Requisição inválida.");
+                return BadRequest("REQUISIÇÃO INVÁLIDA.");
             }
 
 
             if (request.ModelId == Guid.Empty || request.JobId == Guid.Empty)
             {
-                return BadRequest("ModelId ou JobId são obrigatórios.");
+                return BadRequest("MODELID OU JOBID SÃO OBRIGATÓRIOS.");
             }
 
-            Model? model = await _agencyContext.Models.FindAsync(request.ModelId);
+            Model? model = await _agencyContext.Models.FindAsync(request.ModelId)
+                                                      .ConfigureAwait(true);
             if (model == null)
             {
-                return NotFound($"Modelo com ID {request.ModelId} não encontrado.");
+                return NotFound($"MODELO COM ID {request.ModelId} NÃO ENCONTRADO.");
             }
 
-            Job? job = await _agencyContext.Jobs.FindAsync(request.JobId);
+            Job? job = await _agencyContext.Jobs.FindAsync(request.JobId)
+                                                .ConfigureAwait(true);
 
             if (job == null)
             {
-                return NotFound($"Job com ID {request.JobId} não encontrado.");
+                return NotFound($"JOB COM ID {request.JobId} NÃO ENCONTRADO.");
             }
 
             ModelJob modelJob = new ModelJob
@@ -81,10 +77,12 @@ namespace Pregiato.API.Controllers
                 AdditionalDescription = request.AdditionalDescription,
             };
 
-            await _agencyContext.ModelJobs.AddAsync(modelJob);
-            await _agencyContext.SaveChangesAsync();
+            await _agencyContext.ModelJobs.AddAsync(modelJob)
+                                          .ConfigureAwait(true);
+            await _agencyContext.SaveChangesAsync()
+                                .ConfigureAwait(true);
 
-            return Ok("Job atribuído ao modelo com sucesso.");
+            return Ok("JOB ATRIBUÍDO AO MODELO COM SUCESSO.");
         }
 
     }

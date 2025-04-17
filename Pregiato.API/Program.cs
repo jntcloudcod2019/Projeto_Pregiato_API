@@ -71,6 +71,7 @@ builder.Services.AddSingleton<IRabbitMQProducer, RabbitMQProducer>();
 builder.Services.AddScoped<IContractRepository, ContractRepository>();
 builder.Services.AddScoped<IProducersRepository, ProducersRepository>();
 builder.Services.AddScoped<IPasswordHasherService, PasswordHasherService>();
+builder.Services.AddSingleton<ITokenExpirationService, GetTokenExpiration>();
 builder.Services.AddSingleton<IEnvironmentVariableProviderEmail, EnvironmentVariableProviderEmail>();
 
 
