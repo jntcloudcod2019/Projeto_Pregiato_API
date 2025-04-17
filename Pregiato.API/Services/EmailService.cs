@@ -18,7 +18,15 @@ namespace Pregiato.API.Services
 
         public async Task<string> LoadTemplate(Dictionary<string, string> replacements)
         {
-            string templatePath = Path.Combine(Directory.GetCurrentDirectory(), "Templates", "WelcomeEmailTemplate.html");
+            replacements.TryGetValue("Position", out string? positionValue);
+
+            string templateName = positionValue switch
+            {
+                var p when p == UserType.Model.ToString() => "WelcomeModelTemplate.html",
+                _ => "WelcomeEmailTemplate.html"
+            };
+
+            string templatePath = Path.Combine(Directory.GetCurrentDirectory(), "Templates", templateName);
 
             if (!File.Exists(templatePath))
             {
@@ -26,7 +34,7 @@ namespace Pregiato.API.Services
                 //Criar resiliência...
             }
 
-            Console.WriteLine($"[ERROR] {DateTime.Now:yyyy-MM-dd HH:mm:ss} | Populando tamplate do e-mail..: {templatePath}.");
+            Console.WriteLine($"[ERROR] {DateTime.Now:yyyy-MM-dd HH:mm:ss} | Populando template do e-mail..: {templatePath}.");
 
             string templateContent = await File.ReadAllTextAsync(templatePath);
             foreach (KeyValuePair<string, string> replacement in replacements)
@@ -72,7 +80,6 @@ namespace Pregiato.API.Services
                 using SmtpClient client = new SmtpClient();
                 client.ServerCertificateValidationCallback = (s, c, h, e) => true;
 
-                //_logger.LogInformation($"Conectando ao SMTP {_smtpSettings.Server}:{_smtpSettings.Port}...");
 
                 await client.ConnectAsync("smtp.gmail.com", 465, MailKit.Security.SecureSocketOptions.SslOnConnect);
 

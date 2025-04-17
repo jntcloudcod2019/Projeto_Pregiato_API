@@ -153,7 +153,7 @@ namespace Pregiato.API.Services
             return maxCodProposta + 1;
         }
         public async Task<ContractBase>  GenerateContractAsync
-                    (CreateContractModelRequest createContractModelRequest, Model model, string contractType, Dictionary<string, string> parameters, int codProposta)
+                    (CreateContractModelRequest createContractModelRequest, Model model, string contractType, Dictionary<string, string> parameters)
         {
             parameters ??= new Dictionary<string, string>();
 
@@ -172,13 +172,13 @@ namespace Pregiato.API.Services
                 throw new FileNotFoundException($"Template não encontrado: {htmlTemplatePath}");
             }
 
-            string htmlTemplate = await File.ReadAllTextAsync(htmlTemplatePath);
+            string htmlTemplate = await File.ReadAllTextAsync(htmlTemplatePath).ConfigureAwait(true);
 
             string populatedHtml = await PopulateTemplate(htmlTemplate, parameters).ConfigureAwait(true);
 
             byte[] pdfBytes = await ConvertHtmlToPdf(populatedHtml, parameters).ConfigureAwait(true);
             
-            contract.CodProposta = codProposta;
+            contract.CodProposta = await GetNextCodPropostaAsync().ConfigureAwait(true);
 
             if (contractType == DefaulTemplatePhotography || contractType == DefaulTemplatePhotographyMinority)
             { ContractWithProducers contractWithProducers = await DefineContractAsync
@@ -210,7 +210,6 @@ namespace Pregiato.API.Services
                 {"Ano", DateTime.Now.Year.ToString()},
                 {"Nome-Modelo", model.Name},
                 {"CPF-Modelo", model.CPF},
-                {"RG-Modelo", model.RG},
                 {"Endereço-Modelo", model.Address},
                 {"Número-Residência", model.NumberAddress},
                 {"Complemento-Modelo", model.Complement},
@@ -229,10 +228,6 @@ namespace Pregiato.API.Services
 
             List<ContractBase> listContracts = [];
 
-            int codProposta = await GetNextCodPropostaAsync().ConfigureAwait(false);
-
-            parameters["CodProposta"] = codProposta.ToString();
-
             string template = model.Age < 18 ? DefaulTemplatePhotographyMinority : DefaulTemplatePhotography;
                                   
             Dictionary<string, string> signaturePhotographyParams = await AddSignatureToParameters(parameters, template).ConfigureAwait(false);
@@ -241,8 +236,7 @@ namespace Pregiato.API.Services
                 createContractModelRequest,
                 model,
                 template,
-                signaturePhotographyParams,
-                codProposta
+                signaturePhotographyParams
             ).ConfigureAwait(true);
            
             listContracts.Add(photographyContract);
@@ -252,8 +246,7 @@ namespace Pregiato.API.Services
                 createContractModelRequest,
                 model,
                 DefaulTemplateAgency,
-                signatureAgencyParams,
-                codProposta
+                signatureAgencyParams
             ).ConfigureAwait(true);
 
              listContracts.Add(agencyContract);

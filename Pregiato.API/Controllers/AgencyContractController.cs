@@ -89,7 +89,7 @@ namespace Pregiato.API.Controllers
             return Ok($"Termo de Concessão de direito de imagem para: {model.Name}, gerado com sucesso. Código da Proposta: {contract.CodProposta}.");
         }
 
-        [SwaggerOperation("Processo de gerar contrato de Agenciamento e Fotoprgrafia.")]
+        [SwaggerOperation("Processo de gerar contrato de Agenciamento e Fotografia.")]
         [ProducesResponseType(typeof(ApiResponse<object>), StatusCodes.Status200OK)]
         [ProducesResponseType(typeof(ApiResponse<object>), StatusCodes.Status404NotFound)]
         [HttpPost("generate/Agency&PhotographyProductionContracts")]
@@ -115,7 +115,7 @@ namespace Pregiato.API.Controllers
                     return ActionResultIndex.Failure("MODELO NÃO ENCONTRADO COM OS CRITÉRIOS FORNECIDOS.");
                 }
 
-                List<ContractBase> contracts = await _contractService.GenerateAllContractsAsync(createContractModelRequest, model);
+                List<ContractBase> contracts = await _contractService.GenerateAllContractsAsync(createContractModelRequest, model).ConfigureAwait(true);
 
                 if (contracts == null || !contracts.Any())
                 {
@@ -125,12 +125,14 @@ namespace Pregiato.API.Controllers
                 string contentString = await _contractService.ConvertBytesToString(
                     contracts.FirstOrDefault(c =>
                         c.TemplateFileName == "PhotographyProductionContractMinority.html" ||
-                        c.TemplateFileName == "PhotographyProductionContract.html")?.Content);
+                        c.TemplateFileName == "PhotographyProductionContract.html")?.Content)
+                        .ConfigureAwait(true);
 
                 byte[] pdfBytes = await _contractService.ExtractBytesFromString(contentString)
                                                          .ConfigureAwait(true);
 
                 string message = $"CONTRATO PARA {model.Name.ToUpper()}, EMITIDOS COM SUCESSO!";
+
                 List<ContractSummary> contractsSummary = contracts.Select(c => new ContractSummary
                 {
                     CodProposta = c.CodProposta
@@ -159,27 +161,29 @@ namespace Pregiato.API.Controllers
                 Console.WriteLine($"ERRO AO GERAR CONTRATOS: {ex.Message}");
                 return ActionResultIndex.Failure($"OCORREU UM ERRO NA OPERAÇÃO: {ex.Message}", isSpeakOnOperation: true);
             }
+            
         }
 
-        //[Authorize(Policy = "PolicyGenerateContracts")]
+        [Authorize(Policy = "ManagementPolicyLevel5")]
         [HttpGet("download-contract")]
         public async Task<IActionResult> DownloadContractAsync(int proposalCode)
         {
 
-            ContractDTO? contract = await contractRepository.DownloadContractAsync(proposalCode).ConfigureAwait(true);
-
+            ContractDTO? contract = await contractRepository.DownloadContractAsync(proposalCode)
+                                                            .ConfigureAwait(true);
             if (contract == null)
             {
                 return NotFound("CONTRATO NÃO ENCONTRADO.");
             }
 
-            string contentString = await _contractService.ConvertBytesToString(contract.Content).ConfigureAwait(true);
-
+            string contentString = await _contractService.ConvertBytesToString(contract.Content)
+                                                         .ConfigureAwait(true);
             byte[] pdfBytes;
 
             try
             {
-                pdfBytes = await _contractService.ExtractBytesFromString(contentString).ConfigureAwait(true);
+                pdfBytes = await _contractService.ExtractBytesFromString(contentString)
+                                                  .ConfigureAwait(true);
             }
             catch (Exception ex)
             {
@@ -189,29 +193,7 @@ namespace Pregiato.API.Controllers
             return File(pdfBytes, "application/pdf", "contract.pdf");
         }
 
-        [Authorize(Policy = "PolicyGenerateContracts")]
-        [HttpPost("upload/payment-receipt")]
-        public async Task<IActionResult> UploadPaymentReceipt([FromForm] UploadPaymentReceiptRequest request)
-        {
-            if (request.File == null || request.File.Length == 0)
-                return BadRequest("The receipt is required for Pix payments.");
-
-            Payment? payment = await _context.Payments.FindAsync(request.PaymentId);
-
-            if (payment == null)
-                return NotFound("Payment not found.");
-
-            using MemoryStream memoryStream = new MemoryStream();
-            await request.File.CopyToAsync(memoryStream);
-            payment.Comprovante = memoryStream.ToArray();
-            _context.Entry(payment).Property(p => p.Comprovante).IsModified = true;
-
-            await _context.SaveChangesAsync().ConfigureAwait(true);
-
-            return Ok("Receipt uploaded successfully.");
-        }
-
-
+        
         [Authorize(Policy = "ManagementPolicyLevel3")]
         [HttpGet("all-contracts")]
         public async Task<IActionResult> GetAllContractsForAgencyAsync()
@@ -248,7 +230,7 @@ namespace Pregiato.API.Controllers
             {
                 var user = await _userService.UserCaptureByToken().ConfigureAwait(true);
 
-                if (user.CodProducers == null && user.UserType == UserType.Producers)
+                if (user.CodProducers == null || user.UserType == UserType.Producers)
                 {
                     return BadRequest("USUÁRIO NÃO ENCONTRADO OU NÃO É UM PRODUTOR.");
                 }

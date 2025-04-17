@@ -26,19 +26,20 @@ namespace Pregiato.API.Controllers
         private readonly IUserRepository _userRepository;
         private readonly IJwtService _jwtService;
         private readonly CustomResponse _customResponse;
-        private readonly GetTokenExpiration _getTokenExpiration;
+        private readonly ITokenExpirationService _tokenExpirationService;
         private bool _toBoolean;
 
         public UserController(IJwtService jwtService, IUserService userService, IUserRepository userRepository,
-            CustomResponse customResponse)
+            CustomResponse customResponse, ITokenExpirationService tokenExpirationService)
         {
             _userService = userService;
             _userRepository = userRepository;
             _customResponse = customResponse;
+            _tokenExpirationService = tokenExpirationService; 
             _jwtService = jwtService;
         }
 
-      //  [AllowAnonymous]
+        [AllowAnonymous]
         [HttpPost("register/login")]
         [SwaggerOperation(Summary = "Autentica um usuário e retorna um token JWT")]
         [SwaggerResponse(200, "Retorna o token JWT", typeof(string))]
@@ -52,11 +53,12 @@ namespace Pregiato.API.Controllers
                 {
                     return BadRequest(new ErrorResponse
                     {
-                        Message = "Requisição inválida. Verifique os dados enviados."
+                        Message = "REQUISIÇÃO INVÁLIDA. VERIFIQUE OS DADOS ENVIADOS."
                     });
                 }
 
-                var token = await _userService.AuthenticateUserAsync(loginUserRequest);
+                var token = await _userService.AuthenticateUserAsync(loginUserRequest)
+                                                    .ConfigureAwait(true);
 
                 return Ok(new LoginResponse
                 {
@@ -117,12 +119,13 @@ namespace Pregiato.API.Controllers
 
                 var userId = await _jwtService.GetUserIdFromTokenAsync(token).ConfigureAwait(true);
 
+                var expires = _tokenExpirationService.GetExpirationToken(token);
 
                 return Ok(new
                 {
                     IsValid = true,
                     UserId = userId,
-                    Expires = _getTokenExpiration.GetExpirationToken(token)
+                    Expires = expires
                 });
             }
             catch (SecurityTokenException ex)
@@ -174,7 +177,7 @@ namespace Pregiato.API.Controllers
                     return BadRequest(errorResponse);
                 }
 
-                var successMessage = $"USUÁRIO {user.Username} CADASTRADO COM SUCESSO.";
+                var successMessage = $"USUÁRIO {user.Username.ToUpper()} CADASTRADO COM SUCESSO.";
                 var successResponse = ApiResponse<object>.Success(null, successMessage);
                 return Ok(successResponse);
             }
@@ -208,7 +211,7 @@ namespace Pregiato.API.Controllers
                     return BadRequest(errorResponse);
                 }
 
-                var successMessage = $"USUÁRIO {user.Username} CADASTRADO COM SUCESSO.";
+                var successMessage = $"USUÁRIO {user.Username.ToUpper()} CADASTRADO COM SUCESSO.";
                 var successResponse = ApiResponse<object>.Success(null, successMessage);
                 return Ok(successResponse);
             }
@@ -242,7 +245,7 @@ namespace Pregiato.API.Controllers
                     return BadRequest(errorResponse);
                 }
 
-                var successMessage = $"USUÁRIO {user.Username} CADASTRADO COM SUCESSO.";
+                var successMessage = $"USUÁRIO {user.Username.ToUpper()} CADASTRADO COM SUCESSO.";
                 var successResponse = ApiResponse<object>.Success(null, successMessage);
                 return Ok(successResponse);
             }
@@ -276,7 +279,7 @@ namespace Pregiato.API.Controllers
                     return BadRequest(errorResponse);
                 }
 
-                var successMessage = $"USUÁRIO {user.Username} CADASTRADO COM SUCESSO.";
+                var successMessage = $"USUÁRIO {user.Username.ToUpper()} CADASTRADO COM SUCESSO.";
                 var successResponse = ApiResponse<object>.Success(null, successMessage);
                 return Ok(successResponse);
             }
@@ -308,7 +311,7 @@ namespace Pregiato.API.Controllers
                     return BadRequest(errorResponse);
                 }
 
-                var successMessage = $"USUÁRIO {user.Username} CADASTRADO COM SUCESSO.";
+                var successMessage = $"USUÁRIO {user.Username.ToUpper()} CADASTRADO COM SUCESSO.";
                 var successResponse = ApiResponse<object>.Success(null, successMessage);
                 return Ok(successResponse);
             }
@@ -341,7 +344,7 @@ namespace Pregiato.API.Controllers
                     return BadRequest(errorResponse);
                 }
 
-                var successMessage = $"USUÁRIO {user.Username} CADASTRADO COM SUCESSO.";
+                var successMessage = $"USUÁRIO {user.Username.ToUpper()} CADASTRADO COM SUCESSO.";
                 var successResponse = ApiResponse<object>.Success(null, successMessage);
                 return Ok(successResponse);
             }
@@ -374,7 +377,7 @@ namespace Pregiato.API.Controllers
                     return BadRequest(errorResponse);
                 }
 
-                var successMessage = $"USUÁRIO {user.Username} CADASTRADO COM SUCESSO.";
+                var successMessage = $"USUÁRIO {user.Username.ToUpper()} CADASTRADO COM SUCESSO.";
                 var successResponse = ApiResponse<object>.Success(null, successMessage);
                 return Ok(successResponse);
             }
@@ -406,7 +409,7 @@ namespace Pregiato.API.Controllers
                     return BadRequest(errorResponse);
                 }
 
-                var successMessage = $"USUÁRIO {user.Username} CADASTRADO COM SUCESSO.";
+                var successMessage = $"USUÁRIO {user.Username.ToUpper()} CADASTRADO COM SUCESSO.";
                 var successResponse = ApiResponse<object>.Success(null, successMessage);
                 return Ok(successResponse);
             }
@@ -491,7 +494,6 @@ namespace Pregiato.API.Controllers
                 {
                     ID = user.UserId.ToString(),
                     NAME = user.Name,
-                    CODPRODUCERS = user.CodProducers,
                     EMAIL = user.Email,
                     POSITION = user.UserType
                 }).ToList();

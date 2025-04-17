@@ -127,11 +127,11 @@ namespace Pregiato.API.Services
                                                           .ConfigureAwait(true);
 
             var replacements = new Dictionary<string, string>
-             {
+            {   {"Position", UserType.Model},
                 {"Nome",username},
                 {"User",nikeName },
                 {"Password", password}
-             };
+            };
 
              await _emailService
                  .SendEmailAsync(replacements, email, "Bem-vindo à Plataforma My Pregiato")
@@ -182,6 +182,7 @@ namespace Pregiato.API.Services
 
             var replacements = new Dictionary<string, string>
             {
+                {"Position", UserType.Producers},
                 {"Nome",username},
                 {"User",nikeName },
                 {"Password", password}
@@ -237,6 +238,7 @@ namespace Pregiato.API.Services
 
             var replacements = new Dictionary<string, string>
             {
+                {"Position", UserType.Administrator},
                 {"Nome",username},
                 {"User",nikeName },
                 {"Password", password}
@@ -292,6 +294,7 @@ namespace Pregiato.API.Services
 
             var replacements = new Dictionary<string, string>
             {
+                {"Position", UserType.Coordination},
                 {"Nome",username},
                 {"User",nikeName },
                 {"Password", password}
@@ -347,6 +350,7 @@ namespace Pregiato.API.Services
 
             var replacements = new Dictionary<string, string>
             {
+                {"Position", UserType.Telemarketing},
                 {"Nome",username},
                 {"User",nikeName },
                 {"Password", password}
@@ -402,6 +406,7 @@ namespace Pregiato.API.Services
 
             var replacements = new Dictionary<string, string>
             {
+                {"Position", UserType.Ceo},
                 {"Nome",username},
                 {"User",nikeName },
                 {"Password", password}
@@ -457,6 +462,7 @@ namespace Pregiato.API.Services
 
             var replacements = new Dictionary<string, string>
             {
+                {"Position", UserType.Manager},
                 {"Nome",username},
                 {"User",nikeName },
                 {"Password", password}
@@ -512,6 +518,7 @@ namespace Pregiato.API.Services
 
             var replacements = new Dictionary<string, string>
             {
+                {"Position", UserType.Production},
                 {"Nome",username},
                 {"User",nikeName },
                 {"Password", password}

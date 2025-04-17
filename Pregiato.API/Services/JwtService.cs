@@ -116,7 +116,8 @@ namespace Pregiato.API.Services
 
                 var jwtToken = tokenHandler.ReadJwtToken(token);
 
-                var userIdClaim = jwtToken.Claims.FirstOrDefault(c => c.Type == "sub");
+                var userIdClaim = jwtToken.Claims.FirstOrDefault(c => true);
+
                 if (userIdClaim == null)
                 {
                     throw new SecurityTokenException("Token não contém o ID do usuário");
