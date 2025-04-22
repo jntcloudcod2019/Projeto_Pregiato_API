@@ -24,6 +24,11 @@ namespace Pregiato.API.Data
         public DbSet<Producers> Producers { get; set; }
         public DbSet<ModelsBilling> ModelsBilling { get; set; } 
         public DbSet<ModelPhoto> ModelPhotos { get; set; }
+        public DbSet<Training> Trainings { get; set; }
+        public DbSet<Lesson> Lessons { get; set; }
+        public DbSet<LessonProgress> LessonProgresses { get; set; }
+        public DbSet<CourseReview> CourseReviews { get; set; }
+        public DbSet<Certificate> Certificates { get; set; }
 
         public override int SaveChanges()
         {
@@ -294,6 +299,127 @@ namespace Pregiato.API.Data
                     .HasDefaultValueSql("CURRENT_TIMESTAMP")  
                     .HasColumnType("timestamp with time zone");
                 entity.Property(e => e.DNA);
+            });
+
+
+            // Training
+            modelBuilder.Entity<Training>(entity =>
+            {
+                entity.ToTable("Trainings");
+
+                entity.HasKey(e => e.Id);
+
+                entity.Property(e => e.Name)
+                    .IsRequired()
+                    .HasMaxLength(150);
+
+                entity.Property(e => e.InstructorName)
+                    .IsRequired()
+                    .HasMaxLength(100);
+
+                entity.Property(e => e.Description)
+                    .HasMaxLength(1000);
+            });
+
+            // Lesson
+            modelBuilder.Entity<Lesson>(entity =>
+            {
+                entity.ToTable("Lessons");
+
+                entity.HasKey(e => e.Id);
+
+                entity.Property(e => e.Title)
+                    .IsRequired()
+                    .HasMaxLength(150);
+
+                entity.Property(e => e.VideoUrl)
+                    .IsRequired()
+                    .HasMaxLength(500);
+
+                entity.Property(e => e.Duration)
+                    .IsRequired();
+
+                entity.Property(e => e.TrainingId)
+                    .IsRequired();
+
+                entity.Property(e => e.Likes)
+                    .HasDefaultValue(0);
+
+                entity.Property(e => e.Dislikes)
+                    .HasDefaultValue(0);
+            });
+
+            // LessonProgress
+            modelBuilder.Entity<LessonProgress>(entity =>
+            {
+                entity.ToTable("LessonProgresses");
+
+                entity.HasKey(e => e.Id);
+
+                entity.Property(e => e.IdModel)
+                    .IsRequired();
+
+                entity.Property(e => e.LessonId)
+                    .IsRequired();
+
+                entity.Property(e => e.Completed)
+                    .IsRequired();
+
+                entity.Property(e => e.PercentageWatched)
+                    .IsRequired();
+
+                entity.Property(e => e.ViewedAt)
+                    .IsRequired();
+            });
+
+            // CourseReview
+            modelBuilder.Entity<CourseReview>(entity =>
+            {
+                entity.ToTable("CourseReviews");
+
+                entity.HasKey(e => e.Id);
+
+                entity.Property(e => e.IdModel)
+                    .IsRequired();
+
+                entity.Property(e => e.TrainingId)
+                    .IsRequired();
+
+                entity.Property(e => e.Rating)
+                    .IsRequired();
+
+                entity.Property(e => e.Feedback)
+                    .HasMaxLength(1000);
+
+                entity.Property(e => e.Comments)
+                    .HasColumnType("jsonb");
+            });
+
+            // Certificate
+            modelBuilder.Entity<Certificate>(entity =>
+            {
+                entity.ToTable("Certificates");
+
+                entity.HasKey(e => e.Id);
+
+                entity.HasIndex(e => new { e.IdModel, e.TrainingId }).IsUnique();
+
+                entity.Property(e => e.IdModel)
+                    .IsRequired();
+
+                entity.Property(e => e.TrainingId)
+                    .IsRequired();
+
+                entity.Property(e => e.IssuedAt)
+                    .IsRequired();
+
+                entity.Property(e => e.FileName)
+                    .IsRequired()
+                    .HasMaxLength(255);
+
+                entity.Property(e => e.PdfBytes)
+                    .IsRequired()
+                    .HasColumnType("bytea"); 
             });
         }
     }

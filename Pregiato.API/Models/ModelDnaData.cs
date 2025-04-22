@@ -45,12 +45,12 @@ namespace Pregiato.API.Models
 
     public class Appearance
     {
-        public EyeAttributes Eyes { get; set; }
-        public HairAttributes Hair { get; set; }
-        public SkinAttributes Skin { get; set; }
-        public FaceAttributes Face { get; set; }
-        public SmileAttributes Smile { get; set; }
-        public BodyAttributes Body { get; set; }
+        public EyeAttributes?  Eyes { get; set; }
+        public HairAttributes?  Hair { get; set; }
+        public SkinAttributes? Skin { get; set; }
+        public FaceAttributes? Face { get; set; }
+        public SmileAttributes? Smile { get; set; }
+        public BodyAttributes? Body { get; set; }
     }
 
     public class EyeAttributes
@@ -111,7 +111,7 @@ namespace Pregiato.API.Models
         public string? Waist { get; set; }
         public string? Hips { get; set; }
         public int? ShoeSize { get; set; }
-        public int? ClothingSize { get; set; }
+        public string? ClothingSize { get; set; }
         public string? LegLength { get; set; }
         public string? ArmLength { get; set; }
         public string? Neck { get; set; }

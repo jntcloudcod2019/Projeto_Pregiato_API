@@ -20,6 +20,7 @@ using Pregiato.API.System.Text.Json.Serialization;
 using Pregiato.API.Validator;
 using Prometheus;
 using System.Text.Json;
+using Pregiato.API.Models;
 
 WebApplicationBuilder builder = WebApplication.CreateBuilder(args);
 string connectionString = Environment.GetEnvironmentVariable("SECRET_KEY_DATABASE") ??
@@ -67,6 +68,8 @@ builder.Services.AddScoped<IContractService, ContractService>();
 builder.Services.AddScoped<IServiceUtilites, ServiceUtilites>();
 builder.Services.AddSingleton<IBrowserService, BrowserService>();
 builder.Services.AddScoped<IModelRepository, ModelsRepository>();
+builder.Services.AddScoped<ITrainingServices, TrainingServices>();
+builder.Services.AddScoped<ITrainingRepository, TrainingRepository>();
 builder.Services.AddSingleton<IRabbitMQProducer, RabbitMQProducer>();
 builder.Services.AddScoped<IContractRepository, ContractRepository>();
 builder.Services.AddScoped<IProducersRepository, ProducersRepository>();
@@ -167,19 +170,19 @@ builder.Services.AddAuthentication(options =>
 builder.Services.AddAuthorization(options =>
 {
     options.AddPolicy("PolicyProducers", policy =>
-        policy.RequireRole("PRODUCERS"));
+        policy.RequireRole("PRODUCERS", "CEO"));
+
+    options.AddPolicy("PolicyModels", policy =>
+        policy.RequireRole("MODEL"));
 
     options.AddPolicy("PolicyCEO", policy =>
         policy.RequireRole("CEO"));
-
-    options.AddPolicy("AdminOrManagerOrModel", policy =>
-        policy.RequireRole("ADMINISTRATOR", "MANAGER", "MODEL"));
 
     options.AddPolicy("GlobalPolitics", policy =>
         policy.RequireRole("ADMINISTRATOR", "MANAGER", "TELEMARKETING", "PRODUCERS", "COORDINATION", "CEO", "PRODUCTION"));
 
     options.AddPolicy("GlobalPoliticsAgency", policy =>
-        policy.RequireRole("ADMINISTRATOR", "MANAGER", "TELEMARKETING", "Producers", "Coordination", "CEO", "PRODUCTION", "MODEL"));
+        policy.RequireRole("ADMINISTRATOR", "MANAGER", "TELEMARKETING", "Producers", "COORDINATION", "CEO", "PRODUCTION", "MODEL"));
 
     options.AddPolicy("ManagementPolicyLevel5", policy =>
         policy.RequireRole("ADMINISTRATOR", "MANAGER", "PRODUCERS", "COORDINATION", "CEO"));
@@ -191,7 +194,7 @@ builder.Services.AddAuthorization(options =>
         policy.RequireRole("ADMINISTRATOR", "MANAGER", "CEO"));
 
     options.AddPolicy("ManagementPolicyLevel2", policy =>
-        policy.RequireRole("ADMINISTRATOR", "CEO"));
+        policy.RequireRole("MANAGER", "CEO"));
 });
 
 

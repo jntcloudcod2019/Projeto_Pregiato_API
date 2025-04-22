@@ -59,8 +59,8 @@ namespace Pregiato.API.Controllers
             _producersRepository = producersRepository;
         }
 
-        
-       // [Authorize(Policy = "GlobalPolitics")]
+
+        [Authorize(Policy = "GlobalPolitics")]
         [HttpGet("GetAllModels")]
         [SwaggerOperation("Retorna todos os modelos cadastrados.")]
         public async Task<IActionResult> GetAllModels()
@@ -271,7 +271,7 @@ namespace Pregiato.API.Controllers
             });
         }
 
-        [Authorize(Policy = "ManagementPolicyLevel4")]
+        [Authorize(Policy = "ManagementPolicyLevel2")]
         [HttpDelete("DeleteModel{id}")]
         [SwaggerOperation("Deletar cadastro de modelos.")]
         public async Task<IActionResult> DeleteModel(Guid id)
@@ -281,11 +281,11 @@ namespace Pregiato.API.Controllers
             {
                 return NotFound();
             }
-            await _modelRepository.DeleteModelAsync(id);
+            await _modelRepository.DeleteModelAsync(id).ConfigureAwait(true);
             return NoContent();
         }
 
-        [Authorize(Policy = "GlobalPolitics")]
+        [Authorize(Policy = "PolicyModels")]
         [HttpGet("modelFeedJobs")]
         public async Task<IActionResult> GetModelFeed()
         {
@@ -317,7 +317,7 @@ namespace Pregiato.API.Controllers
             });
         }
 
-        //[Authorize(Policy = "GlobalPolitics")]
+        [Authorize(Policy = "GlobalPolitics")]
         [HttpGet("findModel")]
         public async Task<IActionResult> FindModel(string query)
         {
@@ -391,7 +391,7 @@ namespace Pregiato.API.Controllers
             }
         }
 
-        //[Authorize(Policy = "GlobalPoliticsAgency")]
+        [Authorize(Policy = "PolicyModels")]
         [HttpGet("my-contracts")]
         public async Task<IActionResult> GetMyContracts()
         {
@@ -455,15 +455,13 @@ namespace Pregiato.API.Controllers
             }
         }
         
-        //[Authorize(Policy = "GlobalPoliticsAgency")]
+        [Authorize(Policy = "GlobalPoliticsAgency")]
         [HttpPut("update-dna-property/{idModel}")]
         [ProducesResponseType(StatusCodes.Status204NoContent)]
         [ProducesResponseType(StatusCodes.Status400BadRequest)]
         [ProducesResponseType(StatusCodes.Status404NotFound)]
         [ProducesResponseType(StatusCodes.Status500InternalServerError)]
-        public async Task<IActionResult> UpdateDnaData(
-            [FromRoute] Guid idModel,
-            [FromBody] ModelDnaData requestDNA)
+        public async Task<IActionResult> UpdateDnaData([FromRoute] Guid idModel, [FromBody] ModelDnaData requestDNA)
         {
             if (requestDNA == null)
             {
@@ -506,7 +504,7 @@ namespace Pregiato.API.Controllers
             return NoContent(); 
         }
 
-       // [Authorize(Policy = "GlobalPoliticsAgency")]
+        [Authorize(Policy = "GlobalPoliticsAgency")]
         [HttpPut("update-dna-property")]
         [ProducesResponseType(StatusCodes.Status204NoContent)]
         [ProducesResponseType(StatusCodes.Status401Unauthorized)]
@@ -561,7 +559,7 @@ namespace Pregiato.API.Controllers
             return Ok();
         }
 
-
+        [Authorize(Policy = "GlobalPoliticsAgency")]
         [HttpPost("uploadPhotoModel")]
         public async Task<IActionResult> Upload([FromForm] ModelPhotoUploadDto dto)
         {
@@ -613,6 +611,7 @@ namespace Pregiato.API.Controllers
             });
         }
 
+        [Authorize(Policy = "GlobalPoliticsAgency")]
         [HttpGet("GetPhotoModel/{modelId}")]
         public async Task<IActionResult> GetByModel(Guid modelId)
         {
@@ -639,7 +638,7 @@ namespace Pregiato.API.Controllers
             return Ok(response);
         }
 
-
+        [Authorize(Policy = "GlobalPoliticsAgency")]
         [HttpPatch("EditeRegisterModel/{id}")]
         public async Task<IActionResult> UpdatePartial(Guid id, [FromBody] UpdateModelPartialDto dto)
         {

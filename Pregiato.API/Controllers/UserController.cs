@@ -6,16 +6,8 @@ using Microsoft.AspNetCore.Authorization;
 using Swashbuckle.AspNetCore.Annotations;
 using Pregiato.API.Response;
 using Pregiato.API.DTO;
-using System.IdentityModel.Tokens.Jwt;
-using System.Security.Claims;
-using Microsoft.AspNetCore.Mvc.TagHelpers;
-using Pregiato.API.Services.ServiceModels;
-using Pregiato.API.Services;
 using Microsoft.IdentityModel.Tokens;
 using Pregiato.API.Enums;
-using Serilog;
-using Pregiato.API.Data;
-
 namespace Pregiato.API.Controllers
 {
     [ApiController]
@@ -27,7 +19,6 @@ namespace Pregiato.API.Controllers
         private readonly IJwtService _jwtService;
         private readonly CustomResponse _customResponse;
         private readonly ITokenExpirationService _tokenExpirationService;
-        private bool _toBoolean;
 
         public UserController(IJwtService jwtService, IUserService userService, IUserRepository userRepository,
             CustomResponse customResponse, ITokenExpirationService tokenExpirationService)
@@ -222,8 +213,7 @@ namespace Pregiato.API.Controllers
             }
         }
 
-
-        [Authorize(Policy = "ManagementPolicyLevel4")]
+        [Authorize(Policy = "ManagementPolicyLevel3")]
         [HttpPost("register/producers")]
         public async Task<IActionResult> RegisterUserProducers([FromBody] UserRegisterDto? user)
         {
@@ -255,7 +245,6 @@ namespace Pregiato.API.Controllers
                 return BadRequest(errorResponse);
             }
         }
-
 
         [Authorize(Policy = "ManagementPolicyLevel3")]
         [HttpPost("register/Coordination")]
@@ -290,7 +279,7 @@ namespace Pregiato.API.Controllers
             }
         }
 
-        [Authorize(Policy = "ManagementPolicyLevel2")]
+        [Authorize(Policy = "PolicyCEO")]
         [HttpPost("register/Manager")]
         public async Task<IActionResult> RegisterManager([FromBody] UserRegisterDto? user)
         {
@@ -355,7 +344,7 @@ namespace Pregiato.API.Controllers
             }
         }
 
-        [Authorize(Policy = "ManagementPolicyLevel3")]
+        [Authorize(Policy = "PolicyCEO")]
         [HttpPost("register/CEO")]
         public async Task<IActionResult> RegisterCeo([FromBody] UserRegisterDto? user)
         {
@@ -421,8 +410,8 @@ namespace Pregiato.API.Controllers
 
         }
 
-        [AllowAnonymous]
-        [HttpGet("GetUsersProducers")]
+        [Authorize("GlobalPolitics")]
+        [HttpGet("Get/Producers")]
         public async Task<IActionResult> GetProducers()
         {
             try
@@ -472,7 +461,7 @@ namespace Pregiato.API.Controllers
         }
 
         [Authorize("GlobalPolitics")]
-        [HttpGet("GetUsers")]
+        [HttpGet("Get/Users")]
         public async Task<IActionResult> GetUsers()
         {
             IEnumerable<User?> usersResult = await _userRepository.GetAllUserAsync()

@@ -43,7 +43,7 @@ namespace Pregiato.API.Migrations
                 columns: table => new
                 {
                     JobId = table.Column<Guid>(type: "uuid", nullable: false),
-                    IdModel = table.Column<Guid>(type: "uuid", nullable: false),
+                  //  IdModel = table.Column<Guid>(type: "uuid", nullable: false),
                     Description = table.Column<string>(type: "character varying(500)", maxLength: 500, nullable: true),
                     Status = table.Column<string>(type: "character varying(20)", maxLength: 20, nullable: false),
                     JobDate = table.Column<DateTime>(type: "timestamp with time zone", nullable: false),
