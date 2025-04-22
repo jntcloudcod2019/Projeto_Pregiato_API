@@ -1,0 +1,99 @@
+﻿<!DOCTYPE html>
+<html lang="pt-br">
+<head>
+    <meta charset="UTF-8">
+    <title>Certificado de Conclusão</title>
+    <style>
+        body {
+            font-family: 'Segoe UI', sans-serif;
+            background-color: #fff;
+            margin: 0;
+            padding: 40px;
+            color: #1d1d1d;
+        }
+
+        .cert-container {
+            border: 10px solid #0a2d50;
+            padding: 40px;
+            max-width: 800px;
+            margin: 0 auto;
+            position: relative;
+        }
+
+        .cert-title {
+            text-align: center;
+            font-size: 32px;
+            font-weight: bold;
+            color: #0a2d50;
+            margin-bottom: 40px;
+        }
+
+        .cert-content {
+            font-size: 20px;
+            line-height: 1.6;
+            text-align: center;
+        }
+
+        .highlight {
+            font-weight: bold;
+            color: #0a2d50;
+        }
+
+        .photo-container {
+            margin-top: 30px;
+            text-align: center;
+        }
+
+            .photo-container img {
+                max-width: 160px;
+                border: 2px solid #ccc;
+                border-radius: 4px;
+            }
+
+        .footer {
+            margin-top: 60px;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+        }
+
+            .footer .date {
+                font-size: 16px;
+            }
+
+        .logo-container {
+            text-align: center;
+            margin-top: 40px;
+        }
+
+            .logo-container img {
+                width: 180px;
+            }
+    </style>
+</head>
+<body>
+    <div class="cert-container">
+        <div class="cert-title">CERTIFICADO DE CONCLUSÃO</div>
+
+        <div class="cert-content">
+            Este certificado reconhece que<br><br>
+            <span class="highlight">{NameModel}</span><br><br>
+            concluiu o curso<br>
+            <span class="highlight">{TrainingName}</span><br><br>
+            com excelência e dedicação.
+        </div>
+
+        <div class="photo-container">
+            <img src="{ModelPhotoBase64}" alt="Foto do modelo">
+        </div>
+
+        <div class="footer">
+            <div class="date">Emitido em: {DateNow}</div>
+        </div>
+
+        <div class="logo-container">
+            <img src="{LogoBase64}" alt="Logo Pregiato">
+        </div>
+    </div>
+</body>
+</html>

@@ -235,8 +235,8 @@ public class SalesFeedController : ControllerBase
         }
     }
 
-    //[Authorize(Policy = "ManagementPolicyLevel5")]
-    //[Authorize(Policy = "ManagementPolicyLevel2")]
+   
+    [Authorize(Policy = "PolicyProducers")]
     [HttpGet("GetBillingDayByProducers")]
     public async Task<IActionResult> GetBillingDayByProducers()
     {
@@ -313,9 +313,7 @@ public class SalesFeedController : ControllerBase
 
     }
 
-    //[Authorize(Policy = "ManagementPolicyLevel2")]
-    //[Authorize(Policy = "ManagementPolicyLevel5")]
-    
+    [Authorize(Policy = "ManagementPolicyLevel2")]
     [HttpGet("GetAllBillingDayProducers")]
     public async Task<IActionResult> GetAllBillingDayProducers( )
     {

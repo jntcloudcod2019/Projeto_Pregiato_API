@@ -32,7 +32,7 @@ namespace Pregiato.API.Controllers
         private readonly IModelRepository _modelRepository = modelRepository ?? throw new ArgumentNullException(nameof(modelRepository));
         private readonly IDbContextFactory<ModelAgencyContext> _contextFactory = contextFactory ??  throw new ArgumentNullException(nameof(contextFactory));
 
-        [Authorize(Policy = "ManagementPolicyContracts")]
+        [Authorize(Policy = "ManagementPolicyLevel5")]
         [SwaggerOperation(Summary = "Gera um contrato Termo de comprometimento", Description = "Este endpoint gera o Termo de comprometimento.")]
         [SwaggerResponse(200, "Contrato gerado com sucesso", typeof(string))]
         [SwaggerResponse(400, "Requisição inválida")]
@@ -53,8 +53,7 @@ namespace Pregiato.API.Controllers
             return Ok($"Termo de comprometimento , gerado com sucesso. Código da Proposta: {contract.CodProposta}.");
         }
 
-
-        [Authorize(Policy = "PolicyGenerateContracts")]
+        [Authorize(Policy = "ManagementPolicyLevel5")]
         [SwaggerResponse(200, "Contrato gerado com sucesso", typeof(string))]
         [SwaggerResponse(400, "Requisição inválida.")]
         [SwaggerResponse(404, "Modelo não encontrado")]
@@ -89,6 +88,7 @@ namespace Pregiato.API.Controllers
             return Ok($"Termo de Concessão de direito de imagem para: {model.Name}, gerado com sucesso. Código da Proposta: {contract.CodProposta}.");
         }
 
+        [Authorize(Policy = "ManagementPolicyLevel5")]
         [SwaggerOperation("Processo de gerar contrato de Agenciamento e Fotografia.")]
         [ProducesResponseType(typeof(ApiResponse<object>), StatusCodes.Status200OK)]
         [ProducesResponseType(typeof(ApiResponse<object>), StatusCodes.Status404NotFound)]
@@ -164,7 +164,7 @@ namespace Pregiato.API.Controllers
             
         }
 
-        [Authorize(Policy = "ManagementPolicyLevel5")]
+        [Authorize(Policy = "GlobalPoliticsAgency")]
         [HttpGet("download-contract")]
         public async Task<IActionResult> DownloadContractAsync(int proposalCode)
         {
@@ -193,8 +193,7 @@ namespace Pregiato.API.Controllers
             return File(pdfBytes, "application/pdf", "contract.pdf");
         }
 
-        
-        [Authorize(Policy = "ManagementPolicyLevel3")]
+        [Authorize(Policy = "ManagementPolicyLevel2")]
         [HttpGet("all-contracts")]
         public async Task<IActionResult> GetAllContractsForAgencyAsync()
         {
