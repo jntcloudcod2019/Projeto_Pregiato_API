@@ -170,7 +170,7 @@ builder.Services.AddAuthentication(options =>
 builder.Services.AddAuthorization(options =>
 {
     options.AddPolicy("PolicyProducers", policy =>
-        policy.RequireClaim("PRODUCERS", "CEO"));
+        policy.RequireRole("PRODUCERS", "CEO"));
 
     options.AddPolicy("PolicyModels", policy =>
         policy.RequireRole("MODEL"));
@@ -191,7 +191,7 @@ builder.Services.AddAuthorization(options =>
         policy.RequireRole("ADMINISTRATOR", "MANAGER",  "COORDINATION", "CEO")); 
 
     options.AddPolicy("ManagementPolicyLevel3", policy =>
-        policy.RequireClaim("ADMINISTRATOR", "MANAGER", "CEO"));
+        policy.RequireRole("ADMINISTRATOR", "MANAGER", "CEO"));
 
     options.AddPolicy("ManagementPolicyLevel2", policy =>
         policy.RequireRole("MANAGER", "CEO"));
