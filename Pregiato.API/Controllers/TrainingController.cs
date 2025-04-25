@@ -29,7 +29,7 @@ namespace Pregiato.API.Controllers
             _userRepository = userRepository;
         }
 
-        [HttpPost]
+        [HttpPost("CreateTraining")]
         public async Task<IActionResult> CreateTraining([FromBody] CreateTrainingDTO dto)
         {
             if (string.IsNullOrWhiteSpace(dto.Name) || string.IsNullOrWhiteSpace(dto.Name))
@@ -75,7 +75,7 @@ namespace Pregiato.API.Controllers
         }
 
 
-        [HttpPost("api/lessons/{lessonId}/feedback")]
+        [HttpPost("Lessons/likes/{lessonId}")]
         public async Task<IActionResult> RegisterFeedback(Guid lessonId, [FromQuery] bool like = true)
         {
             using var context = _contextFactory.CreateDbContext();
@@ -100,8 +100,8 @@ namespace Pregiato.API.Controllers
             });
         }
 
-        [HttpPost]
-        [Authorize(Policy = "PolicyModels")]
+        [HttpPost("Lessons/RegisterProcess")]
+        //[Authorize(Policy = "PolicyModels")]
         public async Task<IActionResult> RegisterProgress([FromBody] RegisterLessonProgressDTO dto)
         {
 
@@ -122,8 +122,8 @@ namespace Pregiato.API.Controllers
             return Ok(new { message = "PROGRESSO REGISTRADO COM SUCESSO." });
         }
 
-        [HttpGet("{lessonId}")]
-        [Authorize(Policy = "PolicyModels")]
+        [HttpGet("Lessons/ProgressReturn/{lessonId}")]
+      //[Authorize(Policy = "PolicyModels")]
         public async Task<IActionResult> GetProgress(Guid lessonId)
         {
             var username = await _userService.UserCaptureByToken().ConfigureAwait(true);
