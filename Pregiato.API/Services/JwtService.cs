@@ -43,7 +43,6 @@ namespace Pregiato.API.Services
                     SecurityAlgorithms.HmacSha256Signature),
                 Issuer = _issuer,
                 Audience = _audience
-                
 
             };
 
