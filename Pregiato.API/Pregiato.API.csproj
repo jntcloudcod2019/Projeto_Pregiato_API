@@ -51,6 +51,7 @@
 		<PackageReference Include="RabbitMQ.Client" Version="7.1.2" />
 		<PackageReference Include="Serilog" Version="4.2.0" />
 		<PackageReference Include="Serilog.Settings.Configuration" Version="8.0.0" />
+		<PackageReference Include="Serilog.Sinks.Console" Version="6.0.0" />
 		<PackageReference Include="SmtpServer" Version="10.0.1" />
 		<PackageReference Include="SwaggerEnrichers" Version="1.0.1" />
 		<PackageReference Include="System.IdentityModel.Tokens.Jwt" Version="8.3.0" />

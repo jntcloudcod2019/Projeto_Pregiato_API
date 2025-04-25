@@ -21,6 +21,7 @@ using Pregiato.API.Validator;
 using Prometheus;
 using System.Text.Json;
 using Pregiato.API.Models;
+using Serilog;
 
 WebApplicationBuilder builder = WebApplication.CreateBuilder(args);
 string connectionString = Environment.GetEnvironmentVariable("SECRET_KEY_DATABASE") ??

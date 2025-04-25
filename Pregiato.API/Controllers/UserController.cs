@@ -28,6 +28,7 @@ namespace Pregiato.API.Controllers
             _customResponse = customResponse;
             _tokenExpirationService = tokenExpirationService; 
             _jwtService = jwtService;
+
         }
 
         [AllowAnonymous]
@@ -40,16 +41,20 @@ namespace Pregiato.API.Controllers
         {
             try
             {
+                
                 if (loginUserRequest == null)
                 {
+
                     return BadRequest(new ErrorResponse
                     {
                         Message = "REQUISIÇÃO INVÁLIDA. VERIFIQUE OS DADOS ENVIADOS."
                     });
+                   
                 }
 
                 var token = await _userService.AuthenticateUserAsync(loginUserRequest)
                                                     .ConfigureAwait(true);
+
 
                 return Ok(new LoginResponse
                 {
@@ -410,7 +415,7 @@ namespace Pregiato.API.Controllers
 
         }
 
-        [Authorize("GlobalPolitics")]
+        [AllowAnonymous]
         [HttpGet("Get/Producers")]
         public async Task<IActionResult> GetProducers()
         {
@@ -441,7 +446,7 @@ namespace Pregiato.API.Controllers
                 return Ok(new ProducersResponse
                 {
                     SUCESS = true,
-                    MESSAGE = "Produtores encontrados com sucesso.",
+                    MESSAGE = "PRODUTORES ENCONTRADOS COM SUCESSO.",
                     DATA = resulProducers
                 });
             }
