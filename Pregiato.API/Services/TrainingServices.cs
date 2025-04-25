@@ -7,8 +7,6 @@ namespace Pregiato.API.Services
 {
     public class TrainingServices : ITrainingServices
     {
-      
-
         private static readonly string DefaulTemplateCertificate = "CertificateTemplate.html";
         private readonly IBrowserService _browserService;
 
