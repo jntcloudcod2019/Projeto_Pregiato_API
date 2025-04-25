@@ -416,7 +416,7 @@ namespace Pregiato.API.Controllers
         }
 
         [AllowAnonymous]
-        [HttpGet("Get/Producers")]
+        [HttpGet("GetUsersProducers")]
         public async Task<IActionResult> GetProducers()
         {
             try
