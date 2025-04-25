@@ -317,7 +317,7 @@ namespace Pregiato.API.Controllers
             });
         }
 
-        [Authorize(Policy = "GlobalPolitics")]
+        [Authorize(Policy = "GlobalPoliticsAgency")]
         [HttpGet("findModel")]
         public async Task<IActionResult> FindModel(string query)
         {
