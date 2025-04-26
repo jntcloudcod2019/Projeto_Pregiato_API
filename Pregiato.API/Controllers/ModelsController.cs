@@ -561,7 +561,7 @@ namespace Pregiato.API.Controllers
 
         [Authorize(Policy = "GlobalPoliticsAgency")]
         [HttpPost("uploadPhotoModel")]
-        public async Task<IActionResult> Upload([FromForm] ModelPhotoUploadDto dto)
+        public async Task<IActionResult> UploadPhotos([FromForm] ModelPhotoUploadDto dto)
         {
 
             if (dto.File == null || dto.File.Length == 0)

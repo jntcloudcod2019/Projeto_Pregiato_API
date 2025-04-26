@@ -100,8 +100,8 @@ namespace Pregiato.API.Controllers
             });
         }
 
+        [Authorize(Policy = "GlobalPoliticsAgency")]
         [HttpPost("Lessons/RegisterProcess")]
-        //[Authorize(Policy = "PolicyModels")]
         public async Task<IActionResult> RegisterProgress([FromBody] RegisterLessonProgressDTO dto)
         {
 
@@ -122,8 +122,8 @@ namespace Pregiato.API.Controllers
             return Ok(new { message = "PROGRESSO REGISTRADO COM SUCESSO." });
         }
 
-        [HttpGet("Lessons/ProgressReturn/{lessonId}")]
-      //[Authorize(Policy = "PolicyModels")]
+        [Authorize(Policy = "GlobalPoliticsAgency")]
+        [HttpGet("Lessons/ProgressReturn/{lessonId}")] 
         public async Task<IActionResult> GetProgress(Guid lessonId)
         {
             var username = await _userService.UserCaptureByToken().ConfigureAwait(true);
