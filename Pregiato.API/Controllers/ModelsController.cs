@@ -228,7 +228,7 @@ namespace Pregiato.API.Controllers
                 PhysicalCharacteristics = new PhysicalCharacteristics()
             };
 
-           
+
             Model model = new Model
             {
                 CodProducers = producer.CodProducers,
@@ -292,7 +292,7 @@ namespace Pregiato.API.Controllers
             var username = await _userService
                  .UserCaptureByToken()
                  .ConfigureAwait(true);
-                
+
 
             var model = await _agencyContext.Models
                 .FirstOrDefaultAsync(m => m.Email== username.Email)
