@@ -9,9 +9,7 @@ using Pregiato.API.Interfaces;
 using Pregiato.API.Response;
 using Pregiato.API.Models;
 using Pregiato.API.Services.ServiceModels;
-using Pregiato.API.Services;
 using Microsoft.EntityFrameworkCore;
-using System.Net.NetworkInformation;
 namespace Pregiato.API.Controllers
 {
     [ApiController]

@@ -218,7 +218,7 @@ namespace Pregiato.API.Controllers
             }
         }
 
-        [Authorize(Policy = "ManagementPolicyLevel3")]
+       // [Authorize(Policy = "ManagementPolicyLevel3")]
         [HttpPost("register/producers")]
         public async Task<IActionResult> RegisterUserProducers([FromBody] UserRegisterDto? user)
         {
