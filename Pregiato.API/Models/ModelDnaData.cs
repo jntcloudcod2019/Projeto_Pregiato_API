@@ -92,6 +92,7 @@ namespace Pregiato.API.Models
     public class FaceAttributes
     {
         [JsonPropertyName("SHAPE")]
+
         public string? Shape { get; set; }
 
         [JsonPropertyName("BONESTRUCTURE")]
