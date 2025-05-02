@@ -515,7 +515,7 @@ namespace Pregiato.API.Controllers
 
             if (requestDNA == null)
             {
-                return BadRequest("Dados inválidos.");
+                return BadRequest("DADOS INVÁLIDOS.");
             }
 
             var user = await _userService.UserCaptureByToken().ConfigureAwait(true);
@@ -524,42 +524,59 @@ namespace Pregiato.API.Controllers
                 return BadRequest("USUÁRIO NÃO ENCONTRADO.");
             }
 
-            string jsonDna = JsonSerializer.Serialize(requestDNA, new JsonSerializerOptions
+            var modelToUpdate = new ModelDnaData
             {
-                PropertyNamingPolicy = JsonNamingPolicy.CamelCase,
-                WriteIndented = false,
+                Dna = requestDNA.Dna,
+                Appearance = requestDNA.Appearance,
+                EyeAttributes = requestDNA.EyeAttributes,
+                HairAttributes = requestDNA.HairAttributes,
+                SkinAttributes = requestDNA.SkinAttributes,
+                FaceAttributes = requestDNA.FaceAttributes,
+                SmileAttributes = requestDNA.SmileAttributes,
+                BodyAttributes = requestDNA.BodyAttributes,
+                AdditionalAttributes = requestDNA.AdditionalAttributes,
+                PhysicalCharacteristics = requestDNA.PhysicalCharacteristics
+            };
 
-            });
-
-            JsonDocument dnaDocument;
-            try
+            using (ModelAgencyContext context = _contextFactory.CreateDbContext())
             {
-                dnaDocument = JsonDocument.Parse(jsonDna);
+                var model = await context.Models.FirstOrDefaultAsync(m => m.Email == user.Email).ConfigureAwait(true);
+
+                if (model == null)
+                {
+                    return NotFound("MODELO NÃO ENCONTRADO PARA O E-MAIL DO USUÁRIO LOGADO.");
+                }
+
+                if (modelToUpdate.Dna != null)
+                {
+                    string jsonDna = JsonSerializer.Serialize(modelToUpdate, new JsonSerializerOptions
+                    {
+                        PropertyNamingPolicy = JsonNamingPolicy.CamelCase,
+                        WriteIndented = false
+                    });
+
+                    JsonDocument dnaDocument;
+                    try
+                    {
+                        dnaDocument = JsonDocument.Parse(jsonDna);
+                    }
+                    catch (JsonException ex)
+                    {
+                        return BadRequest($"ERRO AO PROCESSAR O JSON: {ex.Message}");
+                    }
+
+                    model.DNA = dnaDocument;
+                }
+
+                model.UpdatedAt = DateTime.UtcNow;
+                context.Entry(model).Property(m => m.DNA).IsModified = true;
+                await context.SaveChangesAsync().ConfigureAwait(true);
             }
-            catch (JsonException ex)
-            {
-                return BadRequest($"ERRO AO PROCESSAR O JSON: {ex.Message}");
-            }
 
-
-            using ModelAgencyContext context = _contextFactory.CreateDbContext();
-
-            var model = await context.Models
-                .FirstOrDefaultAsync(m => m.Email == user.Email).ConfigureAwait(true);
-
-            if (model == null)
-            {
-                return NotFound("MODELO NÃO ENCONTRADO PARA O E-MAIL DO USUÁRIO LOGADO.");
-            }
-
-            model.DNA = dnaDocument;
-            model.UpdatedAt = DateTime.UtcNow;
-            context.Entry(model).Property(m => m.DNA).IsModified = true;
-            await context.SaveChangesAsync().ConfigureAwait(true);
             return Ok();
         }
 
-      //  [Authorize(Policy = "GlobalPoliticsAgency")]
+      //[Authorize(Policy = "GlobalPoliticsAgency")]
         [HttpPost("uploadPhotoModel")]
         public async Task<IActionResult> UploadPhotos([FromForm] ModelPhotoUploadDto dto)
         {
