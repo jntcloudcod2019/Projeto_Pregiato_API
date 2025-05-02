@@ -1,9 +1,11 @@
-﻿using System.ComponentModel.DataAnnotations.Schema;
+﻿using Pregiato.API.System.Text.Json.Serialization;
+using System.ComponentModel.DataAnnotations.Schema;
 using System.Text.Json;
 using System.Text.Json.Serialization;
 
 namespace Pregiato.API.Models
 {
+    [JsonConverter(typeof(CaseInsensitiveJsonConverter<ModelDnaData>))]
     public class ModelDnaData
     {
         [JsonPropertyName("dna")]

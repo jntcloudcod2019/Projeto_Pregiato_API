@@ -6,7 +6,7 @@ namespace Pregiato.API.System.Text.Json
     {
         public override string ConvertName(string name)
         {
-            return name.ToUpperInvariant(); 
+            return name.ToUpperInvariant();
         }
     }
 }
