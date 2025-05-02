@@ -4,38 +4,37 @@ using System.Text.Json.Serialization;
 
 namespace Pregiato.API.Models
 {
-    [NotMapped]
     public class ModelDnaData
     {
         [JsonPropertyName("dna")]
-        public string Dna { get; set; } = "InfoModel";
+        public string? Dna { get; set; } = "InfoModel";
 
         [JsonPropertyName("appearance")]
-        public Appearance Appearance { get; set; }
+        public Appearance? Appearance { get; set; }
 
         [JsonPropertyName("eyeAttributes")]
-        public EyeAttributes EyeAttributes { get; set; }
+        public EyeAttributes? EyeAttributes { get; set; }
 
         [JsonPropertyName("hairAttributes")]
-        public HairAttributes HairAttributes { get; set; }
+        public HairAttributes? HairAttributes { get; set; }
 
         [JsonPropertyName("skinAttributes")]
-        public SkinAttributes SkinAttributes { get; set; }
+        public SkinAttributes? SkinAttributes { get; set; }
 
         [JsonPropertyName("faceAttributes")]
-        public FaceAttributes FaceAttributes { get; set; }
+        public FaceAttributes? FaceAttributes { get; set; }
 
         [JsonPropertyName("smileAttributes")]
-        public SmileAttributes SmileAttributes { get; set; }
+        public SmileAttributes? SmileAttributes { get; set; }
 
         [JsonPropertyName("bodyAttributes")]
-        public BodyAttributes BodyAttributes { get; set; }
+        public BodyAttributes? BodyAttributes { get; set; }
 
         [JsonPropertyName("additionalAttributes")]
-        public AdditionalAttributes AdditionalAttributes { get; set; }
+        public AdditionalAttributes? AdditionalAttributes { get; set; }
 
         [JsonPropertyName("physicalCharacteristics")]
-        public PhysicalCharacteristics PhysicalCharacteristics { get; set; }
+        public PhysicalCharacteristics? PhysicalCharacteristics { get; set; }
 
         public static implicit operator JsonDocument(ModelDnaData v)
         {
