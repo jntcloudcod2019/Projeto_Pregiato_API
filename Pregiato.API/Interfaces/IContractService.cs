@@ -7,9 +7,10 @@ namespace Pregiato.API.Interfaces
 {
     public interface IContractService
     {
-     Task<ContractBase> GenerateContractAsync(CreateContractModelRequest createContractModelRequest, Model model, string contractType, Dictionary<string, string> parameters);
+     Task<ContractBase> GenerateContractAsync(
+     CreateContractModelRequest createContractModelRequest, Model model, string contractType, Dictionary<string, string> parameters);
      Task<List<ContractBase>> GenerateAllContractsAsync(CreateContractModelRequest createContractModelRequest, Model model);
-     Task SaveContractAsync(ContractBase contract, Stream pdfStream, string cpfModelo);
+     Task SaveContractAsync(ContractBase contract, Stream pdfStream, Model model);
      Task<ContractBase> GenerateContractCommitmentTerm(CreateRequestCommitmentTerm createRequestContractImageRights, string querymodel);
      Task<ContractBase> GenetayeContractImageRightsTerm(string querymodel);
      Task<string> GenerateProducerCodeContractAsync();
@@ -23,11 +24,8 @@ namespace Pregiato.API.Interfaces
      Task AddMinorModelInfo(Model model, Dictionary<string, string> parameters);
      Task<Producers> ProcessProducersAsync(ContractBase contract,  Model model);
      Task<ContractWithProducers> DefineContractAsync(ContractBase contract,
-         CreateContractModelRequest contractModelRequest, Model model, string? contractType);
+     CreateContractModelRequest contractModelRequest, Model model, string? contractType);
      Task<ContractBase> DefineContractAgencyAsync(ContractBase contract,
-         CreateContractModelRequest contractModelRequest, Model model, string? contractType);
-
-
-
+     CreateContractModelRequest contractModelRequest, Model model, string? contractType);
     }
 }

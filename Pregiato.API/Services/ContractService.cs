@@ -91,7 +91,7 @@ namespace Pregiato.API.Services
 
             try
             {
-               
+
                 IBrowser browser = await _browserService.GetBrowserAsync().ConfigureAwait(true);
 
                 await using IPage? page = await browser.NewPageAsync().ConfigureAwait(true);
@@ -122,7 +122,7 @@ namespace Pregiato.API.Services
                 throw;
             }
         }
-        public async Task SaveContractAsync(ContractBase contract, Stream pdfStream, string cpfModelo)
+        public async Task SaveContractAsync(ContractBase contract, Stream pdfStream, Model model)
         {
             using MemoryStream memoryStream = new MemoryStream();
 
@@ -144,8 +144,8 @@ namespace Pregiato.API.Services
                 ? contract.TemplateFileName.Substring(0, contract.TemplateFileName.LastIndexOf('.'))
                 : contract.TemplateFileName;
 
-            contract.ContractFilePath = $"Model_CPF:{cpfModelo}_{nameContract}_{DateTime.UtcNow:dd-MM-yyyy}.pdf";
-            await _contractRepository.SaveContractAsync(contract);         
+            contract.ContractFilePath = $"{model.Name}_CPF:{model.CPF}_{nameContract}_{DateTime.UtcNow:dd-MM-yyyy}.pdf";
+            await _contractRepository.SaveContractAsync(contract);
         }
         private async Task<int> GetNextCodPropostaAsync()
         {
@@ -177,24 +177,24 @@ namespace Pregiato.API.Services
             string populatedHtml = await PopulateTemplate(htmlTemplate, parameters).ConfigureAwait(true);
 
             byte[] pdfBytes = await ConvertHtmlToPdf(populatedHtml, parameters).ConfigureAwait(true);
-            
+
             contract.CodProposta = await GetNextCodPropostaAsync().ConfigureAwait(true);
 
             if (contractType == DefaulTemplatePhotography || contractType == DefaulTemplatePhotographyMinority)
-            { ContractWithProducers contractWithProducers = await DefineContractAsync
-                                 (contract, createContractModelRequest, model, contractType).ConfigureAwait(true);
-               
+            {ContractWithProducers contractWithProducers = await DefineContractAsync
+                                   (contract, createContractModelRequest, model, contractType).ConfigureAwait(true);
+
                 await _paymentService.ValidatePayment(contractWithProducers.Producers, createContractModelRequest.Payment, contract);
             }
 
             if (contractType == DefaulTemplateAgency)
             {
-              
-                    await DefineContractAgencyAsync(contract, createContractModelRequest, model, contractType)
-                        .ConfigureAwait(true);
+
+                await DefineContractAgencyAsync(contract, createContractModelRequest, model, contractType)
+                      .ConfigureAwait(true);
             }
 
-            await SaveContractAsync(contract, new MemoryStream(pdfBytes), model.CPF);
+            await SaveContractAsync(contract, new MemoryStream(pdfBytes), model);
 
             return contract;
         }
@@ -202,7 +202,7 @@ namespace Pregiato.API.Services
         {
 
             Dictionary<string, string> parameters = new Dictionary<string, string?>
-            {
+                {
                 {"Cidade", createContractModelRequest.City},
                 {"Dia", createContractModelRequest.Day.ToString()},
                 {"UF-Local", createContractModelRequest.UFContract},
@@ -229,16 +229,16 @@ namespace Pregiato.API.Services
             List<ContractBase> listContracts = [];
 
             string template = model.Age < 18 ? DefaulTemplatePhotographyMinority : DefaulTemplatePhotography;
-                                  
+
             Dictionary<string, string> signaturePhotographyParams = await AddSignatureToParameters(parameters, template).ConfigureAwait(false);
-            
+
             ContractBase photographyContract = await GenerateContractAsync(
                 createContractModelRequest,
                 model,
                 template,
                 signaturePhotographyParams
             ).ConfigureAwait(true);
-           
+
             listContracts.Add(photographyContract);
 
             Dictionary<string, string> signatureAgencyParams = await AddSignatureToParameters(parameters,  DefaulTemplateAgency).ConfigureAwait(false);
@@ -249,12 +249,12 @@ namespace Pregiato.API.Services
                 signatureAgencyParams
             ).ConfigureAwait(true);
 
-             listContracts.Add(agencyContract);
+            listContracts.Add(agencyContract);
 
-             if (listContracts.Any(c => c.TemplateFileName == "AgencyContract.html"))
-             {
-                 await _rabbitmqProducer.SendMensage(listContracts, model.CPF).ConfigureAwait(false);
-             }
+            if (listContracts.Any(c => c.TemplateFileName == "AgencyContract.html"))
+            {
+                await _rabbitmqProducer.SendMensage(listContracts, model.CPF).ConfigureAwait(false);
+            }
 
             return listContracts;
         }
@@ -334,7 +334,7 @@ namespace Pregiato.API.Services
             };
 
             contract.IdModel = model.IdModel;
-           
+
             string htmlTemplatePath = $"Templates/{contract.TemplateFileName}";
             if (!File.Exists(htmlTemplatePath))
             {
@@ -347,7 +347,7 @@ namespace Pregiato.API.Services
 
             byte[] pdfBytes = await ConvertHtmlToPdf(populatedHtml, parameters);
 
-            await SaveContractAsync(contract, new MemoryStream(pdfBytes), model.CPF);
+          //  await SaveContractAsync(contract, new MemoryStream(pdfBytes), model.CPF);
 
             return contract;
         }
@@ -395,9 +395,11 @@ namespace Pregiato.API.Services
             };
 
             contract.IdModel = model.IdModel;
+
             contract.CodProposta = await GetNextCodPropostaAsync().ConfigureAwait(true);
-           
+
             string htmlTemplatePath = $"Templates/{contract.TemplateFileName}";
+
             if (!File.Exists(htmlTemplatePath))
             {
                 throw new FileNotFoundException($"Template não encontrado: {htmlTemplatePath}");
@@ -409,18 +411,17 @@ namespace Pregiato.API.Services
 
             byte[] pdfBytes = await ConvertHtmlToPdf(populatedHtml, parameters).ConfigureAwait(true);
 
-            await SaveContractAsync(contract, new MemoryStream(pdfBytes), parameters["CPF-Modelo"]).ConfigureAwait(true);
+            await SaveContractAsync(contract, new MemoryStream(pdfBytes), model).ConfigureAwait(true);
 
             return contract;
         }
         public async Task<string?> GenerateProducerCodeContractAsync()
         {
             const string prefix = "PMCA";
-            const int randomNumberLength = 6;
-            Random random = new Random();
+            Random random = new();
             int randomNumber = random.Next(0, 999999);
             string code = $"{prefix}{randomNumber:000000}";
-            return (code).ToString();
+            return await Task.FromResult(code.ToString());
         }
         public async Task<IActionResult> GetMyContracts(string type = "files")
         {
@@ -497,7 +498,7 @@ namespace Pregiato.API.Services
                 CodProducers = model.CodProducers,
                 NameProducer = user.Name,
                 ContractId = contract.ContractId,
-                
+
                 AmountContract = contract?.ValorContrato ?? 0,
                 InfoModel = new DetailsInfo
                 {
@@ -539,9 +540,9 @@ namespace Pregiato.API.Services
             contract.StatusContratc = StatusContratc.Ativo;
 
             Producers producersProcess = await ProcessProducersAsync(contract, model).ConfigureAwait(true);
-            
+
             contract.CodProducers = producersProcess.CodProducers;
-            
+
             return new ContractWithProducers
             {
                 Contract = contract,

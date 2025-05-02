@@ -123,7 +123,7 @@ namespace Pregiato.API.Controllers
         }
 
         [Authorize(Policy = "GlobalPoliticsAgency")]
-        [HttpGet("Lessons/ProgressReturn/{lessonId}")] 
+        [HttpGet("Lessons/ProgressReturn/{lessonId}")]
         public async Task<IActionResult> GetProgress(Guid lessonId)
         {
             var username = await _userService.UserCaptureByToken().ConfigureAwait(true);

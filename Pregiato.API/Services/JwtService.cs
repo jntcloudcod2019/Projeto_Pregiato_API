@@ -21,7 +21,7 @@ namespace Pregiato.API.Services
         private readonly string _issuer = Environment.GetEnvironmentVariable("ISSUER_JWT") ?? "PregiatoAPI";
         private readonly string _audience = Environment.GetEnvironmentVariable("AUDIENCE_JWT") ?? "PregiatoAPIToken";
         private readonly IConfiguration _configuration = configuration;
-        private readonly TimeSpan _tokenExpiry = TimeSpan.FromHours(1);
+        private readonly TimeSpan _tokenExpiry = TimeSpan.FromHours(10);
 
         public async Task<string> GenerateToken(LoginUserRequest? user)
         {
@@ -136,9 +136,9 @@ namespace Pregiato.API.Services
             var handler = new JwtSecurityTokenHandler();
             try
             {
-                var jwtToken = handler.ReadJwtToken(token);
-                var usernameClaim = jwtToken.Claims.FirstOrDefault(c => c.Type == "http://schemas.xmlsoap.org/ws/2005/05/identity/claims/name");
-                
+                JwtSecurityToken jwtToken = handler.ReadJwtToken(token);
+                Claim? usernameClaim = jwtToken.Claims.FirstOrDefault(c => c.Type == "http://schemas.xmlsoap.org/ws/2005/05/identity/claims/name");
+
                 return await Task.FromResult(usernameClaim?.Value);
             }
             catch

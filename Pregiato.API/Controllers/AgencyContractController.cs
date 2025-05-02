@@ -21,7 +21,6 @@ namespace Pregiato.API.Controllers
           IUserService userService,
           IDbContextFactory<ModelAgencyContext> contextFactory,
           ModelAgencyContext context,
-         
           CustomResponse customResponse) : ControllerBase
     {
         private readonly ModelAgencyContext _context = context ?? throw new ArgumentNullException(nameof(context));
@@ -227,7 +226,7 @@ namespace Pregiato.API.Controllers
             {
                 var user = await _userService.UserCaptureByToken().ConfigureAwait(true);
 
-                if (user.CodProducers == null || user.UserType == UserType.Producers)
+                if ( user.UserType != UserType.PRODUCERS)
                 {
                     return BadRequest("USUÁRIO NÃO ENCONTRADO OU NÃO É UM PRODUTOR.");
                 }
