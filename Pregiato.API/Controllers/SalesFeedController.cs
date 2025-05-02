@@ -5,6 +5,7 @@ using Pregiato.API.Data;
 using Pregiato.API.Models;
 using Pregiato.API.Response;
 using Pregiato.API.Interfaces;
+using Pregiato.API.Services.ServiceModels;
 
 namespace Pregiato.API.Controllers;
 
@@ -232,7 +233,7 @@ public class SalesFeedController : ControllerBase
         }
     }
 
-  //  [Authorize(Policy = "PolicyProducers")]
+  //[Authorize(Policy = "PolicyProducers")]
     [HttpGet("GetBillingDayByProducers")]
     public async Task<IActionResult> GetBillingDayByProducers()
     {
@@ -240,6 +241,12 @@ public class SalesFeedController : ControllerBase
         {
             var user = await _userService.UserCaptureByToken()
                                          .ConfigureAwait(true);
+
+            if (user.UserType != UserType.PRODUCERS)
+            {
+                return BadRequest("USUÁRIO NÃO ENCONTRADO OU NÃO É UM PRODUTOR.");
+            }
+
 
             List<Producers> producers = await _producersRepository.GetDailyBillingByProducers(user)
                                                                   .ConfigureAwait(true);
