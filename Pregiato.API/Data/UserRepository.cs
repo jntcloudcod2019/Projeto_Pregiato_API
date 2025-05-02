@@ -108,7 +108,7 @@ namespace Pregiato.API.Data
         public async Task<IEnumerable<User>> GetProducers()
         {
             return await context.Users.AsNoTracking()
-                .Where(u => u.UserType == UserType.Producers)
+                .Where(u => u.UserType == UserType.PRODUCERS)
                 .ToListAsync();
         }
 

@@ -182,7 +182,7 @@ namespace Pregiato.API.Services
 
             var replacements = new Dictionary<string, string>
             {
-                {"Position", UserType.Producers},
+                {"Position", UserType.PRODUCERS},
                 {"Nome",username},
                 {"User",nikeName },
                 {"Password", password}
@@ -203,7 +203,7 @@ namespace Pregiato.API.Services
                 Email = email,
                 NickName = nikeName,
                 PasswordHash = passwordHash,
-                UserType = UserType.Producers.ToString(),
+                UserType = UserType.PRODUCERS.ToString(),
                 CodProducers = await GenerateProducerCodeAsync()
                     .ConfigureAwait(true),
 

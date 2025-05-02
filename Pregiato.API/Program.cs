@@ -19,9 +19,6 @@ using Pregiato.API.System.Text.Json;
 using Pregiato.API.System.Text.Json.Serialization;
 using Pregiato.API.Validator;
 using Prometheus;
-using System.Text.Json;
-using Pregiato.API.Models;
-using Serilog;
 
 WebApplicationBuilder builder = WebApplication.CreateBuilder(args);
 string connectionString = Environment.GetEnvironmentVariable("SECRET_KEY_DATABASE") ??
@@ -189,7 +186,7 @@ builder.Services.AddAuthorization(options =>
         policy.RequireRole("ADMINISTRATOR", "MANAGER", "PRODUCERS", "COORDINATION", "CEO"));
 
     options.AddPolicy("ManagementPolicyLevel4", policy =>
-        policy.RequireRole("ADMINISTRATOR", "MANAGER",  "COORDINATION", "CEO")); 
+        policy.RequireRole("ADMINISTRATOR", "MANAGER", "COORDINATION", "CEO"));
 
     options.AddPolicy("ManagementPolicyLevel3", policy =>
         policy.RequireRole("ADMINISTRATOR", "MANAGER", "CEO"));
