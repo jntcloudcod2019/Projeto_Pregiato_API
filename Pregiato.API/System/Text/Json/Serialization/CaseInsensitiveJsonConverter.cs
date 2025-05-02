@@ -7,7 +7,6 @@ namespace Pregiato.API.System.Text.Json.Serialization
     {
         public override T? Read(ref Utf8JsonReader reader, Type typeToConvert, JsonSerializerOptions options)
         {
-            // Clona os options para não alterar os globais
             var customOptions = new JsonSerializerOptions
             {
                 PropertyNameCaseInsensitive = true
