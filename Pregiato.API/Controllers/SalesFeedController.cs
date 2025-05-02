@@ -6,8 +6,6 @@ using Pregiato.API.Models;
 using Pregiato.API.Response;
 using Pregiato.API.Interfaces;
 
-
-
 namespace Pregiato.API.Controllers;
 
 [ApiController]
@@ -28,7 +26,7 @@ public class SalesFeedController : ControllerBase
         _userService = userService;
     }
 
-    [Authorize(Policy = "ManagementPolicyLevel2")]
+   // [Authorize(Policy = "ManagementPolicyLevel2")]
     [HttpGet("daily")]
     public async Task<IActionResult> GetDailySales()
     {
@@ -82,7 +80,6 @@ public class SalesFeedController : ControllerBase
         }
         catch (Exception ex)
         {
-            
             return StatusCode(500, new
             {
                 success = false,
@@ -96,7 +93,7 @@ public class SalesFeedController : ControllerBase
         }
     }
 
-    [Authorize(Policy = "ManagementPolicyLevel2")]
+   // [Authorize(Policy = "ManagementPolicyLevel2")]
     [HttpGet("weekly")]
     public async Task<IActionResult> GetWeeklySales([FromQuery] string date = null!)
     {
@@ -170,7 +167,7 @@ public class SalesFeedController : ControllerBase
         }
     }
 
-    [Authorize(Policy = "ManagementPolicyLevel2")]
+   // [Authorize(Policy = "ManagementPolicyLevel2")]
     [HttpGet("monthly")]
     public async Task<IActionResult> GetMonthlySales()
     {
@@ -235,8 +232,7 @@ public class SalesFeedController : ControllerBase
         }
     }
 
-   
-    [Authorize(Policy = "PolicyProducers")]
+  //  [Authorize(Policy = "PolicyProducers")]
     [HttpGet("GetBillingDayByProducers")]
     public async Task<IActionResult> GetBillingDayByProducers()
     {
@@ -313,7 +309,7 @@ public class SalesFeedController : ControllerBase
 
     }
 
-    [Authorize(Policy = "ManagementPolicyLevel2")]
+   // [Authorize(Policy = "ManagementPolicyLevel2")]
     [HttpGet("GetAllBillingDayProducers")]
     public async Task<IActionResult> GetAllBillingDayProducers( )
     {
@@ -339,12 +335,11 @@ public class SalesFeedController : ControllerBase
                 .Select(g => new
                 {
                     NameProducer = g.Key,
-                    TotalSalesSum = g.Sum(p => p.AmountContract), 
-                    TransactionCount = g.Count(), 
-                    Producers = g.ToList() 
+                    TotalSalesSum = g.Sum(p => p.AmountContract),
+                    TransactionCount = g.Count(),
+                    Producers = g.ToList()
                 });
 
-            
             var billingDataList = groupedProducers
                 .SelectMany(g => g.Producers.Select(p => new BillingDataProducers
                 {
@@ -384,5 +379,4 @@ public class SalesFeedController : ControllerBase
             });
         }
     }
-
 }
