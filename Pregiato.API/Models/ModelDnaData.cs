@@ -5,37 +5,36 @@ using System.Text.Json.Serialization;
 
 namespace Pregiato.API.Models
 {
-    [JsonConverter(typeof(CaseInsensitiveJsonConverter<ModelDnaData>))]
     public class ModelDnaData
     {
-        [JsonPropertyName("dna")]
+        [JsonPropertyName("DNA")]
         public string? Dna { get; set; } = "InfoModel";
 
-        [JsonPropertyName("appearance")]
+        [JsonPropertyName("APPEARANCE")]
         public Appearance? Appearance { get; set; }
 
-        [JsonPropertyName("eyeAttributes")]
+        [JsonPropertyName("EYEATTRIBUTES")]
         public EyeAttributes? EyeAttributes { get; set; }
 
-        [JsonPropertyName("hairAttributes")]
+        [JsonPropertyName("HAIRATTRIBUTES")]
         public HairAttributes? HairAttributes { get; set; }
 
-        [JsonPropertyName("skinAttributes")]
+        [JsonPropertyName("SKINATTRIBUTES")]
         public SkinAttributes? SkinAttributes { get; set; }
 
-        [JsonPropertyName("faceAttributes")]
+        [JsonPropertyName("FACEATTRIBUTES")]
         public FaceAttributes? FaceAttributes { get; set; }
 
-        [JsonPropertyName("smileAttributes")]
+        [JsonPropertyName("SMILEATTRIBUTES")]
         public SmileAttributes? SmileAttributes { get; set; }
 
-        [JsonPropertyName("bodyAttributes")]
+        [JsonPropertyName("BODYATTRIBUTES")]
         public BodyAttributes? BodyAttributes { get; set; }
 
-        [JsonPropertyName("additionalAttributes")]
+        [JsonPropertyName("ADDITIONALATTRIBUTES")]
         public AdditionalAttributes? AdditionalAttributes { get; set; }
 
-        [JsonPropertyName("physicalCharacteristics")]
+        [JsonPropertyName("PHYSICALCHARACTERISTICS")]
         public PhysicalCharacteristics? PhysicalCharacteristics { get; set; }
 
         public static implicit operator JsonDocument(ModelDnaData v)
