@@ -218,7 +218,7 @@ namespace Pregiato.API.Controllers
             }
         }
 
-     //   [Authorize(Policy = "PolicyProducers")]
+     // [Authorize(Policy = "PolicyProducers")]
         [HttpGet("all-contracts-producers")]
         public async Task<IActionResult> GetAllContractsForProducers()
         {

@@ -20,7 +20,7 @@ namespace Pregiato.API.Response
         public DateTime? DATEOFBIRTH { get; set; }
         public string EMAIL { get; set; }
         public int AGE { get; set; }
-        public JsonDocument MODELATTRIBUTES { get; set; }
+        public ModelDnaData MODELATTRIBUTES { get; set; }
         public string? TELEFONEPRINCIPAL { get; set; }
         public string STATUS { get; set; }
         public string RESPONSIBLEPRODUCER { get; set; }

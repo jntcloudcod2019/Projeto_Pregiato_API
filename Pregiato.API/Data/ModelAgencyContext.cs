@@ -123,25 +123,31 @@ namespace Pregiato.API.Data
                     .HasColumnType("timestamp with time zone");
 
                 entity.Property(e => e.UpdatedAt)
-                    .HasDefaultValueSql("CURRENT_TIMESTAMP")  
+                    .HasDefaultValueSql("CURRENT_TIMESTAMP")
                     .HasColumnType("timestamp with time zone");
             });
 
+            // Configuração da tabela de Jobs
+
+            EnumToStringConverter<JobStatus> jobStatusConvert = new EnumToStringConverter<JobStatus>();
             modelBuilder.Entity<Job>(entity =>
             {
                 entity.ToTable("Jobs");
                 entity.HasKey(e => e.JobId);
                 entity.Property(e => e.CreatedAt)
-                    .HasDefaultValueSql("CURRENT_TIMESTAMP")  
+                    .HasDefaultValueSql("CURRENT_TIMESTAMP")
                     .HasColumnType("timestamp with time zone");
                 entity.Property(e => e.UpdatedAt)
-                    .HasDefaultValueSql("CURRENT_TIMESTAMP")  
+                    .HasDefaultValueSql("CURRENT_TIMESTAMP")
                     .HasColumnType("timestamp with time zone");
                 entity.Property(e => e.Amount).IsRequired(true);
                 entity.Property(e => e.Location).IsRequired(false);
                 entity.Property(e => e.JobDate).IsRequired();
                 entity.Property(e => e.Description).IsRequired(false);
-
+                entity.Property(e => e.Status)
+                    .HasConversion(jobStatusConvert)
+                    .HasColumnType("text")
+                    .IsRequired(true);
             });
 
 
@@ -152,17 +158,15 @@ namespace Pregiato.API.Data
                 entity.Property(e => e.Amount).IsRequired(true);
                 entity.Property(e => e.BillingDate);
                 entity.Property(e => e.CreatedAt)
-                    .HasDefaultValueSql("CURRENT_TIMESTAMP") 
+                    .HasDefaultValueSql("CURRENT_TIMESTAMP")
                     .HasColumnType("timestamp with time zone");
                 entity.Property(e => e.UpdatedAt)
-                    .HasDefaultValueSql("CURRENT_TIMESTAMP")  
+                    .HasDefaultValueSql("CURRENT_TIMESTAMP")
                     .HasColumnType("timestamp with time zone");
 
             });
 
             modelBuilder.Entity<User>().ToTable("Users");
-
-
             modelBuilder.Entity<User>(entity =>
             {
                 entity.ToTable("Users");
@@ -176,13 +180,11 @@ namespace Pregiato.API.Data
                 entity.Property(e => e.PasswordHash).IsRequired(true);
                 entity.Property(e => e.UserType).IsRequired(true);
                 entity.Property(e => e.CreatedAt)
-                    .HasDefaultValueSql("CURRENT_TIMESTAMP")  
+                    .HasDefaultValueSql("CURRENT_TIMESTAMP")
                     .HasColumnType("timestamp with time zone");
                 entity.Property(e => e.UpdatedAt)
-                    .HasDefaultValueSql("CURRENT_TIMESTAMP")  
+                    .HasDefaultValueSql("CURRENT_TIMESTAMP")
                     .HasColumnType("timestamp with time zone");
-
-
             });
 
             // Configuração de ModelJob
@@ -193,8 +195,13 @@ namespace Pregiato.API.Data
                     .HasColumnType("uuid")
                     .HasDefaultValueSql("gen_random_uuid()");
                 entity.HasKey(e => e.Id);
+                entity.Property(e => e.ModelId)
+                    .HasColumnType("uuid")
+                    .IsRequired(true);
+                entity.Property(e => e.JobId)
+                  .HasColumnType("uuid")
+                  .IsRequired(true);
                 entity.Property(e => e.JobDate);
-                
                 entity.Property(e => e.Location)
                     .IsRequired(false)
                     .HasMaxLength(255);
@@ -202,41 +209,38 @@ namespace Pregiato.API.Data
                     .IsRequired(false);
                 entity.Property(e => e.AdditionalDescription)
                     .HasMaxLength(500);
-                
+                entity.Property(e => e.IsPresent);
+                entity.Property(e => e.CreatedAt)
+                   .HasDefaultValueSql("CURRENT_TIMESTAMP")
+                   .HasColumnType("timestamp with time zone");
+                entity.Property(e => e.UpdatedAt)
+                    .HasDefaultValueSql("CURRENT_TIMESTAMP")
+                    .HasColumnType("timestamp with time zone");
             });
 
             modelBuilder.Entity<ModelPhoto>(entity =>
             {
                 entity.ToTable("model_photos");
-
                 entity.HasKey(e => e.Id);
-
                 entity.Property(e => e.Id)
                     .HasColumnName("id")
                     .IsRequired();
-
                 entity.Property(e => e.ModelId)
                     .HasColumnName("model_id")
                     .IsRequired();
-
                 entity.Property(e => e.ImageData)
                     .HasColumnName("image_data")
                     .IsRequired();
-
                 entity.Property(e => e.ImageName)
                     .HasColumnName("image_name")
                     .HasMaxLength(255);
-
                 entity.Property(e => e.ContentType)
                     .HasColumnName("content_type")
                     .HasMaxLength(100);
-
                 entity.Property(e => e.UploadedAt)
                     .HasColumnName("uploaded_at")
                     .HasDefaultValueSql("CURRENT_TIMESTAMP");
             });
-
-
 
             // Configuração de ContractBase
             modelBuilder.Entity<ContractBase>(entity =>
@@ -258,13 +262,12 @@ namespace Pregiato.API.Data
                 entity.Property(e => e.StatusContratc)
                     .HasConversion<string>();
                 entity.Property(e => e.CreatedAt)
-                    .HasDefaultValueSql("CURRENT_TIMESTAMP")  
-                    .HasColumnType("timestamp with time zone"); 
+                    .HasDefaultValueSql("CURRENT_TIMESTAMP")
+                    .HasColumnType("timestamp with time zone");
                 entity.Property(e => e.UpdatedAt)
-                    .HasDefaultValueSql("CURRENT_TIMESTAMP")  
-                    .HasColumnType("timestamp with time zone"); 
+                    .HasDefaultValueSql("CURRENT_TIMESTAMP")
+                    .HasColumnType("timestamp with time zone");
             });
-
 
 
             // Configuração de Model
