@@ -6,8 +6,11 @@ namespace Pregiato.API.Models
     {
         [Key]
         public Guid Id { get; set; }
-
+        [Required]
         public Guid ModelId{ get; set; }
+
+        [Required]
+        public Guid JobId {get; set;}
 
         [Required]
         public DateTime JobDate { get; set; }
@@ -22,6 +25,10 @@ namespace Pregiato.API.Models
 
         [MaxLength(500)]
         public string? AdditionalDescription { get; set; }
+        public bool IsPresent { get; set; } = false;
+
+        public DateTime CreatedAt { get; set; } = DateTime.UtcNow;
+        public DateTime UpdatedAt { get; set; } = DateTime.UtcNow;
 
     }
 }

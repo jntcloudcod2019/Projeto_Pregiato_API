@@ -76,7 +76,7 @@ namespace Pregiato.API.Controllers
 
 
         [HttpPost("Lessons/likes/{lessonId}")]
-        public async Task<IActionResult> RegisterFeedback(Guid lessonId, [FromQuery] bool like = true)
+        public async Task<IActionResult> RegisterLike(Guid lessonId, [FromQuery] bool like = true)
         {
             using var context = _contextFactory.CreateDbContext();
 

@@ -15,10 +15,9 @@ namespace Pregiato.API.Controllers
     {
         private readonly ModelAgencyContext _agencyContext = agencyContext ?? throw new ArgumentNullException(nameof(agencyContext));
 
-        [Authorize(Policy = "ManagementPolicyLevel5")]
+       // [Authorize(Policy = "ManagementPolicyLevel5")]
         [HttpPost("CreatJob")]
-        [SwaggerOperation("Criação de Job")]
-        public async Task <IActionResult> AddJobModel( [FromBody] JobRequest jobRequest)
+        public async Task<IActionResult> AddJobModel([FromBody] JobRequest jobRequest)
         {
             if (!ModelState.IsValid)
             {
@@ -27,16 +26,18 @@ namespace Pregiato.API.Controllers
 
             Job jobModel = new Job
             {
-              Status = "Pending",
-              JobDate = jobRequest.JobDate,
-              Location = jobRequest.Location,
-              Description = jobRequest.Description,                      
-             };               
-            await jobRepository.AddAJobsync(jobModel).ConfigureAwait(true);  
-            return Ok(jobModel);                         
+                JobId = new Guid(),
+                Description = jobRequest.Description,
+                Status = Enums.JobStatus.Pending,
+                JobDate = jobRequest.JobDate,
+                Location = jobRequest.Location,
+                Amount = jobRequest.Amount
+            };
+            await jobRepository.AddAJobsync(jobModel).ConfigureAwait(true);
+            return Ok(jobModel);
         }
 
-        [Authorize(Policy = "ManagementPolicyLevel5")]
+       // [Authorize(Policy = "ManagementPolicyLevel5")]
         [HttpPost("Assign-job-to-model")]
         public async Task<IActionResult> AssignJobToModel([FromBody] AssignJobToModelRequest request)
         {
@@ -69,7 +70,6 @@ namespace Pregiato.API.Controllers
 
             ModelJob modelJob = new ModelJob
             {
-               
                 ModelId= request.ModelId,
                 JobDate = request.JobDate,
                 Location = request.Location,

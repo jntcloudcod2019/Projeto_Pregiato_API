@@ -8,8 +8,8 @@ namespace Pregiato.API.Data
     {
         private readonly ModelAgencyContext _context;
         public JobRepository(ModelAgencyContext context)
-        { 
-            _context = context; 
+        {
+            _context = context;
         }
 
         public async Task AddAJobsync(Job job)
@@ -21,10 +21,10 @@ namespace Pregiato.API.Data
         public async Task DeleteJobAsync(Guid id)
         {
             Job? idJob = await _context.Jobs.FindAsync(id);
-            if (idJob != null) 
+            if (idJob != null)
             {
-                _context.Jobs.Remove(idJob);    
-                await _context.SaveChangesAsync();  
+                _context.Jobs.Remove(idJob);
+                await _context.SaveChangesAsync();
             }
         }
 
@@ -40,7 +40,7 @@ namespace Pregiato.API.Data
 
         public async Task UpdateJobAsync(Job job)
         {
-            _context.Jobs.Update(job);  
+            _context.Jobs.Update(job);
             await _context.SaveChangesAsync();
         }
     }

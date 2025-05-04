@@ -31,7 +31,6 @@ public class SalesFeedController : ControllerBase
     [HttpGet("daily")]
     public async Task<IActionResult> GetDailySales()
     {
-        
         DateTimeOffset startOfDay = new DateTimeOffset(DateTime.UtcNow.Date, TimeSpan.Zero);
         DateTimeOffset endOfDay = startOfDay.AddDays(1).AddTicks(-1);
 

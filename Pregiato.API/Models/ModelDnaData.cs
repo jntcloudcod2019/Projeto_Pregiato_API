@@ -8,7 +8,7 @@ namespace Pregiato.API.Models
     public class ModelDnaData
     {
         [JsonPropertyName("DNA")]
-        public string? Dna { get; set; } = "InfoModel";
+        public string? Dna { get; set; } = "INFOMODEL";
 
         [JsonPropertyName("APPEARANCE")]
         public Appearance? Appearance { get; set; }
