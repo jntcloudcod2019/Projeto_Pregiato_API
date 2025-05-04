@@ -18,6 +18,7 @@ using PuppeteerSharp;
 using Pregiato.API.Services.ServiceModels;
 using System.Text.Json.Serialization;
 using Pregiato.API.Helper;
+using Pregiato.API.Validator;
 
 namespace Pregiato.API.Controllers
 {
@@ -458,17 +459,7 @@ namespace Pregiato.API.Controllers
         public async Task<IActionResult> UpdateDnaDataAuthenticated([FromBody] ModelDnaData requestDNA)
         {
 
-            bool hasAnyData =
-                     requestDNA.Appearance?.Eyes != null ||
-                     requestDNA.Appearance?.Hair != null ||
-                     requestDNA.Appearance?.Skin != null ||
-                     requestDNA.Appearance?.Face != null ||
-                     requestDNA.Appearance?.Smile != null ||
-                     requestDNA.Appearance?.Body != null ||
-                     requestDNA.AdditionalAttributes != null ||
-                     requestDNA.PhysicalCharacteristics != null;
-
-            if (!hasAnyData)
+            if (!UpdateModelDnaValidator.HasAnyValue(requestDNA))
             {
                 return BadRequest("NENHUM DADO VÁLIDO PARA ATUALIZAÇÃO FOI ENVIADO.");
             }
