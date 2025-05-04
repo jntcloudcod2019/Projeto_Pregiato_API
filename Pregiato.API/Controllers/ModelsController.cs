@@ -17,6 +17,7 @@ using iText.Kernel.Pdf.Colorspace.Shading;
 using PuppeteerSharp;
 using Pregiato.API.Services.ServiceModels;
 using System.Text.Json.Serialization;
+using Pregiato.API.Helper;
 
 namespace Pregiato.API.Controllers
 {
@@ -60,16 +61,14 @@ namespace Pregiato.API.Controllers
         }
 
 
-     //   [Authorize(Policy = "GlobalPolitics")]
+     // [Authorize(Policy = "GlobalPolitics")]
         [HttpGet("GetAllModels")]
         [SwaggerOperation("Retorna todos os modelos cadastrados.")]
         public async Task<IActionResult> GetAllModels()
         {
-
             try
             {
                 IEnumerable<Model> modelsExists = await _modelRepository.GetAllModelAsync().ConfigureAwait(true);
-
 
                 var resultModels = modelsExists.Select(model =>
                 {
@@ -87,7 +86,7 @@ namespace Pregiato.API.Controllers
                                 DefaultIgnoreCondition = JsonIgnoreCondition.WhenWritingNull
                             };
 
-                             attributes = JsonSerializer.Deserialize<ModelDnaData>(model.DNA.RootElement.GetRawText(), options);
+                            attributes = JsonSerializer.Deserialize<ModelDnaData>(model.DNA.RootElement.GetRawText(), options);
                         }
                         catch
                         {
@@ -99,31 +98,7 @@ namespace Pregiato.API.Controllers
                         attributes = new ModelDnaData();
                     }
 
-
-
-                    attributes.Appearance ??= new Appearance
-                    {
-                        Eyes = new EyeAttributes(),
-                        Hair = new HairAttributes(),
-                        Skin = new SkinAttributes { Marks = new List<string>() },
-                        Face = new FaceAttributes(),
-                        Smile = new SmileAttributes(),
-                        Body = new BodyAttributes()
-                    };
-                    attributes.EyeAttributes ??= new EyeAttributes();
-                    attributes.HairAttributes ??= new HairAttributes();
-                    attributes.SkinAttributes ??= new SkinAttributes { Marks = new List<string>() };
-                    attributes.FaceAttributes ??= new FaceAttributes();
-                    attributes.SmileAttributes ??= new SmileAttributes();
-                    attributes.BodyAttributes ??= new BodyAttributes();
-                    attributes.AdditionalAttributes ??= new AdditionalAttributes
-                    {
-                        Skills = new List<string>(),
-                        Experience = new List<string>()
-                    };
-                    attributes.PhysicalCharacteristics ??= new PhysicalCharacteristics();
-
-                    var attributesJson = attributes;
+                    DnaHelper.EnsureDefaults(attributes);
 
                     return new ResulModelsResponse
                     {
@@ -134,7 +109,7 @@ namespace Pregiato.API.Controllers
                         DATEOFBIRTH = model.DateOfBirth,
                         EMAIL = model.Email,
                         AGE = model.Age,
-                        MODELATTRIBUTES = attributesJson,
+                        MODELATTRIBUTES = attributes,
                         TELEFONEPRINCIPAL = model.TelefonePrincipal,
                         STATUS = model.Status ? "ATIVO" : "DESCONTINUADO",
                         RESPONSIBLEPRODUCER = model.CodProducers,
@@ -148,7 +123,6 @@ namespace Pregiato.API.Controllers
                         },
                     };
                 }).ToList();
-
 
                 return Ok(new ModelsResponse
                 {
@@ -169,10 +143,9 @@ namespace Pregiato.API.Controllers
                     }
                 });
             }
-
         }
 
-      // [Authorize(Policy = "GlobalPolitics")]
+      //[Authorize(Policy = "GlobalPolitics")]
         [HttpPost("AddModels")]
         [SwaggerOperation("Criar novo modelo.")]
         [ProducesResponseType(typeof(CustomResponse), StatusCodes.Status200OK)]
@@ -200,32 +173,8 @@ namespace Pregiato.API.Controllers
             User producer = await _userRepository.GetByProducersAsync(createModelRequest.Nameproducers)
                                                  .ConfigureAwait(true);
 
-            var defaultDnaData = new ModelDnaData
-            {
-                Dna = "DNA",
-                Appearance = new Appearance
-                {
-                    Eyes = new EyeAttributes(),
-                    Hair = new HairAttributes(),
-                    Skin = new SkinAttributes { Marks = new List<string>() },
-                    Face = new FaceAttributes(),
-                    Smile = new SmileAttributes(),
-                    Body = new BodyAttributes()
-                },
-                EyeAttributes = new EyeAttributes(),
-                HairAttributes = new HairAttributes(),
-                SkinAttributes = new SkinAttributes { Marks = new List<string>() },
-                FaceAttributes = new FaceAttributes(),
-                SmileAttributes = new SmileAttributes(),
-                BodyAttributes = new BodyAttributes(),
-                AdditionalAttributes = new AdditionalAttributes
-                {
-                    Skills = new List<string>(),
-                    Experience = new List<string>()
-                },
-                PhysicalCharacteristics = new PhysicalCharacteristics()
-            };
-
+            var defaultDnaData = new ModelDnaData();
+            DnaHelper.EnsureDefaults(defaultDnaData);
 
             Model model = new Model
             {
@@ -250,13 +199,12 @@ namespace Pregiato.API.Controllers
                 DNA = JsonDocument.Parse(JsonSerializer.Serialize(defaultDnaData)),
                 TelefonePrincipal = createModelRequest.TelefonePrincipal,
                 TelefoneSecundario = createModelRequest.TelefoneSecundario
-
             };
 
-            Console.WriteLine($"[PROCESS] {DateTime.Now:yyyy-MM-dd HH:mm:ss} |  Processando cadastro do Moelo: {model.Name} | Documento:{model.CPF}. ");
+            Console.WriteLine($"[PROCESS] {DateTime.Now:yyyy-MM-dd HH:mm:ss} |  Processando cadastro do Modelo: {model.Name} | Documento:{model.CPF}. ");
             await _modelRepository.AddModelAsync(model).ConfigureAwait(true);
 
-            Console.WriteLine($"[INFO] {DateTime.Now:yyyy-MM-dd HH:mm:ss} |  Modelo cadastro: {model.Name} | Documento:{model.CPF}. ");
+            Console.WriteLine($"[INFO] {DateTime.Now:yyyy-MM-dd HH:mm:ss} |  Modelo cadastrado: {model.Name} | Documento:{model.CPF}. ");
             await _userService.RegisterUserModelAsync(createModelRequest.Name, createModelRequest.Email, producer.CodProducers);
 
             return Ok(new ModelResponse
@@ -322,7 +270,7 @@ namespace Pregiato.API.Controllers
 
             try
             {
-                Model model = await _modelRepository.GetModelByCriteriaAsync(query);
+                var model = await _modelRepository.GetModelByCriteriaAsync(query);
 
                 if (model == null)
                 {
@@ -334,12 +282,12 @@ namespace Pregiato.API.Controllers
                     });
                 }
 
-
-                var resultDNA = model.DNA.Deserialize<ModelDnaData>() ?? new ModelDnaData();
+                var modelAttributes = model.DNA != null
+                    ? JsonSerializer.Deserialize<ModelDnaData>(model.DNA.RootElement.GetRawText())
+                    : new ModelDnaData();
 
                 var producer = await _producersRepository.GetProducersAsync(model.CodProducers);
-
-                var user = await _userRepository.GetByUsernameAsync(model.Email).ConfigureAwait(true);
+                var user = await _userRepository.GetByUsernameAsync(model.Email);
 
                 var resultModel = new ResulModelsResponse
                 {
@@ -364,8 +312,7 @@ namespace Pregiato.API.Controllers
                             CITY = model.City,
                             UF = model.UF
                         },
-                    MODELATTRIBUTES = resultDNA,
-
+                    MODELATTRIBUTES = modelAttributes
                 };
 
                 return Ok(new ModelsResponse
@@ -511,9 +458,19 @@ namespace Pregiato.API.Controllers
         public async Task<IActionResult> UpdateDnaDataAuthenticated([FromBody] ModelDnaData requestDNA)
         {
 
-            if (requestDNA == null)
+            bool hasAnyData =
+                     requestDNA.Appearance?.Eyes != null ||
+                     requestDNA.Appearance?.Hair != null ||
+                     requestDNA.Appearance?.Skin != null ||
+                     requestDNA.Appearance?.Face != null ||
+                     requestDNA.Appearance?.Smile != null ||
+                     requestDNA.Appearance?.Body != null ||
+                     requestDNA.AdditionalAttributes != null ||
+                     requestDNA.PhysicalCharacteristics != null;
+
+            if (!hasAnyData)
             {
-                return BadRequest("DADOS INVÁLIDOS.");
+                return BadRequest("NENHUM DADO VÁLIDO PARA ATUALIZAÇÃO FOI ENVIADO.");
             }
 
             var user = await _userService.UserCaptureByToken().ConfigureAwait(true);
@@ -522,51 +479,35 @@ namespace Pregiato.API.Controllers
                 return BadRequest("USUÁRIO NÃO ENCONTRADO.");
             }
 
-            var modelToUpdate = new ModelDnaData
-            {
-                Dna = requestDNA.Dna,
-                Appearance = requestDNA.Appearance,
-                EyeAttributes = requestDNA.EyeAttributes,
-                HairAttributes = requestDNA.HairAttributes,
-                SkinAttributes = requestDNA.SkinAttributes,
-                FaceAttributes = requestDNA.FaceAttributes,
-                SmileAttributes = requestDNA.SmileAttributes,
-                BodyAttributes = requestDNA.BodyAttributes,
-                AdditionalAttributes = requestDNA.AdditionalAttributes,
-                PhysicalCharacteristics = requestDNA.PhysicalCharacteristics
-            };
-
             using (ModelAgencyContext context = _contextFactory.CreateDbContext())
             {
                 var model = await context.Models.FirstOrDefaultAsync(m => m.Email == user.Email).ConfigureAwait(true);
-
                 if (model == null)
                 {
                     return NotFound("MODELO NÃO ENCONTRADO PARA O E-MAIL DO USUÁRIO LOGADO.");
                 }
 
-                if (modelToUpdate.Dna != null)
+                DnaHelper.EnsureDefaults(requestDNA);
+
+                string jsonDna = JsonSerializer.Serialize(requestDNA, new JsonSerializerOptions
                 {
-                    string jsonDna = JsonSerializer.Serialize(modelToUpdate, new JsonSerializerOptions
-                    {
-                        PropertyNamingPolicy = JsonNamingPolicy.CamelCase,
-                        WriteIndented = false
-                    });
+                    PropertyNamingPolicy = JsonNamingPolicy.CamelCase,
+                    WriteIndented = false
+                });
 
-                    JsonDocument dnaDocument;
-                    try
-                    {
-                        dnaDocument = JsonDocument.Parse(jsonDna);
-                    }
-                    catch (JsonException ex)
-                    {
-                        return BadRequest($"ERRO AO PROCESSAR O JSON: {ex.Message}");
-                    }
-
-                    model.DNA = dnaDocument;
+                JsonDocument dnaDocument;
+                try
+                {
+                    dnaDocument = JsonDocument.Parse(jsonDna);
+                }
+                catch (JsonException ex)
+                {
+                    return BadRequest($"ERRO AO PROCESSAR O JSON: {ex.Message}");
                 }
 
+                model.DNA = dnaDocument;
                 model.UpdatedAt = DateTime.UtcNow;
+
                 context.Entry(model).Property(m => m.DNA).IsModified = true;
                 await context.SaveChangesAsync().ConfigureAwait(true);
             }
@@ -657,7 +598,6 @@ namespace Pregiato.API.Controllers
         [HttpPatch("EditeRegisterModel/{id}")]
         public async Task<IActionResult> UpdatePartial(Guid id, [FromBody] UpdateModelPartialDto dto)
         {
-           
             var exists = await _agencyContext.Models.AnyAsync(m => m.IdModel == id);
             if (!exists)
             {

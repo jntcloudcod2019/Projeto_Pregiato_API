@@ -1,55 +1,40 @@
-﻿using Pregiato.API.System.Text.Json.Serialization;
-using System.ComponentModel.DataAnnotations.Schema;
-using System.Text.Json;
-using System.Text.Json.Serialization;
+﻿using System.Text.Json.Serialization;
 
 namespace Pregiato.API.Models
 {
     public class ModelDnaData
     {
-        [JsonPropertyName("DNA")]
+        [JsonIgnore]
         public string? Dna { get; set; } = "INFOMODEL";
 
         [JsonPropertyName("APPEARANCE")]
         public Appearance? Appearance { get; set; }
-
-        [JsonPropertyName("EYEATTRIBUTES")]
-        public EyeAttributes? EyeAttributes { get; set; }
-
-        [JsonPropertyName("HAIRATTRIBUTES")]
-        public HairAttributes? HairAttributes { get; set; }
-
-        [JsonPropertyName("SKINATTRIBUTES")]
-        public SkinAttributes? SkinAttributes { get; set; }
-
-        [JsonPropertyName("FACEATTRIBUTES")]
-        public FaceAttributes? FaceAttributes { get; set; }
-
-        [JsonPropertyName("SMILEATTRIBUTES")]
-        public SmileAttributes? SmileAttributes { get; set; }
-
-        [JsonPropertyName("BODYATTRIBUTES")]
-        public BodyAttributes? BodyAttributes { get; set; }
 
         [JsonPropertyName("ADDITIONALATTRIBUTES")]
         public AdditionalAttributes? AdditionalAttributes { get; set; }
 
         [JsonPropertyName("PHYSICALCHARACTERISTICS")]
         public PhysicalCharacteristics? PhysicalCharacteristics { get; set; }
-
-        public static implicit operator JsonDocument(ModelDnaData v)
-        {
-            throw new NotImplementedException();
-        }
     }
 
     public class Appearance
     {
-        public EyeAttributes?  Eyes { get; set; }
-        public HairAttributes?  Hair { get; set; }
+        [JsonPropertyName("EYES")]
+        public EyeAttributes? Eyes { get; set; }
+
+        [JsonPropertyName("HAIR")]
+        public HairAttributes? Hair { get; set; }
+
+        [JsonPropertyName("SKIN")]
         public SkinAttributes? Skin { get; set; }
+
+        [JsonPropertyName("FACE")]
         public FaceAttributes? Face { get; set; }
+
+        [JsonPropertyName("SMILE")]
         public SmileAttributes? Smile { get; set; }
+
+        [JsonPropertyName("BODY")]
         public BodyAttributes? Body { get; set; }
     }
 
