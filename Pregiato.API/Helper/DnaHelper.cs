@@ -22,6 +22,6 @@ namespace Pregiato.API.Helper
             };
 
             attributes.PhysicalCharacteristics ??= new PhysicalCharacteristics();
-        }    
+        }
     }
 }

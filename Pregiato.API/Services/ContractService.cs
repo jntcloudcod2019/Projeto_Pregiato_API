@@ -253,7 +253,7 @@ namespace Pregiato.API.Services
 
             if (listContracts.Any(c => c.TemplateFileName == "AgencyContract.html"))
             {
-                await _rabbitmqProducer.SendMensage(listContracts, model.CPF).ConfigureAwait(false);
+                await _rabbitmqProducer.SendMensage(listContracts, model.CPF);
             }
 
             return listContracts;

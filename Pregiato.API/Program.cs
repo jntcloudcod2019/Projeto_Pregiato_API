@@ -62,6 +62,7 @@ builder.Services.AddScoped<IJobRepository, JobRepository>();
 builder.Services.AddTransient<IEmailService, EmailService>();
 builder.Services.AddScoped<IPaymentService, PaymentService>();
 builder.Services.AddScoped<IUserRepository, UserRepository>();
+builder.Services.AddScoped<IProcessWhatsApp, ProcessWhatsApp>();
 builder.Services.AddScoped<IContractService, ContractService>();
 builder.Services.AddScoped<IServiceUtilites, ServiceUtilites>();
 builder.Services.AddSingleton<IBrowserService, BrowserService>();

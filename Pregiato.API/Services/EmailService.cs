@@ -13,7 +13,6 @@ namespace Pregiato.API.Services
         public EmailService(IEnvironmentVariableProviderEmail envVarProvider, ILogger<EmailService> logger)
         {
             _logger = logger;
-           
         }
 
         public async Task<string> LoadTemplate(Dictionary<string, string> replacements)

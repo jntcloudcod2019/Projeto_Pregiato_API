@@ -14,17 +14,17 @@ using Pregiato.API.Services.ServiceModels;
 
 namespace Pregiato.API.Services
 {
-    public class UserService(IUserRepository userRepository, IJwtService jwtService,
+    public class UserService(IUserRepository userRepository, IJwtService jwtService,IProcessWhatsApp processWhatsApp,
                        IPasswordHasherService passwordHasherService, IDbContextFactory<ModelAgencyContext> contextFactory,
                        IEmailService emailService, IHttpContextAccessor httpContextAccessor) : IUserService
     {
-        private readonly IUserRepository _userRepository = userRepository;
         private readonly IJwtService _jwtService = jwtService;
+        private readonly IProcessWhatsApp _processWhatsApp = processWhatsApp;
+        private readonly IUserRepository _userRepository = userRepository;
         private readonly IEmailService _emailService = emailService;
         private readonly IPasswordHasherService _passwordHasherService = passwordHasherService;
         private readonly IDbContextFactory<ModelAgencyContext> _contextFactory = contextFactory;
-        private readonly CustomResponse _customResponse = new CustomResponse();
-        private readonly HttpContext _httpContext;
+        private readonly CustomResponse _customResponse = new();
         private readonly IHttpContextAccessor _httpContextAccessor = httpContextAccessor;
 
 
@@ -74,7 +74,6 @@ namespace Pregiato.API.Services
         {
             try
             {
-               
                 User? user = await _userRepository.GetByUsernameAsync(loginUserRequest.NickNAme);
 
                 if (user == null)
@@ -82,7 +81,6 @@ namespace Pregiato.API.Services
                     throw new UnauthorizedAccessException(JsonSerializer.Serialize(new ErrorResponse
                     {
                         Message = "USUÁRIOS OU SENHA INVÁLIDOS.".ToUpper()
-                       
                     }));
                 }
 
@@ -107,7 +105,7 @@ namespace Pregiato.API.Services
                 throw new Exception($"Erro durante o processo de autenticação. {ex.Message}");
             }
         }
-        public async Task<RegistrationResult> RegisterUserModelAsync(string username, string email, string CodProducers)
+        public async Task<RegistrationResult> RegisterUserModelAsync(string username, string email, string CodProducers, Model model)
         {
             Console.WriteLine($"[PROCESS] {DateTime.Now:yyyy-MM-dd HH:mm:ss} |  Validando se o USER_MODEL: {username}, já está cadastrado... ");
 
@@ -122,9 +120,7 @@ namespace Pregiato.API.Services
             Console.WriteLine($"[PROCESS] {DateTime.Now:yyyy-MM-dd HH:mm:ss} | Gerando cadastro... ");
 
             var nikeName = username.Replace(" ", "").ToLower();
-
-            var password = await _passwordHasherService.GenerateRandomPasswordAsync(12)
-                                                          .ConfigureAwait(true);
+            var password = await _passwordHasherService.GenerateRandomPasswordAsync(12);
 
             var replacements = new Dictionary<string, string>
             {   {"Position", UserType.Model},
@@ -133,7 +129,10 @@ namespace Pregiato.API.Services
                 {"Password", password}
             };
 
-             await _emailService
+
+            await _processWhatsApp.ProcessWhatsAppAsync(model, nikeName, password);
+
+            await _emailService
                  .SendEmailAsync(replacements, email, "Bem-vindo à Plataforma My Pregiato")
                  .ConfigureAwait(true);
 
@@ -142,7 +141,7 @@ namespace Pregiato.API.Services
                 .ConfigureAwait(true);
 
             var user = new User
-            {  
+            {
                 UserId = Guid.NewGuid(),
                 Name = username,
                 Email = email,
@@ -150,7 +149,6 @@ namespace Pregiato.API.Services
                 PasswordHash = passwordHash,
                 UserType = UserType.Model.ToString(),
                 CodProducers = CodProducers
-                
             };
 
             await _userRepository.AddUserAsync(user)

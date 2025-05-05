@@ -184,40 +184,6 @@ namespace Pregiato.API.Controllers
             }
         }
 
-        [Authorize(Policy = "GlobalPolitics")]
-        [HttpPost("register/Model")]
-        public async Task<IActionResult> RegisterModel([FromBody] CreateuserModelRequest user)
-        {
-            try
-            {
-                if (user == null || string.IsNullOrWhiteSpace(user.Username) || string.IsNullOrWhiteSpace(user.Email))
-                {
-                    var errorResponse = ApiResponse<object>.Info("NOME DE USUÁRIO E EMAIL SÃO OBRIGATÓRIOS.");
-                    return BadRequest(errorResponse);
-                }
-
-
-                var result = await _userService.RegisterUserModelAsync(user.Username, user.Email, user.NomeProducers)
-                    .ConfigureAwait(true);
-
-                if (result == RegistrationResult.UserAlreadyExists)
-                {
-
-                    var errorResponse = ApiResponse<object>.Info("USUÁRIO JÁ ESTÁ CADASTRADO.");
-                    return BadRequest(errorResponse);
-                }
-
-                var successMessage = $"USUÁRIO {user.Username.ToUpper()} CADASTRADO COM SUCESSO.";
-                var successResponse = ApiResponse<object>.Success(null, successMessage);
-                return Ok(successResponse);
-            }
-            catch (Exception exception)
-            {
-                var errorResponse = ApiResponse<object>.Fail($"FALHA AO REGISTRAR O USUÁRIO: {exception.Message}");
-                return BadRequest(errorResponse);
-            }
-        }
-
        // [Authorize(Policy = "ManagementPolicyLevel3")]
         [HttpPost("register/producers")]
         public async Task<IActionResult> RegisterUserProducers([FromBody] UserRegisterDto? user)
