@@ -26,6 +26,12 @@ namespace Pregiato.API.Models
         public string? UserType { get; set; }
 
         [Required]
+        public string? Cpf { get; set; }
+
+        [Required]
+        public string? WhatsApp { get; set; }
+
+        [Required]
         public DateTime CreatedAt { get; set; } = DateTime.UtcNow;
 
         [Required]

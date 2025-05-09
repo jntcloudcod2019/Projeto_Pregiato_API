@@ -22,7 +22,7 @@ namespace Pregiato.API.Data
             }
 
             _context.Models.Add(model);  
-            await _context.SaveChangesAsync();  
+            await _context.SaveChangesAsync();
         }
 
         public async Task DeleteModelAsync(Guid id)
@@ -30,14 +30,14 @@ namespace Pregiato.API.Data
            Model? idModel = await _context.Models.FindAsync(id);
             if (idModel != null)
             { 
-                _context.Models.Remove(idModel);    
-                await _context.SaveChangesAsync();  
+                _context.Models.Remove(idModel);
+                await _context.SaveChangesAsync();
             }
         }
 
         public async Task<IEnumerable<Model>> GetAllModelAsync()
         {
-           return await _context.Models.ToListAsync().ConfigureAwait(true);  
+            return await _context.Models.ToListAsync();
         }
 
         public async Task<Model> GetByIdModelAsync(Guid id)

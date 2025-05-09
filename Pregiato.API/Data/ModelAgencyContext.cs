@@ -22,13 +22,15 @@ namespace Pregiato.API.Data
         public DbSet<Payment> Payments { get; set; }
         public DbSet<ModelJob> ModelJobs { get; set; }
         public DbSet<Producers> Producers { get; set; }
-        public DbSet<ModelsBilling> ModelsBilling { get; set; } 
+        public DbSet<ModelsBilling> ModelsBilling { get; set; }
         public DbSet<ModelPhoto> ModelPhotos { get; set; }
         public DbSet<Training> Trainings { get; set; }
         public DbSet<Lesson> Lessons { get; set; }
         public DbSet<LessonProgress> LessonProgresses { get; set; }
         public DbSet<CourseReview> CourseReviews { get; set; }
         public DbSet<Certificate> Certificates { get; set; }
+
+        public DbSet<PasswordReset> PasswordReset { get; set; }
 
         public override int SaveChanges()
         {
@@ -37,7 +39,6 @@ namespace Pregiato.API.Data
 
             foreach (EntityEntry entry in entries)
             {
-                
                 ((Model)entry.Entity).UpdatedAt = DateTime.UtcNow;
             }
 
@@ -46,8 +47,7 @@ namespace Pregiato.API.Data
 
         protected override void OnModelCreating(ModelBuilder modelBuilder)
         {
-            
-           
+
             modelBuilder.Ignore<LoginUserRequest>();
             modelBuilder.Ignore<ContractDTO>();
 
@@ -179,6 +179,8 @@ namespace Pregiato.API.Data
                 entity.Property(e => e.NickName).IsRequired(true);
                 entity.Property(e => e.PasswordHash).IsRequired(true);
                 entity.Property(e => e.UserType).IsRequired(true);
+                entity.Property(e => e.Cpf);
+                entity.Property(e => e.WhatsApp);
                 entity.Property(e => e.CreatedAt)
                     .HasDefaultValueSql("CURRENT_TIMESTAMP")
                     .HasColumnType("timestamp with time zone");
@@ -422,7 +424,25 @@ namespace Pregiato.API.Data
 
                 entity.Property(e => e.PdfBytes)
                     .IsRequired()
-                    .HasColumnType("bytea"); 
+                    .HasColumnType("bytea");
+            });
+
+            // PasswordReset
+            modelBuilder.Entity<PasswordReset>(entity =>
+            {
+                entity.ToTable("PasswordReset");
+                entity.HasKey(e => e.ID);
+                entity.Property(e => e.WhatsApp)
+                      .IsRequired();
+                entity.Property(e => e.Used);
+                entity.Property(e => e.VerificationCode)
+                      .HasColumnName("VerificationCode");
+                entity.Property(e => e.CreatedAt)
+                      .HasDefaultValueSql("CURRENT_TIMESTAMP")
+                      .HasColumnType("timestamp with time zone");
+                entity.Property(e => e.ExpiresAt)
+                      .HasDefaultValueSql("CURRENT_TIMESTAMP")
+                      .HasColumnType("timestamp with time zone");
             });
         }
     }

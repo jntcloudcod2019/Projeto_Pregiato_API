@@ -33,7 +33,6 @@ namespace Pregiato.API.Controllers
         public async Task<IActionResult> ChangePassword([FromBody] ChangePasswordRequest request)
         {
             var userIdentity = await _userService.UserCaptureByToken();
-            
             if (userIdentity is null)
                 return Unauthorized();
 
