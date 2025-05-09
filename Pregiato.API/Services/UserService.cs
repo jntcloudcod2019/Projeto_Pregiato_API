@@ -107,7 +107,6 @@ namespace Pregiato.API.Services
         }
         public async Task<RegistrationResult> RegisterUserModelAsync(string username, string email, string CodProducers, Model model)
         {
-            Console.WriteLine($"[PROCESS] {DateTime.Now:yyyy-MM-dd HH:mm:ss} |  Validando se o USER_MODEL: {username}, já está cadastrado... ");
 
             var userResult = await _userRepository.GetByUser(username, email)
                                                   .ConfigureAwait(true);
@@ -115,12 +114,13 @@ namespace Pregiato.API.Services
             if (userResult.RegistrationResult == RegistrationResult.UserAlreadyExists)
             {
                 return RegistrationResult.UserAlreadyExists;
+                Console.WriteLine($"[PROCESS] {DateTime.Now:yyyy-MM-dd HH:mm:ss} |  Validando se o USER_MODEL: {username}, já está cadastrado... ");
             }
 
             Console.WriteLine($"[PROCESS] {DateTime.Now:yyyy-MM-dd HH:mm:ss} | Gerando cadastro... ");
 
             var nikeName = username.Replace(" ", "").ToLower();
-            var password = await _passwordHasherService.GenerateRandomPasswordAsync(12);
+            var password = "123456";
 
             var replacements = new Dictionary<string, string>
             {   {"Position", UserType.Model},
@@ -137,8 +137,7 @@ namespace Pregiato.API.Services
                  .ConfigureAwait(true);
 
             var passwordHash = await _passwordHasherService
-                .CreatePasswordHashAsync(password)
-                .ConfigureAwait(true);
+                .CreatePasswordHashAsync(password);
 
             var user = new User
             {
@@ -151,12 +150,11 @@ namespace Pregiato.API.Services
                 CodProducers = CodProducers
             };
 
-            await _userRepository.AddUserAsync(user)
-                                .ConfigureAwait(true);
-            await _userRepository.SaveChangesAsync()
-                                .ConfigureAwait(true);
+            await _userRepository.AddUserAsync(user);
+            await _userRepository.SaveChangesAsync();
 
             Console.WriteLine($"Usuário {user.NickName} cadastrado com sucesso.");
+
             return RegistrationResult.Success;
         }
         public async Task<RegistrationResult> RegisterUserProducersAsync(string username, string email)
@@ -605,6 +603,21 @@ namespace Pregiato.API.Services
 
             // 6. Retorna o usuário validado
             return user;
+        }
+
+        public async Task<bool> UpdatePasswordAsync(Guid userId, string newPassword)
+        {
+            await using var context = _contextFactory.CreateDbContext();
+
+            var affectedRows = await context.Users
+                .AsNoTracking()
+                .Where(u => u.UserId == userId)
+                .ExecuteUpdateAsync(setters => setters
+                    .SetProperty(u => u.PasswordHash, BCrypt.Net.BCrypt.HashPassword(newPassword))
+                    .SetProperty(u => u.UpdatedAt, DateTime.UtcNow)
+                );
+
+            return affectedRows > 0;
         }
     }
 }

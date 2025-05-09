@@ -68,7 +68,6 @@ namespace Pregiato.API.Controllers
                 NAME = created.Name,
                 INSTRUCTOR = created.InstructorName,
                 DESCRIPTION = created.Description,
-             
             };
 
             return StatusCode(201, response);
