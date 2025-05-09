@@ -141,11 +141,13 @@ namespace Pregiato.API.Services
 
             var user = new User
             {
-                UserId = Guid.NewGuid(),
+                UserId = model.IdModel,
                 Name = username,
                 Email = email,
                 NickName = nikeName,
                 PasswordHash = passwordHash,
+                Cpf = model.CPF,
+                WhatsApp = model.TelefonePrincipal,
                 UserType = UserType.Model.ToString(),
                 CodProducers = CodProducers
             };

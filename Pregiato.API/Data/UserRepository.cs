@@ -62,7 +62,6 @@ namespace Pregiato.API.Data
 
             if (user == null)
             {
-              
                 result.User = null;
                 result.RegistrationResult = RegistrationResult.NonExistentUser;
             }
