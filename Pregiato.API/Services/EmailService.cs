@@ -84,7 +84,7 @@ namespace Pregiato.API.Services
 
                 _logger.LogInformation("Autenticando no servidor SMTP...");
 
-                await client.AuthenticateAsync("jonathanfrnnd3@gmail.com", "dawq saxv alkx fqhi");
+                await client.AuthenticateAsync("jonathanfrnnd3@gmail.com", "mlmv vvwg mnbg jers");
 
                 _logger.LogInformation("Enviando e-mail...");
 

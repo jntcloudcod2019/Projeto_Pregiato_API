@@ -33,15 +33,17 @@ namespace Pregiato.API.Controllers
         public async Task<IActionResult> ChangePassword([FromBody] ChangePasswordRequest request)
         {
             var userIdentity = await _userService.UserCaptureByToken();
+            
             if (userIdentity is null)
                 return Unauthorized();
 
-            var user = await _userRepository.GetByUserIdAsync(userIdentity.UserId);
+            var user = await _userRepository.GetByUsernameAsync(userIdentity.Email);
+
             if (user is null)
                 return NotFound(new { error = "USUÁRIO NÃO ENCONTRADO." });
 
             if (!BCrypt.Net.BCrypt.Verify(request.CurrentPassword.Trim(), user.PasswordHash))
-               return BadRequest(new { error = "Senha atual incorreta." });
+               return BadRequest(new { error = "SENHA ATUAL INCORRETA." });
 
             await _userService.UpdatePasswordAsync(user.UserId, request.NewPassword);
             return Ok(new { success = true, message = "SENHA ALTERADA COM SUCESSO." });

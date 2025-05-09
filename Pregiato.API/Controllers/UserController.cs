@@ -41,7 +41,6 @@ namespace Pregiato.API.Controllers
         {
             try
             {
-                
                 if (loginUserRequest == null)
                 {
 
@@ -49,7 +48,6 @@ namespace Pregiato.API.Controllers
                     {
                         Message = "REQUISIÇÃO INVÁLIDA. VERIFIQUE OS DADOS ENVIADOS."
                     });
-                   
                 }
 
                 var token = await _userService.AuthenticateUserAsync(loginUserRequest)
