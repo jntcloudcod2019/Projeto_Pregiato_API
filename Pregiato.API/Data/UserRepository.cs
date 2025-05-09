@@ -30,7 +30,9 @@ namespace Pregiato.API.Data
 
         public async Task<User?> GetByUserIdAsync(Guid id)
         {
-            return await context.Users.FindAsync(id).ConfigureAwait(true);
+            return await context.Users
+             .AsNoTracking()
+             .FirstOrDefaultAsync(u => u.UserId == id);
         }
 
         public async Task<User> GetByUsernameAsync(string queryUser)

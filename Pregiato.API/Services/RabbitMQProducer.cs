@@ -1,10 +1,12 @@
 ﻿using Microsoft.Extensions.Options;
+using Newtonsoft.Json;
 using Pregiato.API.Interfaces;
 using Pregiato.API.Models;
 using Pregiato.API.Services.ServiceModels;
 using RabbitMQ.Client;
 using System.Text;
 using System.Text.Json;
+using JsonSerializer = System.Text.Json.JsonSerializer;
 
 public class RabbitMQProducer(IOptions<RabbitMQConfig> options) : IRabbitMQProducer
 {
@@ -15,7 +17,6 @@ public class RabbitMQProducer(IOptions<RabbitMQConfig> options) : IRabbitMQProdu
         try
         {
             var contractIds = contracts.Select(c => c.ContractId).ToList();
-
             var contractMessage = new ContractMessage
             {
                 ContractIds = contractIds,
@@ -25,18 +26,19 @@ public class RabbitMQProducer(IOptions<RabbitMQConfig> options) : IRabbitMQProdu
 
             var factory = new ConnectionFactory()
             {
-                HostName = "mouse.rmq5.cloudamqp.com", 
+                HostName = "mouse.rmq5.cloudamqp.com",
                 VirtualHost = "ewxcrhtv",
                 UserName = "ewxcrhtv",
-                Password = "DNcdH0NEeP4Fsgo2_w-vd47CqjelFk_S", 
+                Password = "DNcdH0NEeP4Fsgo2_w-vd47CqjelFk_S",
                 Port = 5672, 
-                AutomaticRecoveryEnabled = true, 
-                NetworkRecoveryInterval = TimeSpan.FromSeconds(10) 
+                AutomaticRecoveryEnabled = true,
+                NetworkRecoveryInterval = TimeSpan.FromSeconds(10)
             };
 
             var jsonMessage = JsonSerializer.Serialize(contractMessage, new JsonSerializerOptions { WriteIndented = true });
-            var connection = await factory.CreateConnectionAsync().ConfigureAwait(true);
-            var channel = await connection.CreateChannelAsync().ConfigureAwait(true);
+
+            var connection = await factory.CreateConnectionAsync();
+            var channel = await connection.CreateChannelAsync();
 
             var body = Encoding.UTF8.GetBytes(jsonMessage);
 
@@ -58,12 +60,42 @@ public class RabbitMQProducer(IOptions<RabbitMQConfig> options) : IRabbitMQProdu
                     Console.WriteLine($"Falha ao fechar o canal: {t.Exception?.Message}");
                 }
             });
-            await connection.CloseAsync().ConfigureAwait(true);    
+            await connection.CloseAsync();
         }
         catch (Exception ex)
         {
             Console.WriteLine($"Erro ao enviar mensagem para fila {_config.QueueName}| Error: {ex.Message}");
         }
-        return ("Ok");
+        return "Ok";
+    }
+
+    public async Task<Task> SendMessageWhatsAppAsync(string queueName, object message)
+    {
+        var factory = new ConnectionFactory
+        {
+            HostName = "mouse.rmq5.cloudamqp.com",
+            VirtualHost = "ewxcrhtv",
+            UserName = "ewxcrhtv",
+            Password = "DNcdH0NEeP4Fsgo2_w-vd47CqjelFk_S",
+            Port = 5672
+        };
+
+        using var connection = await factory.CreateConnectionAsync();
+        using var channel = await connection.CreateChannelAsync();
+
+        await channel.QueueDeclareAsync(queue: queueName,
+                             durable: true,
+                             exclusive: false,
+                             autoDelete: false,
+                             arguments: null);
+
+        var body = Encoding.UTF8.GetBytes(JsonConvert.SerializeObject(message));
+
+        await channel.BasicPublishAsync(
+                             exchange: string.Empty,
+                             routingKey: queueName,
+                             body: body);
+
+        return Task.CompletedTask;
     }
 }

@@ -206,7 +206,7 @@ namespace Pregiato.API.Controllers
             await _modelRepository.AddModelAsync(model).ConfigureAwait(true);
 
             Console.WriteLine($"[INFO] {DateTime.Now:yyyy-MM-dd HH:mm:ss} |  Modelo cadastrado: {model.Name} | Documento:{model.CPF}. ");
-            await _userService.RegisterUserModelAsync(createModelRequest.Name, createModelRequest.Email, producer.CodProducers);
+            await _userService.RegisterUserModelAsync(createModelRequest.Name, createModelRequest.Email, producer.CodProducers, model);
 
             return Ok(new ModelResponse
             {

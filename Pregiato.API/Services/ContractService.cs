@@ -251,9 +251,9 @@ namespace Pregiato.API.Services
 
             listContracts.Add(agencyContract);
 
-            if (listContracts.Any(c => c.TemplateFileName == "AgencyContract.html"))
+            if (listContracts.Any(c => c.TemplateFileName == "AgencyContract.html" || c.TemplateFileName == "PhotographyProductionContract.html"))
             {
-                await _rabbitmqProducer.SendMensage(listContracts, model.CPF).ConfigureAwait(false);
+                await _rabbitmqProducer.SendMensage(listContracts, model.CPF);
             }
 
             return listContracts;
