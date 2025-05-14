@@ -1,20 +1,13 @@
-﻿using Microsoft.AspNetCore.Authorization;
-using Microsoft.AspNetCore.Mvc;
+﻿using Microsoft.AspNetCore.Mvc;
 using Microsoft.EntityFrameworkCore;
 using Pregiato.API.Data;
 using Pregiato.API.Models;
 using Pregiato.API.Requests;
 using Pregiato.API.Response;
 using Swashbuckle.AspNetCore.Annotations;
-using Npgsql;
-using System.IdentityModel.Tokens.Jwt;
-using System.Security.Claims;
 using System.Text.Json;
 using Pregiato.API.DTO;
 using Pregiato.API.Interfaces;
-using iText.Commons.Actions.Contexts;
-using iText.Kernel.Pdf.Colorspace.Shading;
-using PuppeteerSharp;
 using Pregiato.API.Services.ServiceModels;
 using System.Text.Json.Serialization;
 using Pregiato.API.Helper;
@@ -22,9 +15,6 @@ using Pregiato.API.Validator;
 
 namespace Pregiato.API.Controllers
 {
-    using static iText.StyledXmlParser.Jsoup.Select.Evaluator;
-    using Alias = string;
-
     [ApiController]
     [Route("api/[controller]")]
     public class ModelsController : ControllerBase
@@ -247,7 +237,7 @@ namespace Pregiato.API.Controllers
 
 
             var feed = await _agencyContext.ModelJobs
-           .Where(mj => mj.ModelId == model.IdModel )
+           .Where(mj => mj.ModelId == model.IdModel)
            .Select(mj => new
            {
                mj.ModelId,
@@ -390,7 +380,7 @@ namespace Pregiato.API.Controllers
                         TotalContracts = contractsDto.Count,
                         Contracts = contractsDto
                     },
-                    message: "TODOS OS CONTRATOS FORAM RECUPERADOS COM SUCESSO!"
+                    message: "TODOS OS CONTRATOS FORAM RECUPERADOS COM SUCESSO"
                     );
             }
             catch (Exception ex)
@@ -400,8 +390,8 @@ namespace Pregiato.API.Controllers
                 isSpeakOnOperation: true);
             }
         }
-        
-      //[Authorize(Policy = "GlobalPoliticsAgency")]
+
+      // [Authorize(Policy = "GlobalPoliticsAgency")]
         [HttpPut("update-dna-property/{idModel}")]
         [ProducesResponseType(StatusCodes.Status204NoContent)]
         [ProducesResponseType(StatusCodes.Status400BadRequest)]
@@ -447,7 +437,9 @@ namespace Pregiato.API.Controllers
 
             await context.SaveChangesAsync().ConfigureAwait(true);
 
-            return NoContent(); 
+            var successMessage = $"DNA ATUALIZADO";
+            var successResponse = ApiResponse<object>.Success(null, successMessage);
+            return Ok(successResponse);
         }
 
        // [Authorize(Policy = "GlobalPoliticsAgency")]
@@ -585,18 +577,16 @@ namespace Pregiato.API.Controllers
             return Ok(response);
         }
 
-      //  [Authorize(Policy = "GlobalPoliticsAgency")]
+      // [Authorize(Policy = "GlobalPoliticsAgency")]
         [HttpPatch("EditeRegisterModel/{id}")]
         public async Task<IActionResult> UpdatePartial(Guid id, [FromBody] UpdateModelPartialDto dto)
         {
             var exists = await _agencyContext.Models.AnyAsync(m => m.IdModel == id);
+
             if (!exists)
             {
-                return NotFound(new
-                {
-                    success = false,
-                    message = "MODELO NÃO ENCONTRADO."
-                });
+                var errorResponse = ApiResponse<object>.Info("MODELO NÃO ENCONTRATDO.");
+                return BadRequest(errorResponse);
             }
 
             var model = new Model { IdModel = id };
@@ -687,11 +677,9 @@ namespace Pregiato.API.Controllers
 
             var changes = await _agencyContext.SaveChangesAsync();
 
-            return Ok(new
-            {
-                success = true,
-                message = $"MODELO ATUALIZADO COM SUCESSO ({changes} CAMPO(S) ALTERADO(S))."
-            });
+            var successMessage = $" DADOS ATUALIZADO COM SUCESSO";
+            var successResponse = ApiResponse<object>.Success(null, successMessage);
+            return Ok(successResponse);
         }
     }
 }

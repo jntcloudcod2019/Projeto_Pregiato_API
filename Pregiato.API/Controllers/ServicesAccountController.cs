@@ -1,11 +1,8 @@
-﻿using iText.Commons.Actions.Contexts;
-using Microsoft.AspNetCore.Mvc;
+﻿using Microsoft.AspNetCore.Mvc;
 using Microsoft.EntityFrameworkCore;
 using Pregiato.API.Data;
 using Pregiato.API.Interfaces;
-using Pregiato.API.Models;
 using Pregiato.API.Services.ServiceModels;
-using System.Security.Claims;
 
 namespace Pregiato.API.Controllers
 {

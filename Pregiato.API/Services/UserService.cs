@@ -4,6 +4,7 @@ using System.Text.Json;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.EntityFrameworkCore.Internal;
 using Pregiato.API.Data;
+using Pregiato.API.DTO;
 using Pregiato.API.Enums;
 using Pregiato.API.Interfaces;
 using Pregiato.API.Models;
@@ -130,7 +131,7 @@ namespace Pregiato.API.Services
             };
 
 
-            await _processWhatsApp.ProcessWhatsAppAsync(model, nikeName, password);
+            await _processWhatsApp.ProcessWhatsAppModelAsync(model, nikeName, password);
 
             await _emailService
                  .SendEmailAsync(replacements, email, "Bem-vindo à Plataforma My Pregiato")
@@ -159,11 +160,11 @@ namespace Pregiato.API.Services
 
             return RegistrationResult.Success;
         }
-        public async Task<RegistrationResult> RegisterUserProducersAsync(string username, string email)
+        public async Task<RegistrationResult> RegisterUserProducersAsync(UserRegisterDto userRegisterDto)
         {
-            Console.WriteLine($"[PROCESS] {DateTime.Now:yyyy-MM-dd HH:mm:ss} |  Validando se o USER_MODEL: {username}, já está cadastrado... ");
+            Console.WriteLine($"[PROCESS] {DateTime.Now:yyyy-MM-dd HH:mm:ss} |  Validando se o USER_MODEL: {userRegisterDto.Username}, já está cadastrado... ");
 
-            var userResult = await _userRepository.GetByUser(username, email)
+            var userResult = await _userRepository.GetByUser(userRegisterDto.Username, userRegisterDto.Email)
                 .ConfigureAwait(true);
 
             if (userResult.RegistrationResult == RegistrationResult.UserAlreadyExists)
@@ -173,7 +174,7 @@ namespace Pregiato.API.Services
 
             Console.WriteLine($"[PROCESS] {DateTime.Now:yyyy-MM-dd HH:mm:ss} | Gerando cadastro... ");
 
-            var nikeName = username.Replace(" ", "").ToLower();
+            var nikeName = userRegisterDto.Username.Replace(" ", "").ToLower();
 
             var password = await _passwordHasherService.GenerateRandomPasswordAsync(12)
                 .ConfigureAwait(true);
@@ -181,13 +182,13 @@ namespace Pregiato.API.Services
             var replacements = new Dictionary<string, string>
             {
                 {"Position", UserType.PRODUCERS},
-                {"Nome",username},
+                {"Nome",userRegisterDto.Username},
                 {"User",nikeName },
                 {"Password", password}
             };
 
             await _emailService
-                .SendEmailAsync(replacements, email, "Bem-vindo à Plataforma My Pregiato")
+                .SendEmailAsync(replacements, userRegisterDto.Email, "Bem-vindo à Plataforma My Pregiato")
                 .ConfigureAwait(true);
 
             var passwordHash = await _passwordHasherService
@@ -197,29 +198,29 @@ namespace Pregiato.API.Services
             var user = new User
             {
                 UserId = Guid.NewGuid(),
-                Name = username,
-                Email = email,
+                Name = userRegisterDto.Username,
+                Email = userRegisterDto.Email,
                 NickName = nikeName,
                 PasswordHash = passwordHash,
+                WhatsApp = userRegisterDto.WhatsApp,
+                Cpf = userRegisterDto.Cpf,
                 UserType = UserType.PRODUCERS.ToString(),
                 CodProducers = await GenerateProducerCodeAsync()
-                    .ConfigureAwait(true),
-
             };
 
-            await _userRepository.AddUserAsync(user)
-                .ConfigureAwait(true);
-            await _userRepository.SaveChangesAsync()
-                .ConfigureAwait(true);
+            await _processWhatsApp.ProcessWhatsAppCollaboratorAsync(user, nikeName, password);
+
+            await _userRepository.AddUserAsync(user);
+            await _userRepository.SaveChangesAsync();
 
             Console.WriteLine($"Usuário {user.NickName} cadastrado com sucesso.");
             return RegistrationResult.Success;
         }
-        public async Task<RegistrationResult> RegisterUserAdministratorAsync(string username, string email)
+        public async Task<RegistrationResult> RegisterUserAdministratorAsync(UserRegisterDto userRegisterDto)
         {
-            Console.WriteLine($"[PROCESS] {DateTime.Now:yyyy-MM-dd HH:mm:ss} |  Validando se o USER_MODEL: {username}, já está cadastrado... ");
+            Console.WriteLine($"[PROCESS] {DateTime.Now:yyyy-MM-dd HH:mm:ss} |  Validando se o USER_MODEL: {userRegisterDto.Username}, já está cadastrado... ");
 
-            var userResult = await _userRepository.GetByUser(username, email)
+            var userResult = await _userRepository.GetByUser(userRegisterDto.Username, userRegisterDto.Email)
                 .ConfigureAwait(true);
 
             if (userResult.RegistrationResult == RegistrationResult.UserAlreadyExists)
@@ -229,7 +230,7 @@ namespace Pregiato.API.Services
 
             Console.WriteLine($"[PROCESS] {DateTime.Now:yyyy-MM-dd HH:mm:ss} | Gerando cadastro... ");
 
-            var nikeName = username.Replace(" ", "").ToLower();
+            var nikeName = userRegisterDto.Username.Replace(" ", "").ToLower();
 
             var password = await _passwordHasherService.GenerateRandomPasswordAsync(12)
                 .ConfigureAwait(true);
@@ -237,46 +238,42 @@ namespace Pregiato.API.Services
             var replacements = new Dictionary<string, string>
             {
                 {"Position", UserType.Administrator},
-                {"Nome",username},
+                {"Nome",userRegisterDto.Username},
                 {"User",nikeName },
                 {"Password", password}
             };
 
             await _emailService
-                .SendEmailAsync(replacements, email, "Bem-vindo à Plataforma My Pregiato")
-                .ConfigureAwait(true);
+                .SendEmailAsync(replacements, userRegisterDto.Email, "Bem-vindo à Plataforma My Pregiato");
 
             var passwordHash = await _passwordHasherService
-                .CreatePasswordHashAsync(password)
-                .ConfigureAwait(true);
+                .CreatePasswordHashAsync(password);
 
             var user = new User
             {
                 UserId = Guid.NewGuid(),
-                Name = username,
-                Email = email,
+                Name = userRegisterDto.Username,
+                Email = userRegisterDto.Email,
                 NickName = nikeName,
                 PasswordHash = passwordHash,
+                WhatsApp = userRegisterDto.WhatsApp,
+                Cpf = userRegisterDto.Cpf,
                 UserType = UserType.Administrator.ToString(),
                 CodProducers = await GenerateProducerCodeAsync()
-                    .ConfigureAwait(true),
-
             };
 
-            await _userRepository.AddUserAsync(user)
-                .ConfigureAwait(true);
-            await _userRepository.SaveChangesAsync()
-                .ConfigureAwait(true);
+            await _processWhatsApp.ProcessWhatsAppCollaboratorAsync(user, nikeName, password);
+            await _userRepository.AddUserAsync(user);
+            await _userRepository.SaveChangesAsync();
 
             Console.WriteLine($"Usuário {user.NickName} cadastrado com sucesso.");
             return RegistrationResult.Success;
         }
-        public async Task<RegistrationResult> RegisterUserCoordinationAsync(string username, string email)
+        public async Task<RegistrationResult> RegisterUserCoordinationAsync(UserRegisterDto userRegisterDto)
         {
-            Console.WriteLine($"[PROCESS] {DateTime.Now:yyyy-MM-dd HH:mm:ss} |  Validando se o USER_MODEL: {username}, já está cadastrado... ");
+            Console.WriteLine($"[PROCESS] {DateTime.Now:yyyy-MM-dd HH:mm:ss} |  Validando se o USER_MODEL: {userRegisterDto.Username}, já está cadastrado... ");
 
-            var userResult = await _userRepository.GetByUser(username, email)
-                .ConfigureAwait(true);
+            var userResult = await _userRepository.GetByUser(userRegisterDto.Username, userRegisterDto.Email);
 
             if (userResult.RegistrationResult == RegistrationResult.UserAlreadyExists)
             {
@@ -285,54 +282,51 @@ namespace Pregiato.API.Services
 
             Console.WriteLine($"[PROCESS] {DateTime.Now:yyyy-MM-dd HH:mm:ss} | Gerando cadastro... ");
 
-            var nikeName = username.Replace(" ", "").ToLower();
+            var nikeName = userRegisterDto.Username.Replace(" ", "").ToLower();
 
-            var password = await _passwordHasherService.GenerateRandomPasswordAsync(12)
-                .ConfigureAwait(true);
+            var password = await _passwordHasherService.GenerateRandomPasswordAsync(12);
 
             var replacements = new Dictionary<string, string>
             {
                 {"Position", UserType.Coordination},
-                {"Nome",username},
+                {"Nome",userRegisterDto.Username},
                 {"User",nikeName },
                 {"Password", password}
             };
 
             await _emailService
-                .SendEmailAsync(replacements, email, "Bem-vindo à Plataforma My Pregiato")
-                .ConfigureAwait(true);
+                .SendEmailAsync(replacements, userRegisterDto.Email, "Bem-vindo à Plataforma My Pregiato");
 
             var passwordHash = await _passwordHasherService
-                .CreatePasswordHashAsync(password)
-                .ConfigureAwait(true);
+                .CreatePasswordHashAsync(password);
 
             var user = new User
             {
                 UserId = Guid.NewGuid(),
-                Name = username,
-                Email = email,
+                Name = userRegisterDto.Username,
+                Email = userRegisterDto.Email,
                 NickName = nikeName,
                 PasswordHash = passwordHash,
+                WhatsApp = userRegisterDto.WhatsApp,
+                Cpf = userRegisterDto.Cpf,
                 UserType = UserType.Coordination,
                 CodProducers = await GenerateProducerCodeAsync()
                     .ConfigureAwait(true),
 
             };
 
-            await _userRepository.AddUserAsync(user)
-                .ConfigureAwait(true);
-            await _userRepository.SaveChangesAsync()
-                .ConfigureAwait(true);
+            await _processWhatsApp.ProcessWhatsAppCollaboratorAsync(user, nikeName, password);
+            await _userRepository.AddUserAsync(user);
+            await _userRepository.SaveChangesAsync();
 
             Console.WriteLine($"Usuário {user.NickName} cadastrado com sucesso.");
             return RegistrationResult.Success;
         }
-        public async Task<RegistrationResult> RegisterTelemarketingAsync(string username, string email)
+        public async Task<RegistrationResult> RegisterTelemarketingAsync(UserRegisterDto userRegisterDto)
         {
-            Console.WriteLine($"[PROCESS] {DateTime.Now:yyyy-MM-dd HH:mm:ss} |  Validando se o USER_MODEL: {username}, já está cadastrado... ");
+            Console.WriteLine($"[PROCESS] {DateTime.Now:yyyy-MM-dd HH:mm:ss} |  Validando se o USER_MODEL: {userRegisterDto.Username}, já está cadastrado... ");
 
-            var userResult = await _userRepository.GetByUser(username, email)
-                .ConfigureAwait(true);
+            var userResult = await _userRepository.GetByUser(userRegisterDto.Username, userRegisterDto.Email);
 
             if (userResult.RegistrationResult == RegistrationResult.UserAlreadyExists)
             {
@@ -341,53 +335,50 @@ namespace Pregiato.API.Services
 
             Console.WriteLine($"[PROCESS] {DateTime.Now:yyyy-MM-dd HH:mm:ss} | Gerando cadastro... ");
 
-            var nikeName = username.Replace(" ", "").ToLower();
+            var nikeName = userRegisterDto.Username.Replace(" ", "").ToLower();
 
-            var password = await _passwordHasherService.GenerateRandomPasswordAsync(12)
-                .ConfigureAwait(true);
+            var password = await _passwordHasherService.GenerateRandomPasswordAsync(12);
 
             var replacements = new Dictionary<string, string>
             {
                 {"Position", UserType.Telemarketing},
-                {"Nome",username},
+                {"Nome",userRegisterDto.Username},
                 {"User",nikeName },
                 {"Password", password}
             };
 
             await _emailService
-                .SendEmailAsync(replacements, email, "Bem-vindo à Plataforma My Pregiato")
-                .ConfigureAwait(true);
+                .SendEmailAsync(replacements, userRegisterDto.Email, "Bem-vindo à Plataforma My Pregiato");
 
-            var passwordHash = await _passwordHasherService
-                .CreatePasswordHashAsync(password)
-                .ConfigureAwait(true);
+            var passwordHash = await _passwordHasherService.CreatePasswordHashAsync(password);
 
             var user = new User
             {
                 UserId = Guid.NewGuid(),
-                Name = username,
-                Email = email,
+                Name = userRegisterDto.Username,
+                Email = userRegisterDto.Email,
                 NickName = nikeName,
                 PasswordHash = passwordHash,
+                WhatsApp = userRegisterDto.WhatsApp,
+                Cpf = userRegisterDto.Cpf,
                 UserType = UserType.Telemarketing,
                 CodProducers = await GenerateProducerCodeAsync()
                     .ConfigureAwait(true),
 
             };
 
-            await _userRepository.AddUserAsync(user)
-                .ConfigureAwait(true);
-            await _userRepository.SaveChangesAsync()
-                .ConfigureAwait(true);
+            await _processWhatsApp.ProcessWhatsAppCollaboratorAsync(user, nikeName, password);
+            await _userRepository.AddUserAsync(user);
+            await _userRepository.SaveChangesAsync();
 
             Console.WriteLine($"Usuário {user.NickName} cadastrado com sucesso.");
             return RegistrationResult.Success;
         }
-        public async Task<RegistrationResult> RegisterCEOAsync(string username, string email)
+        public async Task<RegistrationResult> RegisterCEOAsync(UserRegisterDto userRegisterDto)
         {
-            Console.WriteLine($"[PROCESS] {DateTime.Now:yyyy-MM-dd HH:mm:ss} |  Validando se o USER_MODEL: {username}, já está cadastrado... ");
+            Console.WriteLine($"[PROCESS] {DateTime.Now:yyyy-MM-dd HH:mm:ss} |  Validando se o USER_MODEL: {userRegisterDto.Username}, já está cadastrado... ");
 
-            var userResult = await _userRepository.GetByUser(username, email)
+            var userResult = await _userRepository.GetByUser(userRegisterDto.Username, userRegisterDto.Email)
                 .ConfigureAwait(true);
 
             if (userResult.RegistrationResult == RegistrationResult.UserAlreadyExists)
@@ -397,53 +388,51 @@ namespace Pregiato.API.Services
 
             Console.WriteLine($"[PROCESS] {DateTime.Now:yyyy-MM-dd HH:mm:ss} | Gerando cadastro... ");
 
-            var nikeName = username.Replace(" ", "").ToLower();
+            var nikeName = userRegisterDto.Username.Replace(" ", "").ToLower();
 
             var password = await _passwordHasherService.GenerateRandomPasswordAsync(12)
                 .ConfigureAwait(true);
 
             var replacements = new Dictionary<string, string>
-            {
-                {"Position", UserType.Ceo},
-                {"Nome",username},
-                {"User",nikeName },
-                {"Password", password}
-            };
+    {
+        {"Position", UserType.PRODUCERS},
+        {"Nome",userRegisterDto.Username},
+        {"User",nikeName },
+        {"Password", password}
+    };
 
             await _emailService
-                .SendEmailAsync(replacements, email, "Bem-vindo à Plataforma My Pregiato")
-                .ConfigureAwait(true);
+                .SendEmailAsync(replacements, userRegisterDto.Email, "Bem-vindo à Plataforma My Pregiato");
 
             var passwordHash = await _passwordHasherService
-                .CreatePasswordHashAsync(password)
-                .ConfigureAwait(true);
+                .CreatePasswordHashAsync(password);
 
             var user = new User
             {
                 UserId = Guid.NewGuid(),
-                Name = username,
-                Email = email,
+                Name = userRegisterDto.Username,
+                Email = userRegisterDto.Email,
                 NickName = nikeName,
                 PasswordHash = passwordHash,
+                WhatsApp = userRegisterDto.WhatsApp,
+                Cpf = userRegisterDto.Cpf,
                 UserType = UserType.Ceo.ToString(),
                 CodProducers = await GenerateProducerCodeAsync()
-                    .ConfigureAwait(true),
-
             };
 
-            await _userRepository.AddUserAsync(user)
-                .ConfigureAwait(true);
-            await _userRepository.SaveChangesAsync()
-                .ConfigureAwait(true);
+            await _processWhatsApp.ProcessWhatsAppCollaboratorAsync(user, nikeName, password);
+
+            await _userRepository.AddUserAsync(user);
+            await _userRepository.SaveChangesAsync();
 
             Console.WriteLine($"Usuário {user.NickName} cadastrado com sucesso.");
             return RegistrationResult.Success;
         }
-        public async Task<RegistrationResult> RegisterManagerAsync(string username, string email)
+        public async Task<RegistrationResult> RegisterManagerAsync(UserRegisterDto userRegisterDto)
         {
-            Console.WriteLine($"[PROCESS] {DateTime.Now:yyyy-MM-dd HH:mm:ss} |  Validando se o USER_MODEL: {username}, já está cadastrado... ");
+            Console.WriteLine($"[PROCESS] {DateTime.Now:yyyy-MM-dd HH:mm:ss} |  Validando se o USER_MODEL: {userRegisterDto.Username}, já está cadastrado... ");
 
-            var userResult = await _userRepository.GetByUser(username, email)
+            var userResult = await _userRepository.GetByUser(userRegisterDto.Username, userRegisterDto.Email)
                 .ConfigureAwait(true);
 
             if (userResult.RegistrationResult == RegistrationResult.UserAlreadyExists)
@@ -453,21 +442,21 @@ namespace Pregiato.API.Services
 
             Console.WriteLine($"[PROCESS] {DateTime.Now:yyyy-MM-dd HH:mm:ss} | Gerando cadastro... ");
 
-            var nikeName = username.Replace(" ", "").ToLower();
+            var nikeName = userRegisterDto.Username.Replace(" ", "").ToLower();
 
             var password = await _passwordHasherService.GenerateRandomPasswordAsync(12)
                 .ConfigureAwait(true);
 
             var replacements = new Dictionary<string, string>
-            {
-                {"Position", UserType.Manager},
-                {"Nome",username},
-                {"User",nikeName },
-                {"Password", password}
-            };
+    {
+        {"Position", UserType.PRODUCERS},
+        {"Nome",userRegisterDto.Username},
+        {"User",nikeName },
+        {"Password", password}
+    };
 
             await _emailService
-                .SendEmailAsync(replacements, email, "Bem-vindo à Plataforma My Pregiato")
+                .SendEmailAsync(replacements, userRegisterDto.Email, "Bem-vindo à Plataforma My Pregiato")
                 .ConfigureAwait(true);
 
             var passwordHash = await _passwordHasherService
@@ -477,29 +466,29 @@ namespace Pregiato.API.Services
             var user = new User
             {
                 UserId = Guid.NewGuid(),
-                Name = username,
-                Email = email,
+                Name = userRegisterDto.Username,
+                Email = userRegisterDto.Email,
                 NickName = nikeName,
                 PasswordHash = passwordHash,
+                WhatsApp = userRegisterDto.WhatsApp,
+                Cpf = userRegisterDto.Cpf,
                 UserType = UserType.Manager.ToString(),
                 CodProducers = await GenerateProducerCodeAsync()
-                    .ConfigureAwait(true),
-
             };
 
-            await _userRepository.AddUserAsync(user)
-                .ConfigureAwait(true);
-            await _userRepository.SaveChangesAsync()
-                .ConfigureAwait(true);
+            await _processWhatsApp.ProcessWhatsAppCollaboratorAsync(user, nikeName, password);
+
+            await _userRepository.AddUserAsync(user);
+            await _userRepository.SaveChangesAsync();
 
             Console.WriteLine($"Usuário {user.NickName} cadastrado com sucesso.");
             return RegistrationResult.Success;
         }
-        public async Task<RegistrationResult> RegisterProductionAsync(string username, string email)
+        public async Task<RegistrationResult> RegisterProductionAsync(UserRegisterDto userRegisterDto)
         {
-            Console.WriteLine($"[PROCESS] {DateTime.Now:yyyy-MM-dd HH:mm:ss} |  Validando se o USER_MODEL: {username}, já está cadastrado... ");
+            Console.WriteLine($"[PROCESS] {DateTime.Now:yyyy-MM-dd HH:mm:ss} |  Validando se o USER_MODEL: {userRegisterDto.Username}, já está cadastrado... ");
 
-            var userResult = await _userRepository.GetByUser(username, email)
+            var userResult = await _userRepository.GetByUser(userRegisterDto.Username, userRegisterDto.Email)
                 .ConfigureAwait(true);
 
             if (userResult.RegistrationResult == RegistrationResult.UserAlreadyExists)
@@ -509,21 +498,21 @@ namespace Pregiato.API.Services
 
             Console.WriteLine($"[PROCESS] {DateTime.Now:yyyy-MM-dd HH:mm:ss} | Gerando cadastro... ");
 
-            var nikeName = username.Replace(" ", "").ToLower();
+            var nikeName = userRegisterDto.Username.Replace(" ", "").ToLower();
 
             var password = await _passwordHasherService.GenerateRandomPasswordAsync(12)
                 .ConfigureAwait(true);
 
             var replacements = new Dictionary<string, string>
-            {
-                {"Position", UserType.Production},
-                {"Nome",username},
-                {"User",nikeName },
-                {"Password", password}
-            };
+    {
+        {"Position", UserType.PRODUCERS},
+        {"Nome",userRegisterDto.Username},
+        {"User",nikeName },
+        {"Password", password}
+    };
 
             await _emailService
-                .SendEmailAsync(replacements, email, "Bem-vindo à Plataforma My Pregiato")
+                .SendEmailAsync(replacements, userRegisterDto.Email, "Bem-vindo à Plataforma My Pregiato")
                 .ConfigureAwait(true);
 
             var passwordHash = await _passwordHasherService
@@ -533,20 +522,20 @@ namespace Pregiato.API.Services
             var user = new User
             {
                 UserId = Guid.NewGuid(),
-                Name = username,
-                Email = email,
+                Name = userRegisterDto.Username,
+                Email = userRegisterDto.Email,
                 NickName = nikeName,
                 PasswordHash = passwordHash,
+                WhatsApp = userRegisterDto.WhatsApp,
+                Cpf = userRegisterDto.Cpf,
                 UserType = UserType.Production.ToString(),
                 CodProducers = await GenerateProducerCodeAsync()
-                    .ConfigureAwait(true),
-
             };
 
-            await _userRepository.AddUserAsync(user)
-                .ConfigureAwait(true);
-            await _userRepository.SaveChangesAsync()
-                .ConfigureAwait(true);
+            await _processWhatsApp.ProcessWhatsAppCollaboratorAsync(user, nikeName, password);
+
+            await _userRepository.AddUserAsync(user);
+            await _userRepository.SaveChangesAsync();
 
             Console.WriteLine($"Usuário {user.NickName} cadastrado com sucesso.");
             return RegistrationResult.Success;
@@ -593,20 +582,13 @@ namespace Pregiato.API.Services
 
             using var context = _contextFactory.CreateDbContext();
 
-            var user = await context.Users.FirstOrDefaultAsync(u => u.Email == email);
+            var user = await context.Users
+                .AsNoTracking()
+                .FirstOrDefaultAsync(u => u.Email == email);
             if (user is null)
                 throw new UnauthorizedAccessException("USUÁRIO NÃO ENCONTRADO");
-
-            // 5. Valida o tipo de usuário (defina os tipos permitidos aqui)
-            //var tiposPermitidos = new[] { UserType.Administrator, UserType.Manager, UserType.Ceo };
-
-            //if (!tiposPermitidos.Contains(userTypeFromToken))
-            //    throw new UnauthorizedAccessException("USUÁRIO SEM PERMISSÃO PARA ESSA OPERAÇÃO");
-
-            // 6. Retorna o usuário validado
             return user;
         }
-
         public async Task<bool> UpdatePasswordAsync(Guid userId, string newPassword)
         {
             await using var context = _contextFactory.CreateDbContext();

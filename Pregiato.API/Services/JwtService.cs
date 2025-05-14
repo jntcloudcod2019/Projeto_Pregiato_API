@@ -164,7 +164,29 @@ namespace Pregiato.API.Services
             return await GetUsernameFromTokenAsync(token).ConfigureAwait(true);
         }
 
-    }
+        public async Task<string> GeneratePasswordResetToken(string whatsApp)
+        {
+            var tokenHandler = new JwtSecurityTokenHandler();
+            var key = Encoding.ASCII.GetBytes(_secretKey);
+            var tokenDescriptor = new SecurityTokenDescriptor
+            {
+                Subject = new ClaimsIdentity([
+                    new Claim(ClaimTypes.MobilePhone, whatsApp),
+                     new Claim("purpose", "password-reset"),
+                    new Claim(JwtRegisteredClaimNames.Jti, Guid.NewGuid().ToString())
+                ]),
+                Expires = DateTime.UtcNow.AddMinutes(15),
+                SigningCredentials = new SigningCredentials(
+                    new SymmetricSecurityKey(key),
+                    SecurityAlgorithms.HmacSha256Signature),
+                Issuer = _issuer,
+                Audience = _audience
 
+            };
+
+            var token = tokenHandler.CreateToken(tokenDescriptor);
+            return tokenHandler.WriteToken(token);
+        }
+    }
 }
 

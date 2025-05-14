@@ -10,5 +10,6 @@ namespace Pregiato.API.Interfaces
         Task<string> GetUserIdFromTokenAsync(string token);
         Task<string> GetUsernameFromTokenAsync(string token);
         Task<string> GetAuthenticatedUsernameAsync();
+        Task<string> GeneratePasswordResetToken(string whatsApp);
     }
 }

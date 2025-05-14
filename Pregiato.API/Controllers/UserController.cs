@@ -26,7 +26,7 @@ namespace Pregiato.API.Controllers
             _userService = userService;
             _userRepository = userRepository;
             _customResponse = customResponse;
-            _tokenExpirationService = tokenExpirationService; 
+            _tokenExpirationService = tokenExpirationService;
             _jwtService = jwtService;
 
         }
@@ -157,17 +157,17 @@ namespace Pregiato.API.Controllers
             {
                 if (user == null || string.IsNullOrWhiteSpace(user.Username) || string.IsNullOrWhiteSpace(user.Email))
                 {
-                    var errorResponse = ApiResponse<object>.Info("NOME DE USUÁRIO E EMAIL SÃO OBRIGATÓRIOS.");
+                    var errorResponse = ApiResponse<object>.Info("DADOS INSUFICIENTES PARA CRIAR USUÁRIO");
                     return BadRequest(errorResponse);
                 }
 
-                var result = await _userService.RegisterUserAdministratorAsync(user.Username, user.Email)
+                var result = await _userService.RegisterUserAdministratorAsync(user)
                     .ConfigureAwait(true);
 
                 if (result == RegistrationResult.UserAlreadyExists)
                 {
 
-                    var errorResponse = ApiResponse<object>.Info("USUÁRIO JÁ ESTÁ CADASTRADO.");
+                    var errorResponse = ApiResponse<object>.Info("USUÁRIO JÁ CADASTRADO");
                     return BadRequest(errorResponse);
                 }
 
@@ -194,7 +194,7 @@ namespace Pregiato.API.Controllers
                     return BadRequest(errorResponse);
                 }
 
-                var result = await _userService.RegisterUserProducersAsync(user.Username, user.Email)
+                var result = await _userService.RegisterUserProducersAsync(user)
                     .ConfigureAwait(true);
 
                 if (result == RegistrationResult.UserAlreadyExists)
@@ -227,7 +227,7 @@ namespace Pregiato.API.Controllers
                     return BadRequest(errorResponse);
                 }
 
-                var result = await _userService.RegisterUserCoordinationAsync(user.Username, user.Email)
+                var result = await _userService.RegisterUserCoordinationAsync(user)
                     .ConfigureAwait(true);
 
                 if (result == RegistrationResult.UserAlreadyExists)
@@ -260,7 +260,7 @@ namespace Pregiato.API.Controllers
                     return BadRequest(errorResponse);
                 }
 
-                var result = await _userService.RegisterManagerAsync(user.Username, user.Email).ConfigureAwait(true);
+                var result = await _userService.RegisterManagerAsync(user);
 
                 if (result == RegistrationResult.UserAlreadyExists)
                 {
@@ -292,8 +292,7 @@ namespace Pregiato.API.Controllers
                     return BadRequest(errorResponse);
                 }
 
-                var result = await _userService.RegisterTelemarketingAsync(user.Username, user.Email)
-                    .ConfigureAwait(true);
+                var result = await _userService.RegisterTelemarketingAsync(user);
 
                 if (result == RegistrationResult.UserAlreadyExists)
                 {
@@ -326,7 +325,7 @@ namespace Pregiato.API.Controllers
                     return BadRequest(errorResponse);
                 }
 
-                var result = await _userService.RegisterCEOAsync(user.Username, user.Email).ConfigureAwait(true);
+                var result = await _userService.RegisterCEOAsync(user);
 
                 if (result == RegistrationResult.UserAlreadyExists)
                 {
@@ -358,7 +357,7 @@ namespace Pregiato.API.Controllers
                     return BadRequest(errorResponse);
                 }
 
-                var result = await _userService.RegisterProductionAsync(user.Username, user.Email).ConfigureAwait(true);
+                var result = await _userService.RegisterProductionAsync(user);
 
                 if (result == RegistrationResult.UserAlreadyExists)
                 {

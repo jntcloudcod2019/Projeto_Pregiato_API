@@ -15,7 +15,7 @@ namespace Pregiato.API.Response
         public string FILEURL { get; set; }
         public ApiResponse()
         {
-            ERRORS = (List<string>) []; 
+            ERRORS = (List<string>) [];
         }
 
         public static ApiResponse<T?> Success(T? data, string message)
@@ -29,7 +29,6 @@ namespace Pregiato.API.Response
             };
         }
 
-      
         public static ApiResponse<T> CreateResponse(bool success, string message, T data, string fileBase64 = null, string fileName = null, string fileUrl = null)
         {
             return new ApiResponse<T>

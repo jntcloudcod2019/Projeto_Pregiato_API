@@ -39,7 +39,11 @@ namespace Pregiato.API.Data
         {
             var users = await context.Users
                 .AsNoTracking()
-                .Where(u => u.NickName == queryUser || u.Email == queryUser || u.Name == queryUser)
+                .Where(u => 
+                u.NickName == queryUser ||
+                u.Email == queryUser ||
+                u.Name == queryUser ||
+                u.WhatsApp == queryUser)
                 .ToListAsync();
 
             if (users.Count > 1)

@@ -158,7 +158,6 @@ namespace Pregiato.API.Controllers
                 Console.WriteLine($"ERRO AO GERAR CONTRATOS: {ex.Message}");
                 return ActionResultIndex.Failure($"OCORREU UM ERRO NA OPERAÇÃO: {ex.Message}", isSpeakOnOperation: true);
             }
-            
         }
 
        // [Authorize(Policy = "GlobalPoliticsAgency")]

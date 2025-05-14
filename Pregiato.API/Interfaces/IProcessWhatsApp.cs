@@ -4,6 +4,7 @@ namespace Pregiato.API.Interfaces
 {
     public interface IProcessWhatsApp
     {
-        Task<Task> ProcessWhatsAppAsync(Model model, string userName, string password);
+        Task<Task> ProcessWhatsAppModelAsync(Model model, string userName, string password);
+        Task<Task> ProcessWhatsAppCollaboratorAsync(User user, string userName, string password);
     }
 }
