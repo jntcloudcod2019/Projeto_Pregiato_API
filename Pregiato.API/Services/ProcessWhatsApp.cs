@@ -10,10 +10,31 @@ namespace Pregiato.API.Services
         private static readonly string DefaulSQS = "sqs-send-Credentials";
         private readonly IRabbitMQProducer _rabbitmqProducer = rabbitmqProducer;
 
-        public async Task<Task> ProcessWhatsAppAsync(Model model, string nikeName, string password)
+        public async Task<Task> ProcessWhatsAppCollaboratorAsync(User user, string userName, string password)
+        {
+            var validatedPhone = PhoneNumberUtils.NormalizeToE164(user.WhatsApp);
+
+            var dto = new WhatsAppMessage
+            {
+                Phone = validatedPhone,
+                UserName = user.Name,
+                NickName = user.NickName,
+                Password = password
+            };
+
+            await _rabbitmqProducer.SendMessageWhatsAppAsync(DefaulSQS, new
+            {
+                phone = dto.Phone,
+                message = dto.GetFormattedMessage()
+            });
+
+            return Task.CompletedTask;
+        }
+
+        public async Task<Task> ProcessWhatsAppModelAsync(Model model, string nikeName, string password)
         {
             var validatedPhone = PhoneNumberUtils.NormalizeToE164(model.TelefonePrincipal);
-            var dto = new WhatsAppCredentialMessage
+            var dto = new WhatsAppMessage
             {
                 Phone = validatedPhone,
                 UserName = model.Name,
@@ -29,5 +50,7 @@ namespace Pregiato.API.Services
 
             return Task.CompletedTask;
         }
+
+
     }
 }

@@ -22,7 +22,6 @@ namespace Pregiato.API.Data
         public async Task<List<Producers>> GetDailyBillingByProducers(User user)
         {
             using ModelAgencyContext context = await _contextFactory.CreateDbContextAsync().ConfigureAwait(false);
-           
             DateTimeOffset startOfDay = new DateTimeOffset(DateTime.UtcNow.Date, TimeSpan.Zero);
             DateTimeOffset endOfDay = startOfDay.AddDays(1).AddTicks(-1);
 
