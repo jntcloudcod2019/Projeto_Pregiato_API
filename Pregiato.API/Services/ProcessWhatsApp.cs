@@ -50,7 +50,5 @@ namespace Pregiato.API.Services
 
             return Task.CompletedTask;
         }
-
-
     }
 }
