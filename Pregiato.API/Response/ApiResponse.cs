@@ -61,5 +61,14 @@ namespace Pregiato.API.Response
                 MESSAGE = message,
             };
         }
+
+        public static ApiResponse<object> InfoSucess(string message)
+        {
+            return new ApiResponse<object>
+            {
+                STATUSSUCCESS = true,
+                MESSAGE = message,
+            };
+        }
     }
 }

@@ -2,10 +2,10 @@
 
 namespace Pregiato.API.Interfaces
 {
-    public interface IServicesAccountService
+    public interface IServicesAccount
     {
         Task<Task> RequestResetAsync(User user);
         Task<bool> ValidateCodeAsync(string whatsApp, string code);
-        Task ResetPasswordAsync(string whatsApp, string code, string newPassword);
+        Task ResetPasswordAsync(string whatsApp, string newPassword);
     }
 }
