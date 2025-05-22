@@ -6,6 +6,8 @@ namespace Pregiato.API.Response
     public class ModelsResponse
     {
         public bool SUCESS { get; set; }
+
+        public int? STATUSCODE { get; set; }
         public string MESSAGE { get; set; }
         public List<ResulModelsResponse>? DATA { get; set; }
     }

@@ -68,17 +68,17 @@ namespace Pregiato.API.Data
             return await _context.Models.FirstOrDefaultAsync(m =>
                 (idModel != null && m.IdModel.ToString() == idModel) ||
                 (cpf != null && m.CPF == cpf) ||
-                (rg != null && m.RG == rg));       
+                (rg != null && m.RG == rg));
         }
         public async Task<Model> ModelExistsAsync(CreateModelRequest inputModel)
         {
 
             Model? existingModel = await _context.Models
                 .FirstOrDefaultAsync(m =>
-                    m.CPF == inputModel.CPF &&
-                    m.Name == inputModel.Name &&
-                    m.RG == inputModel.RG &&
-                    m.Email == inputModel.Email).ConfigureAwait(true);
+                    m.CPF == inputModel.CPF ||
+                    m.Name == inputModel.Name ||
+                    m.RG == inputModel.RG ||
+                    m.Email == inputModel.Email);
             return existingModel;
         }
 

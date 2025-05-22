@@ -9,13 +9,14 @@ namespace Pregiato.API.Interfaces
         Task AddAsync(ContractsModels contract);
         Task<ContractsModels> GetByIdContractAsync(Guid id);
         Task UpdateAsync(ContractsModels contract);
-        Task DeleteAsync(ContractsModels contract);
+        Task DeleteAsync(Guid idContract, int? proposalCode, Guid? IdModel);
         Task SaveContractAsync(ContractBase contract);
         Task<List<ContractBase>> GetContractsByModelId(Guid modelId);
-        Task<ContractBase> GetContractByCriteriaAsync(string? contractId, string? modelId, int? codProposta);
+        Task<ContractBase> GetContractByCriteriaAsync(Guid idContract, int? proposalCode, Guid? IdModel);
         Task<ContractDTO?> DownloadContractAsync(int proposalCode);
         Task<List<ContractSummaryDTO>> GetAllContractsAsync();
         Task<List<ContractSummaryDTO>> GetAllContractsForProducersAsync(string codPrducers);
+        Task<List<ContractBase>> ExistsContractForTodayAsync(Guid idmodel);
 
     }
 }

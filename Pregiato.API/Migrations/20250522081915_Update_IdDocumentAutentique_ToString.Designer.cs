@@ -4,6 +4,7 @@ using System.Collections.Generic;
 using System.Text.Json;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.EntityFrameworkCore.Infrastructure;
+using Microsoft.EntityFrameworkCore.Migrations;
 using Microsoft.EntityFrameworkCore.Storage.ValueConversion;
 using Npgsql.EntityFrameworkCore.PostgreSQL.Metadata;
 using Pregiato.API.Data;
@@ -14,9 +15,11 @@ using Pregiato.API.Models;
 namespace Pregiato.API.Migrations
 {
     [DbContext(typeof(ModelAgencyContext))]
-    partial class ModelAgencyContextModelSnapshot : ModelSnapshot
+    [Migration("20250522081915_Update_IdDocumentAutentique_ToString")]
+    partial class Update_IdDocumentAutentique_ToString
     {
-        protected override void BuildModel(ModelBuilder modelBuilder)
+        /// <inheritdoc />
+        protected override void BuildTargetModel(ModelBuilder modelBuilder)
         {
 #pragma warning disable 612, 618
             modelBuilder
@@ -160,11 +163,9 @@ namespace Pregiato.API.Migrations
 
             modelBuilder.Entity("Pregiato.API.Models.DocumentsAutentique", b =>
                 {
-                    b.Property<string>("IdDocumentAutentique")
-                        .HasColumnType("text");
-
-                    b.Property<int?>("CodProposta")
-                        .HasColumnType("integer");
+                    b.Property<Guid>("IdDocumentAutentique")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("uuid");
 
                     b.Property<DateTime>("CreatedAt")
                         .ValueGeneratedOnAdd()
@@ -178,9 +179,6 @@ namespace Pregiato.API.Migrations
                         .HasColumnType("uuid");
 
                     b.Property<Guid>("IdContract")
-                        .HasColumnType("uuid");
-
-                    b.Property<Guid?>("IdModel")
                         .HasColumnType("uuid");
 
                     b.Property<string>("StatusContratc")

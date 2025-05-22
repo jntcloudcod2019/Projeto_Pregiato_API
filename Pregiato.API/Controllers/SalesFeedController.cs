@@ -39,7 +39,7 @@ public class SalesFeedController : ControllerBase
             using ModelAgencyContext context = _contextFactory.CreateDbContext();
 
             var transactions = await context.Payments
-                .AsNoTracking()  
+                .AsNoTracking()
                 .Where(p => p.DataPagamento >= startOfDay &&
                            p.DataPagamento <= endOfDay &&
                            (p.StatusPagamento == "Paid" || p.StatusPagamento == "Pending"))

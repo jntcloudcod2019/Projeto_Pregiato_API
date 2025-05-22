@@ -13,7 +13,7 @@ namespace Pregiato.API.Models
     {
         [Key]
         public Guid? PaymentId { get; set; }
-        public Guid? ContractId { get; set; }  
+        public Guid? ContractId { get; set; }
         [Required]
         public decimal Valor { get; set; }
         public int? QuantidadeParcela { get; set; }

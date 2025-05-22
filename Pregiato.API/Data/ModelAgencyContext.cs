@@ -30,6 +30,7 @@ namespace Pregiato.API.Data
         public DbSet<CourseReview> CourseReviews { get; set; }
         public DbSet<Certificate> Certificates { get; set; }
 
+        public DbSet<DocumentsAutentique> DocumentsAutentique { get; set; }
         public DbSet<PasswordReset> PasswordReset { get; set; }
 
         public override int SaveChanges()
@@ -443,6 +444,26 @@ namespace Pregiato.API.Data
                 entity.Property(e => e.ExpiresAt)
                       .HasDefaultValueSql("CURRENT_TIMESTAMP")
                       .HasColumnType("timestamp with time zone");
+            });
+
+            modelBuilder.Entity<DocumentsAutentique>(entity =>
+            {
+                entity.ToTable("DocumentsAutentique");
+                entity.Property(e => e.Id);
+                entity.HasKey(e => e.IdDocumentAutentique);
+                entity.Property(e => e.IdModel);
+                entity.Property(e => e.CodProposta);
+                entity.Property(e => e.IdContract).IsRequired(true);
+                entity.Property(e => e.DocumentName).IsRequired(false);
+                entity.Property(e => e.StatusContratc)
+                      .HasConversion<string>();
+                entity.Property(e => e.CreatedAt)
+                    .HasDefaultValueSql("CURRENT_TIMESTAMP")
+                    .HasColumnType("timestamp with time zone");
+                entity.Property(e => e.UpdatedAt)
+                    .HasDefaultValueSql("CURRENT_TIMESTAMP")
+                    .HasColumnType("timestamp with time zone");
+
             });
         }
     }

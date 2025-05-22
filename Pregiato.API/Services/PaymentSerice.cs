@@ -24,7 +24,6 @@ public class PaymentService(IDbContextFactory<ModelAgencyContext> contextFactory
 
             if (payment.Valor <= 0)
                 throw new ArgumentException("O valor deve ser maior que zero.");
-          
             var valorString = payment.Valor != 0
                 ? payment.Valor.ToString(CultureInfo.InvariantCulture)
                 : "0";
@@ -47,7 +46,6 @@ public class PaymentService(IDbContextFactory<ModelAgencyContext> contextFactory
                 StatusPagamento = StatusPagamento.Create(payment.StatusPagamento),
                 AutorizationNumber = payment.AutorizationNumber,
                 Provider = payment.Provider,
-               
             };
 
             if (payment.MetodoPagamento == MetodoPagamento.CartaoCredito)

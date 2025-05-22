@@ -1,6 +1,7 @@
 ﻿using Microsoft.EntityFrameworkCore;
 using Pregiato.API.Models;
 using Pregiato.API.DTO;
+using Pregiato.API.Helper;
 using Pregiato.API.Interfaces;
 using Pregiato.API.Services.ServiceModels;
 
@@ -26,10 +27,14 @@ namespace Pregiato.API.Data
             context.ContractsModels.Update(contract);
             await context.SaveChangesAsync();
         }
-        public async Task DeleteAsync(ContractsModels contract)
+        public async Task DeleteAsync(Guid idContract, int? proposalCode, Guid? IdModel)
         {
             using ModelAgencyContext context = _contextFactory.CreateDbContext();
-            context.ContractsModels.Remove(contract);
+
+            var contract = await GetContractByCriteriaAsync(idContract, proposalCode, IdModel);
+            context.Contracts.Remove(contract);
+
+
             await context.SaveChangesAsync();
         }
         public async Task<ContractsModels> GetByIdContractAsync(Guid id)
@@ -47,18 +52,18 @@ namespace Pregiato.API.Data
         {
             using ModelAgencyContext context = _contextFactory.CreateDbContext();
             return await context.Contracts
-                .AsNoTracking()     
+                .AsNoTracking()
                 .Where(c => c.IdModel == modelId)
                 .ToListAsync();
         }
-        public async Task<ContractBase> GetContractByCriteriaAsync(string? contractId, string? modelId, int? codProposta)
+        public async Task<ContractBase> GetContractByCriteriaAsync(Guid idContract, int? proposalCode, Guid? IdModel)
         {
             using ModelAgencyContext context = _contextFactory.CreateDbContext();
 
             ContractBase? contract = await context.Contracts.FirstOrDefaultAsync
-                (m => (modelId != null && m.IdModel.ToString() == modelId) ||
-                (contractId != null && m.ContractId.ToString() == contractId) ||
-                (codProposta != null && m.CodProposta == codProposta));
+                (m => IdModel != null || m.IdModel == IdModel ||
+                idContract  != null || m.ContractId == idContract ||
+                proposalCode != null || m.CodProposta == proposalCode);
 
             if (contract == null)
             {
@@ -96,7 +101,7 @@ namespace Pregiato.API.Data
                     ContractId = c.ContractId,
                     ModelId = c.IdModel ?? Guid.Empty,
                     DataContrato = c.DataContrato,
-                    VigenciaContrato = c.VigenciaContrato, 
+                    VigenciaContrato = c.VigenciaContrato,
                     ValorContrato = c.ValorContrato,
                     FormaPagamento = c.FormaPagamento ?? "Não informado",
                     StatusPagamento = c.StatusPagamento,
@@ -128,6 +133,17 @@ namespace Pregiato.API.Data
                 })
                 .ToListAsync()
                 .ConfigureAwait(true);
+        }
+
+        public async Task<List<ContractBase>> ExistsContractForTodayAsync(Guid idModel)
+        {
+            using ModelAgencyContext context = _contextFactory.CreateDbContext();
+            var contracts =  await context.Contracts
+            .Where(c => c.IdModel == idModel)
+            .WhereDateEquals(c => c.CreatedAt, DateTime.UtcNow.Date)
+            .ToListAsync();
+
+            return contracts;
         }
     }
 }

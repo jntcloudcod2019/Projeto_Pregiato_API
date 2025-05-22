@@ -118,20 +118,18 @@ namespace Pregiato.API.Controllers
                 return Ok(new ModelsResponse
                 {
                     SUCESS = true,
+                    STATUSCODE = StatusCodes.Status200OK,
                     DATA = resultModels
                 });
             }
             catch (Exception ex)
             {
-                return StatusCode(500, new
+
+                return BadRequest(new CustomResponse
                 {
-                    success = false,
-                    message = "OCORREU UM ERRO AO BUSCAR OS MODELOS.",
-                    error = new
-                    {
-                        code = "INTERNAL_SERVER_ERROR",
-                        details = ex.Message
-                    }
+                    StatusCode = StatusCodes.Status400BadRequest,
+                    Message = $"OCORREU UM ERRO AO BUSCAR OS MODELOS.",
+                    Data = null,
                 });
             }
         }
@@ -144,19 +142,15 @@ namespace Pregiato.API.Controllers
         [ProducesResponseType(typeof(CustomResponse), StatusCodes.Status400BadRequest)]
         public async Task<IActionResult> AddNewModel([FromBody] CreateModelRequest createModelRequest)
         {
-            Console.WriteLine($"[PROCESS] {DateTime.Now:yyyy-MM-dd HH:mm:ss} |Validando se model {createModelRequest.Name} | Documento: {createModelRequest.CPF}");
 
-            ModelCheckDto? checkExistence = await _modelRepository.GetModelCheck(createModelRequest)
-                                                                  .ConfigureAwait(true);
+            var checkExistence = await _modelRepository.ModelExistsAsync(createModelRequest);
 
             if (checkExistence != null)
             {
-                Console.WriteLine($"[ERROR] {DateTime.Now:yyyy-MM-dd HH:mm:ss} | Modelo: {createModelRequest.Name} já cadastrado.. ");
-
                 return BadRequest(new CustomResponse
                 {
                     StatusCode = StatusCodes.Status304NotModified,
-                    Message = $"Modelo {createModelRequest.Name} já cadastrado.",
+                    Message = $"MODELO {createModelRequest.Name} JÁ CADASTRADO.",
                     Data = null,
                 });
             }
@@ -192,19 +186,14 @@ namespace Pregiato.API.Controllers
                 TelefoneSecundario = createModelRequest.TelefoneSecundario
             };
 
-            Console.WriteLine($"[PROCESS] {DateTime.Now:yyyy-MM-dd HH:mm:ss} |  Processando cadastro do Modelo: {model.Name} | Documento:{model.CPF}. ");
-            await _modelRepository.AddModelAsync(model).ConfigureAwait(true);
-
-            Console.WriteLine($"[INFO] {DateTime.Now:yyyy-MM-dd HH:mm:ss} |  Modelo cadastrado: {model.Name} | Documento:{model.CPF}. ");
+            await _modelRepository.AddModelAsync(model);
             await _userService.RegisterUserModelAsync(createModelRequest.Name, createModelRequest.Email, producer.CodProducers, model);
 
-            return Ok(new ModelResponse
+            return Ok(new CustomResponse
             {
-                Mensage = "CADASTRO DO MODELO CRIADO COM SUCESSO.",
-                Model = new ModelInfo
-                {
-                    Name = model.Name
-                }
+                StatusCode = StatusCodes.Status200OK,
+                Message = $"MODELO {createModelRequest.Name} CADASTRADO COM SUCESSO.",
+                Data = null,
             });
         }
 

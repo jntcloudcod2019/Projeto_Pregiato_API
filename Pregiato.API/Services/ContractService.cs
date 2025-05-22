@@ -202,26 +202,16 @@ namespace Pregiato.API.Services
         {
 
             Dictionary<string, string> parameters = new Dictionary<string, string?>
-                {
-                {"Cidade", createContractModelRequest.City},
-                {"Dia", createContractModelRequest.Day.ToString()},
-                {"UF-Local", createContractModelRequest.UFContract},
-                {"Mês-Extenso", createContractModelRequest.Month},
-                {"Ano", DateTime.Now.Year.ToString()},
-                {"Nome-Modelo", model.Name},
-                {"CPF-Modelo", model.CPF},
-                {"Endereço-Modelo", model.Address},
-                {"Número-Residência", model.NumberAddress},
-                {"Complemento-Modelo", model.Complement},
-                {"Bairro-Modelo", model.Neighborhood},
-                {"Cidade-Modelo", model.City},
-                {"UF", model.UF},
-                {"CEP-Modelo", model.PostalCode},
-                {"Telefone-Principal", model.TelefonePrincipal},
-                {"Telefone-Secundário", model.TelefoneSecundario},
+            {
+                {"Cidade", createContractModelRequest.City}, {"Dia", createContractModelRequest.Day.ToString()},
+                {"UF-Local", createContractModelRequest.UFContract}, {"Mês-Extenso", createContractModelRequest.Month},
+                {"Ano", DateTime.Now.Year.ToString()}, {"Nome-Modelo", model.Name}, {"CPF-Modelo", model.CPF},
+                {"Endereço-Modelo", model.Address}, {"Número-Residência", model.NumberAddress},
+                {"Complemento-Modelo", model.Complement}, {"Bairro-Modelo", model.Neighborhood},
+                {"Cidade-Modelo", model.City}, {"UF", model.UF}, {"CEP-Modelo", model.PostalCode},
+                {"Telefone-Principal", model.TelefonePrincipal}, {"Telefone-Secundário", model.TelefoneSecundario},
                 {"Valor-Contrato",createContractModelRequest.Payment.Valor.ToString("N2", new CultureInfo("pt-BR"))},
-                {"Meses-Contrato", createContractModelRequest.MonthContract.ToString()},
-                {"Nome-Assinatura", model.Name}
+                {"Meses-Contrato", createContractModelRequest.MonthContract.ToString()}, {"Nome-Assinatura", model.Name}
             };
 
             await AddMinorModelInfo(model, parameters).ConfigureAwait(false);

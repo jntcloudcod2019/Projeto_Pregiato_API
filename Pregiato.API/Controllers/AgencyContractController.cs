@@ -1,4 +1,4 @@
-﻿using System.Text.Json;
+﻿    using System.Text.Json;
 using Microsoft.AspNetCore.Mvc;
 using Pregiato.API.Requests;
 using Swashbuckle.AspNetCore.Annotations;
@@ -10,6 +10,7 @@ using Pregiato.API.Response;
 using Pregiato.API.Models;
 using Pregiato.API.Services.ServiceModels;
 using Microsoft.EntityFrameworkCore;
+using Microsoft.AspNetCore.Http.HttpResults;
 namespace Pregiato.API.Controllers
 {
     [ApiController]
@@ -19,17 +20,20 @@ namespace Pregiato.API.Controllers
           IModelRepository modelRepository,
           IContractRepository contractRepository,
           IUserService userService,
+          IAutentiqueService autentiqueService,
           IDbContextFactory<ModelAgencyContext> contextFactory,
           ModelAgencyContext context,
           CustomResponse customResponse) : ControllerBase
     {
+        private readonly IAutentiqueService _autentiqueService = autentiqueService;
         private readonly ModelAgencyContext _context = context ?? throw new ArgumentNullException(nameof(context));
         private readonly IUserService _userService = userService ?? throw new ArgumentNullException(nameof(userService));
         private readonly IContractService _contractService = contractService ?? throw new ArgumentNullException(nameof(contractService));
         private readonly IModelRepository _modelRepository = modelRepository ?? throw new ArgumentNullException(nameof(modelRepository));
-        private readonly IDbContextFactory<ModelAgencyContext> _contextFactory = contextFactory ??  throw new ArgumentNullException(nameof(contextFactory));
+        private readonly IDbContextFactory<ModelAgencyContext> _contextFactory = contextFactory ?? throw new ArgumentNullException(nameof(contextFactory));
+        private readonly IContractRepository _contractRepository = contractRepository ?? throw new ArgumentNullException(nameof(contractRepository));
 
-     //   [Authorize(Policy = "ManagementPolicyLevel5")]
+        //   [Authorize(Policy = "ManagementPolicyLevel5")]
         [SwaggerOperation(Summary = "Gera um contrato Termo de comprometimento", Description = "Este endpoint gera o Termo de comprometimento.")]
         [SwaggerResponse(200, "Contrato gerado com sucesso", typeof(string))]
         [SwaggerResponse(400, "Requisição inválida")]
@@ -50,7 +54,7 @@ namespace Pregiato.API.Controllers
             return Ok($"Termo de comprometimento , gerado com sucesso. Código da Proposta: {contract.CodProposta}.");
         }
 
-     //   [Authorize(Policy = "ManagementPolicyLevel5")]
+        // [Authorize(Policy = "ManagementPolicyLevel5")]
         [SwaggerResponse(200, "Contrato gerado com sucesso", typeof(string))]
         [SwaggerResponse(400, "Requisição inválida.")]
         [SwaggerResponse(404, "Modelo não encontrado")]
@@ -85,7 +89,7 @@ namespace Pregiato.API.Controllers
             return Ok($"Termo de Concessão de direito de imagem para: {model.Name}, gerado com sucesso. Código da Proposta: {contract.CodProposta}.");
         }
 
-       // [Authorize(Policy = "ManagementPolicyLevel5")]
+        // [Authorize(Policy = "ManagementPolicyLevel5")]
         [SwaggerOperation("Processo de gerar contrato de Agenciamento e Fotografia.")]
         [ProducesResponseType(typeof(ApiResponse<object>), StatusCodes.Status200OK)]
         [ProducesResponseType(typeof(ApiResponse<object>), StatusCodes.Status404NotFound)]
@@ -97,70 +101,80 @@ namespace Pregiato.API.Controllers
             {
                 if (createContractModelRequest == null || !ModelState.IsValid)
                 {
-                    List<string> erros = ModelState.Values.SelectMany(v => v.Errors)
-                                                         .Select(e => e.ErrorMessage)
-                                                         .ToList();
-                    return ActionResultIndex.Failure($"OS DADOS FORNECIDOS SÃO INVÁLIDOS: {string.Join(", ", erros).ToUpper()}");
+                    var erros = ModelState.Values.SelectMany(v => v.Errors)
+                                                 .Select(e => e.ErrorMessage)
+                                                 .ToList();
+
+                    return ActionResultIndex.Failure(
+                        $"OS DADOS FORNECIDOS SÃO INVÁLIDOS: {string.Join(", ", erros).ToUpper()}");
                 }
 
                 Console.WriteLine($"BUSCANDO DADOS DO MODELO {createContractModelRequest.ModelIdentification}");
 
-                Model? model = await _modelRepository.GetModelByCriteriaAsync(createContractModelRequest.ModelIdentification);
+                var model = await _modelRepository.GetModelByCriteriaAsync(createContractModelRequest.ModelIdentification);
 
                 if (model == null)
                 {
                     return ActionResultIndex.Failure("MODELO NÃO ENCONTRADO COM OS CRITÉRIOS FORNECIDOS.");
                 }
 
-                List<ContractBase> contracts = await _contractService.GenerateAllContractsAsync(createContractModelRequest, model).ConfigureAwait(true);
+                var existingContracts = await _contractRepository.ExistsContractForTodayAsync(model.IdModel);
 
-                if (contracts == null || !contracts.Any())
+                if (existingContracts.Any())
                 {
-                    return ActionResultIndex.Failure("NENHUM CONTRATO FOI GERADO.");
+                    return Unauthorized(new CustomResponse
+                    {
+                        StatusCode = StatusCodes.Status401Unauthorized,
+                        Message = $"JÁ EXISTEM CONTRATO(S) GERADO(S) PARA ESTE MODELO HOJE. " +
+                                  $"CASO PRECISE GERAR UM NOVO CONTRATO EXCLUA OS QUE FORAM GERADOS.",
+                        Data = existingContracts.Select(c => new ContractResponse
+                        {
+                            StatusCode = StatusCodes.Status400BadRequest,
+                            ContractFilePath = c.ContractFilePath,
+                            CodProposta = c.CodProposta,
+                            ValorContrato = c.ValorContrato,
+                            DataContrato = c.DataContrato
+                        })
+                    });
                 }
 
-                string contentString = await _contractService.ConvertBytesToString(
-                    contracts.FirstOrDefault(c =>
-                        c.TemplateFileName == "PhotographyProductionContractMinority.html" ||
-                        c.TemplateFileName == "PhotographyProductionContract.html")?.Content)
-                        .ConfigureAwait(true);
+                var generatedContracts = await _contractService.GenerateAllContractsAsync(createContractModelRequest, model);
 
-                byte[] pdfBytes = await _contractService.ExtractBytesFromString(contentString)
-                                                         .ConfigureAwait(true);
-
-                string message = $"CONTRATO PARA {model.Name.ToUpper()}, EMITIDOS COM SUCESSO!";
-
-                List<ContractSummary> contractsSummary = contracts.Select(c => new ContractSummary
+                if (generatedContracts == null || !generatedContracts.Any())
                 {
-                    CodProposta = c.CodProposta
-                }).ToList();
+                    return BadRequest(new CustomResponse
+                    {
+                        StatusCode = StatusCodes.Status400BadRequest,
+                        Message = $" ERRO AO GERAR CONTRATOS. CONSULTAR TIME DE TECNOLOGIA."
+                    });
+                }
 
-                var response = new ContractGenerationResponse
+                var response = new CustomResponse
                 {
-                    ContractName = "Photography Production Contract",
-                    Message = message,
-                    Contracts = contractsSummary
+                    StatusCode = StatusCodes.Status200OK,
+                    Message = $"CONTRATOS GERADOS COM SUCESSO PARA {model.Name.ToUpper()}",
+                    Data = generatedContracts.Select(c => new ContractResponse
+                    {
+                        ContractFilePath = c.ContractFilePath,
+                        CodProposta = c.CodProposta,
+                        ValorContrato = c.ValorContrato,
+                        DataContrato = c.DataContrato
+
+                    })
                 };
 
-                string metadataJson = JsonSerializer.Serialize(new
-                {
-                    Message = message,
-                    Contracts = contractsSummary
-                });
-
-
-                Response.Headers.Add("X-Contract-Metadata", metadataJson);
-
-                return File(pdfBytes, "application/pdf", "contract.pdf");
+                return Ok(response);
             }
             catch (Exception ex)
             {
                 Console.WriteLine($"ERRO AO GERAR CONTRATOS: {ex.Message}");
-                return ActionResultIndex.Failure($"OCORREU UM ERRO NA OPERAÇÃO: {ex.Message}", isSpeakOnOperation: true);
+                return ActionResultIndex.Failure(
+                    $"OCORREU UM ERRO NA OPERAÇÃO: {ex.Message}",
+                    isSpeakOnOperation: true);
             }
         }
 
-       // [Authorize(Policy = "GlobalPoliticsAgency")]
+        // [Authorize(Policy = "GlobalPoliticsAgency")]
         [HttpGet("download-contract")]
         public async Task<IActionResult> DownloadContractAsync(int proposalCode)
         {
@@ -189,7 +203,7 @@ namespace Pregiato.API.Controllers
             return File(pdfBytes, "application/pdf", "contract.pdf");
         }
 
-       // [Authorize(Policy = "ManagementPolicyLevel2")]
+        // [Authorize(Policy = "ManagementPolicyLevel2")]
         [HttpGet("all-contracts")]
         public async Task<IActionResult> GetAllContractsForAgencyAsync()
         {
@@ -217,7 +231,7 @@ namespace Pregiato.API.Controllers
             }
         }
 
-     // [Authorize(Policy = "PolicyProducers")]
+        // [Authorize(Policy = "PolicyProducers")]
         [HttpGet("all-contracts-producers")]
         public async Task<IActionResult> GetAllContractsForProducers()
         {
@@ -225,7 +239,7 @@ namespace Pregiato.API.Controllers
             {
                 var user = await _userService.UserCaptureByToken().ConfigureAwait(true);
 
-                if ( user.UserType != UserType.PRODUCERS)
+                if (user.UserType != UserType.PRODUCERS)
                 {
                     return BadRequest("USUÁRIO NÃO ENCONTRADO OU NÃO É UM PRODUTOR.");
                 }
@@ -234,19 +248,19 @@ namespace Pregiato.API.Controllers
                         .GetAllContractsForProducersAsync(user.CodProducers)
                         .ConfigureAwait(true);
 
-                    if (!contracts.Any())
-                    {
-                        return ActionResultIndex.Failure("NENHUM CONTRATO ENCONTRADO NA BASE DE DADOS.");
-                    }
+                if (!contracts.Any())
+                {
+                    return ActionResultIndex.Failure("NENHUM CONTRATO ENCONTRADO NA BASE DE DADOS.");
+                }
 
-                    return ActionResultIndex.Success(
-                        data: new
-                        {
-                            TotalContracts = contracts.Count,
-                            Contracts = contracts
-                        },
-                        message: "TODOS OS CONTRATOS FORAM RECUPERADOS COM SUCESSO!"
-                    );
+                return ActionResultIndex.Success(
+                    data: new
+                    {
+                        TotalContracts = contracts.Count,
+                        Contracts = contracts
+                    },
+                    message: "TODOS OS CONTRATOS FORAM RECUPERADOS COM SUCESSO!"
+                );
             }
             catch (Exception ex)
             {
@@ -256,6 +270,55 @@ namespace Pregiato.API.Controllers
             }
 
         }
+
+        [HttpPost("delete-contract")]
+        public async Task<IActionResult> ReceiveWebhook([FromBody] AutentiqueWebhookRequest request)
+        {
+
+            request.Event = "document.deleted";
+
+            try
+            {
+                 var documentAutentique = await _autentiqueService.ProcessDocumentAutentiqueAsync(request.Data.Id);
+
+                if (documentAutentique == null)
+                {
+                    return NotFound(new CustomResponse
+                    {
+                        StatusCode = StatusCodes.Status404NotFound,
+                        Message = $"CONTRATO NÃO ENCONTRADO"
+                    });
+                }
+
+                request.Data.Name = documentAutentique.DocumentName;
+
+                await _autentiqueService.ProcessDeleteContractAsync(documentAutentique);
+                var contract = await _contractRepository.GetContractByCriteriaAsync
+                                    (documentAutentique.IdContract, documentAutentique.CodProposta, documentAutentique.IdModel);
+
+                await _contractRepository.DeleteAsync(contract.ContractId, contract.CodProposta, contract.IdModel);
+
+                return Ok(new CustomResponse
+                {
+                    StatusCode = StatusCodes.Status200OK,
+                    Message = $"CONTRATO {documentAutentique.DocumentName} EXCLUIDO"
+                });
+
+            }
+
+            catch (Exception ex)
+            {
+                return BadRequest(new CustomResponse
+                {
+                    StatusCode = StatusCodes.Status400BadRequest,
+                    Message = $"ERRO AO EXCLUIR CONTRATO{request.Data.Name}, ENTRE EM CONTATO O TIME DE T.I.",
+                    Data = ex
+                });
+            }
+        }
     }
 
 }
+
+
+
