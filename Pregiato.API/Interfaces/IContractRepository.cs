@@ -11,6 +11,7 @@ namespace Pregiato.API.Interfaces
         Task UpdateAsync(ContractsModels contract);
         Task DeleteAsync(Guid idContract, int? proposalCode, Guid? IdModel);
         Task SaveContractAsync(ContractBase contract);
+        Task SaveCommitmentTermAsync(ContractCommitmentTerm term);
         Task<List<ContractBase>> GetContractsByModelId(Guid modelId);
         Task<ContractBase> GetContractByCriteriaAsync(Guid idContract, int? proposalCode, Guid? IdModel);
         Task<ContractDTO?> DownloadContractAsync(int proposalCode);

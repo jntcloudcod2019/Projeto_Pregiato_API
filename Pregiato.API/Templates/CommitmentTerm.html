@@ -2,62 +2,149 @@
 <html lang="pt-BR">
 <head>
     <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Termo de Comprometimento</title>
+    <style>
+        @import url('https://fonts.googleapis.com/css2?family=Times+New+Roman&display=swap');
+
+        body {
+            font-family: 'Times New Roman', Times, serif;
+            margin: 40px;
+            line-height: 1.5;
+            font-size: 14pt;
+            color: #000;
+        }
+
+        .header, .section, .footer {
+            margin-bottom: 20px;
+        }
+
+        .clause {
+            margin-top: 20px;
+        }
+
+        .title {
+            text-align: center;
+            font-weight: bold;
+            text-decoration: underline;
+            margin-bottom: 30px;
+        }
+
+        .signature {
+            margin-top: 50px;
+            text-align: center;
+        }
+
+        .placeholder {
+            background-color: yellow;
+        }
+        .signature {
+            margin-top: 40px;
+            text-align: center;
+            font-weight: bold;
+            position: relative;
+            width: 100%;
+            max-width: 400px;
+            margin-left: auto;
+            margin-right: auto;
+        }
+
+            .signature p {
+                margin: 5px 0;
+                font-size: 14px;
+            }
+
+        .signature-line {
+            display: block;
+            width: 300px;
+            border-bottom: 2px solid black;
+            margin: 10px auto;
+            padding-top: 10px;
+        }
+
+        .signature-img {
+            width: 250px;
+            height: auto;
+            display: block;
+            margin: 10px auto;
+            object-fit: contain;
+        }
+    </style>
 </head>
 <body>
-    <h1>TERMO DE COMPROMETIMENTO</h1>
-    <p>Local: {Local-Contrato}, Data: {Data-Contrato}, {Mês-Contrato} de 2025.</p>
-    <p>
-        Eu, <strong>{Nome-Modelo}</strong>, inscrito(a) no CPF: <strong>{CPF-Modelo}</strong>, e portador(a) da cédula de RG: <strong>{RG-Modelo}</strong>,
-        residente e domiciliada no endereço <strong>{Endereço-Modelo}</strong>, nº <strong>{Numero-Modelo}</strong>, complemento <strong>{Complemento-Modelo}</strong>,
-        localizado no bairro <strong>{Bairro-Modelo}</strong>, situado na cidade <strong>{Cidade-Modelo}</strong>, CEP: <strong>{CEP-Modelo}</strong>,
-        tendo como telefone principal: <strong>{Telefone-Principal}</strong> e telefone secundário: <strong>{Telefone-Secundário}</strong>, representada pela empresa
-        <strong>PREGIATO MANAGEMENT LTDA</strong>, concordo e comprometo-me com os termos estabelecidos abaixo:
-    </p>
 
-    <h2>CLÁUSULA PRIMEIRA - DO COMPROMISSO</h2>
-    <ol>
-        <li>
-            Comparecer no horário previamente agendado, no dia <strong>{Data-Agendamento}</strong>, às <strong>{Horário-Agendamento}</strong>, no local indicado,
-            de forma a garantir o cumprimento do cronograma estabelecido pela equipe responsável.
-        </li>
-        <li>Zelar pela utilização adequada e pela conservação de todas as peças, acessórios, produtos ou serviços fornecidos pela marca ou seus representantes durante a sessão de fotos.</li>
-        <li>Cumprir integralmente o tempo de trabalho necessário para a execução e análise do material bruto, sua edição e eventual aprovação pelo cliente, respeitando o processo estabelecido pela produção.</li>
-        <li>Reconhecer que o horário de finalização do trabalho pode variar e será comunicado de forma aproximada pelo responsável, para que não haja divergências ou prejuízos.</li>
-    </ol>
+    <div class="header">
+        <p class="title">TERMO DE COMPROMETIMENTO</p>
+        <p><strong>{Cidade} - {UF}</strong>, <strong>{Dia} de {Mês-Extenso}</strong> de {Ano}.</p>
+    </div>
 
-    <h2>CLÁUSULA SEGUNDA - DO CACHÊ E AJUSTES FINANCEIROS</h2>
-    <ol>
-        <li>Estou ciente de que o valor de R$ <strong>{Valor-Cache}</strong>, referente ao cachê, está sendo considerado na negociação, podendo ser ajustado conforme acordado em reunião com o representante da produtora.</li>
-        <li>Eventuais deduções ou ajustes no valor acordado serão formalmente informados e justificados, alinhados às condições previamente discutidas.</li>
-    </ol>
+    <div class="section">
+        <p>
+            Eu, <strong>{Nome do Modelo}</strong>, inscrito(a) no CPF: <strong>{CPF Modelo}</strong>, residente e domiciliada no endereço
+            <strong>{Endereço do Modelo}</strong>, nº <strong>{Número Modelo}</strong>, <strong>{Complemento Modelo}</strong>, localizado no bairro
+            <strong>{Bairro Modelo}</strong>, situado na cidade <strong>{Cidade Modelo} e {UF Modelo}</strong>, CEP: <strong>{CEP Modelo}</strong>,
+            tendo como telefone principal: <strong>{Telefone Principal}</strong> e telefone secundário:
+            <strong>{Telefone Secundário}</strong>, representada pela empresa <strong>PREGIATO MANAGEMENT LTDA</strong>,
+            com sede na Avenida Paulista, N° 1636 - Conj. 1105 - Bela Vista - CEP: 01310-100, São Paulo - SP,
+            inscrita no CNPJ sob o N° 34.871.424/0001-43, telefone oficial: (11) 97866 9411,
+            representada por quem de direito via cartão CNPJ, concordo e comprometo-me com os termos estabelecidos abaixo:
+        </p>
 
-    <h2>CLÁUSULA TERCEIRA - DA RESPONSABILIDADE E PENALIDADES</h2>
-    <ol>
-        <li>Em caso de desistência não comunicada, atrasos não autorizados ou abandono do contrato, este Termo será considerado nulo e poderá resultar na perda de quaisquer direitos a cachê ou compensações financeiras.</li>
-        <li>A remarcação de datas dependerá de análise e disponibilidade, podendo ser inviabilizada em casos de abandono ou não cumprimento das obrigações estabelecidas.</li>
-    </ol>
+        <p>
+            <strong>MARCA:</strong> {Nome da Marca}<br>
+            <strong>DATA DA ATIVIDADE:</strong> {Data da Atividade}<br>
+            <strong>HORÁRIO:</strong> {Horário do Job}<br>
+            <strong>LOCAL:</strong> {Endereço do Local do Trabalho}<br>
+            <strong>CACHÊ BRUTO:</strong> R$ {Valor Total}<br>
+            <strong>CACHÊ LÍQUIDO À MODELO (após desconto de 30%):</strong> R$ {Valor Líquido}<br>
+            <strong>FORMA DE PAGAMENTO:</strong> {Forma de Pagamento}
+        </p>
+    </div>
 
-    <h2>CLÁUSULA QUARTA - DISPOSIÇÕES GERAIS</h2>
-    <ol>
-        <li>O presente Termo tem como objetivo estabelecer claramente as obrigações das partes envolvidas, garantindo a boa execução do trabalho e o cumprimento das expectativas estabelecidas.</li>
-        <li>Fica eleito o foro da Comarca de São Paulo, Estado de São Paulo, para dirimir quaisquer dúvidas ou controvérsias decorrentes deste Termo.</li>
-    </ol>
+    <div class="clause">
+        <strong>CLÁUSULA 1ª - DO COMPROMISSO</strong>
+        <p>
+            Comparecer no horário previamente agendado, no local indicado, garantindo o cumprimento do cronograma estabelecido pela equipe responsável.<br>
+            Zelar pela utilização adequada e conservação das peças, acessórios, produtos ou serviços fornecidos pela marca ou seus representantes durante a sessão de fotos.<br>
+            Cumprir integralmente o tempo de trabalho necessário para a execução, análise do material bruto, sua edição e eventual aprovação pelo cliente, respeitando o processo estabelecido pela produção.<br>
+            Reconhecer que o horário de finalização do trabalho pode variar e será comunicado de forma aproximada pelo responsável, para que não haja divergências ou prejuízos.
+        </p>
+    </div>
 
-    <p>Por estarem justas e acordadas, as partes assinam o presente Termo em duas vias de igual teor e forma, para que produza os efeitos legais necessários.</p>
+    <div class="clause">
+        <strong>CLÁUSULA 2ª - DO CACHÊ E AJUSTES FINANCEIROS</strong>
+        <p>
+            Estou ciente que o valor aprazado à título de cachê terá a incidência de 30% referente ao serviço de intermediação da agência.<br>
+            Eventuais deduções ou ajustes no valor acordado serão formalmente informados e justificados, alinhados às condições previamente discutidas.
+        </p>
+    </div>
 
-    <h2 style="margin-top: 50px;">Assinaturas:</h2>
-    <div class="signatures">
-        <div class="signature">
-            <p>CONTRATANTE:</p>
-            <p>__________________________________________</p>
-        </div>
-        <div class="signature">
-            <p>PREGIATO MANAGEMENT LTDA:</p>
-            <p>__________________________________________</p>
-        </div>
+    <div class="clause">
+        <strong>CLÁUSULA 3ª - DA RESPONSABILIDADE E PENALIDADES</strong>
+        <p>
+            Em caso de desistência não comunicada, atrasos não autorizados ou abandono do contrato, este Termo será considerado nulo e poderá resultar na perda de quaisquer direitos a cachê ou compensações financeiras.<br>
+            A remarcação de datas dependerá de análise e disponibilidade, podendo ser inviabilizada em casos de abandono ou não cumprimento das obrigações estabelecidas.
+        </p>
+    </div>
+
+    <div class="clause">
+        <strong>CLÁUSULA 4ª - DISPOSIÇÕES GERAIS</strong>
+        <p>
+            O presente Termo estabelece claramente as obrigações das partes envolvidas, garantindo a boa execução do trabalho e o cumprimento das expectativas estabelecidas.<br>
+            Fica eleito o foro da Comarca de São Paulo, Estado de São Paulo, para dirimir quaisquer dúvidas ou controvérsias decorrentes deste Termo.
+        </p>
+    </div>
+
+    <div class="signature">
+        <p>Nome: {Nome-Assinatura}</p>
+        <div class="signature-line"></div>
+        <p>Assinatura:</p>
+    </div>
+
+    <div class="signature">
+        <p>PREGIATO MANAGEMENT LTDA</p>
+        <img src="{NameImageSignature}" alt="Assinatura" style="width:200px;height:auto;" />
+        <div class="signature-line"></div>
+        <p>Assinatura:</p>
     </div>
 </body>
 </html>
-

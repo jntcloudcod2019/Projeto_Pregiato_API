@@ -27,7 +27,6 @@ namespace Pregiato.API.Services.ServiceModels
                 Action = "DELETE",
                 IdDocumentAutentique = documentsAutentique.IdDocumentAutentique,
                 IdContract = documentsAutentique.IdContract
-,
             });
 
             Console.WriteLine($"[API] MENSAGEM DE EXCLUSÃO ENVIADA PARA A FILA. DOCUMENTO AUTENTIQUE ID: {documentsAutentique.IdDocumentAutentique}");

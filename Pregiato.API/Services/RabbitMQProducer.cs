@@ -1,10 +1,12 @@
 ﻿using Microsoft.Extensions.Options;
 using Newtonsoft.Json;
+using Pregiato.API.DTO;
 using Pregiato.API.Enums;
 using Pregiato.API.Interfaces;
 using Pregiato.API.Models;
 using Pregiato.API.Services.ServiceModels;
 using RabbitMQ.Client;
+using System.Diagnostics.Contracts;
 using System.Text;
 using System.Text.Json;
 using JsonSerializer = System.Text.Json.JsonSerializer;
@@ -13,6 +15,7 @@ public class RabbitMQProducer(IOptions<RabbitMQConfig> options) : IRabbitMQProdu
 {
     private readonly RabbitMQConfig _config = options.Value;
     private static readonly string SQSDeleteContract = "sqs-delete-document";
+    private static readonly string SQSCreateCommitmentTerm = "send-file-commitmentTerm";
 
     public async Task<RegistrationResult> SendMessageDeleteContractAsync(DocumentsAutentique documentsAutentique, object message)
     {
@@ -33,6 +36,12 @@ public class RabbitMQProducer(IOptions<RabbitMQConfig> options) : IRabbitMQProdu
                              exclusive: false,
                              autoDelete: false,
                              arguments: null);
+        var contractMessage = new ContractMessage
+        {
+            Action = "DELETE",
+            IdContract = documentsAutentique.IdContract,
+            Timestamp = DateTime.UtcNow.ToString("yyyy-MM-dd HH:mm:ss")
+        };
 
         var body = Encoding.UTF8.GetBytes(JsonConvert.SerializeObject(message));
 
@@ -146,5 +155,119 @@ public class RabbitMQProducer(IOptions<RabbitMQConfig> options) : IRabbitMQProdu
                              body: body);
 
         return Task.CompletedTask;
+    }
+
+    public async Task<string> SendMensageCreateContract(Guid? idContract, string modelDocument)
+    {
+        try
+        {
+            var contractMessage = new ContractMessage
+            {
+                Action = "CREATE",
+                IdContract = idContract,
+                CpfModel = modelDocument,
+                Timestamp = DateTime.UtcNow.ToString("yyyy-MM-dd HH:mm:ss")
+            };
+
+            var factory = new ConnectionFactory()
+            {
+                HostName = "mouse.rmq5.cloudamqp.com",
+                VirtualHost = "ewxcrhtv",
+                UserName = "ewxcrhtv",
+                Password = "DNcdH0NEeP4Fsgo2_w-vd47CqjelFk_S",
+                Port = 5672,
+                AutomaticRecoveryEnabled = true,
+                NetworkRecoveryInterval = TimeSpan.FromSeconds(10)
+            };
+
+            var jsonMessage = JsonSerializer.Serialize(contractMessage, new JsonSerializerOptions { WriteIndented = true });
+
+            var connection = await factory.CreateConnectionAsync();
+            var channel = await connection.CreateChannelAsync();
+
+            var body = Encoding.UTF8.GetBytes(jsonMessage);
+
+            await channel.BasicPublishAsync(
+                exchange: string.Empty,
+                routingKey: _config.QueueName,
+                body: body
+            ).ConfigureAwait(true);
+
+            await channel.CloseAsync().ContinueWith(t =>
+            {
+
+                if (t.IsCompletedSuccessfully)
+                {
+                    Console.WriteLine("Canal fechado com sucesso.");
+                }
+                else
+                {
+                    Console.WriteLine($"Falha ao fechar o canal: {t.Exception?.Message}");
+                }
+            });
+            await connection.CloseAsync();
+        }
+        catch (Exception ex)
+        {
+            Console.WriteLine($"Erro ao enviar mensagem para fila {_config.QueueName}| Error: {ex.Message}");
+        }
+        return "Ok";
+    }
+
+    public async Task<string> SendCommitmentTerm(ContractCommitmentTerm contractCommitment)
+    {
+        try
+        {
+            var contractMessage = new SendCommitmentTermDTO
+            {
+                Action = "CREATE_COMMITMENTTERM",
+                IdCommitmentTerm = contractCommitment.IDcontract,
+                CpfModel = contractCommitment.CpfModel,
+                IdModel = contractCommitment.IDModel,
+            };
+
+            var factory = new ConnectionFactory()
+            {
+                HostName = "mouse.rmq5.cloudamqp.com",
+                VirtualHost = "ewxcrhtv",
+                UserName = "ewxcrhtv",
+                Password = "DNcdH0NEeP4Fsgo2_w-vd47CqjelFk_S",
+                Port = 5672,
+                AutomaticRecoveryEnabled = true,
+                NetworkRecoveryInterval = TimeSpan.FromSeconds(10)
+            };
+
+            var jsonMessage = JsonSerializer.Serialize(contractMessage, new JsonSerializerOptions { WriteIndented = true });
+
+            var connection = await factory.CreateConnectionAsync();
+            var channel = await connection.CreateChannelAsync();
+
+            var body = Encoding.UTF8.GetBytes(jsonMessage);
+
+            await channel.BasicPublishAsync(
+                exchange: string.Empty,
+                routingKey: SQSCreateCommitmentTerm,
+                body: body
+            ).ConfigureAwait(true);
+
+            await channel.CloseAsync().ContinueWith(t =>
+            {
+
+                if (t.IsCompletedSuccessfully)
+                {
+                    Console.WriteLine("Canal fechado com sucesso.");
+                }
+                else
+                {
+                    Console.WriteLine($"Falha ao fechar o canal: {t.Exception?.Message}");
+                }
+            });
+            await connection.CloseAsync();
+        }
+        catch (Exception ex)
+        {
+            Console.WriteLine($"Erro ao enviar mensagem para fila {_config.QueueName}| Error: {ex.Message}");
+        }
+        return "Ok";
     }
 }

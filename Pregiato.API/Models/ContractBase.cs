@@ -46,6 +46,11 @@ namespace Pregiato.API.Models
         public override string TemplateFileName => "AgencyContract.html";
     }
 
+    public class AgencyContractMinority : ContractBase
+    {
+        public override string TemplateFileName => "AgencyContractMinority.html";
+    }
+
     public class PhotographyProductionContract : ContractBase
     {
         public override string TemplateFileName => "PhotographyProductionContract.html";

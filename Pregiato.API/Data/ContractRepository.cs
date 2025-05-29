@@ -4,16 +4,18 @@ using Pregiato.API.DTO;
 using Pregiato.API.Helper;
 using Pregiato.API.Interfaces;
 using Pregiato.API.Services.ServiceModels;
+using System.Diagnostics.Contracts;
 
 namespace Pregiato.API.Data
 {
     public class ContractRepository : IContractRepository
     {
         private readonly IDbContextFactory<ModelAgencyContext> _contextFactory;
-
-        public ContractRepository(IDbContextFactory<ModelAgencyContext> contextFactory)
+        private readonly ModelAgencyContext _modelAgencyContext;
+        public ContractRepository(IDbContextFactory<ModelAgencyContext> contextFactory, ModelAgencyContext modelAgencyContext)
         {
             _contextFactory = contextFactory;
+            _modelAgencyContext = modelAgencyContext;
         }
         public async Task AddAsync(ContractsModels contract)
         {
@@ -144,6 +146,13 @@ namespace Pregiato.API.Data
             .ToListAsync();
 
             return contracts;
+        }
+
+        public async Task SaveCommitmentTermAsync(ContractCommitmentTerm term)
+        {
+            using ModelAgencyContext context = _contextFactory.CreateDbContext();
+            context.ContractCommitmentTerms.Add(term);
+            await context.SaveChangesAsync();
         }
     }
 }

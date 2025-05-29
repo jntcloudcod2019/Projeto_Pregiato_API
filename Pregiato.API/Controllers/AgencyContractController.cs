@@ -1,16 +1,13 @@
-﻿    using System.Text.Json;
-using Microsoft.AspNetCore.Mvc;
+﻿using Microsoft.AspNetCore.Mvc;
 using Pregiato.API.Requests;
 using Swashbuckle.AspNetCore.Annotations;
 using Pregiato.API.Data;
-using Microsoft.AspNetCore.Authorization;
 using Pregiato.API.DTO;
 using Pregiato.API.Interfaces;
 using Pregiato.API.Response;
 using Pregiato.API.Models;
 using Pregiato.API.Services.ServiceModels;
 using Microsoft.EntityFrameworkCore;
-using Microsoft.AspNetCore.Http.HttpResults;
 namespace Pregiato.API.Controllers
 {
     [ApiController]
@@ -33,25 +30,70 @@ namespace Pregiato.API.Controllers
         private readonly IDbContextFactory<ModelAgencyContext> _contextFactory = contextFactory ?? throw new ArgumentNullException(nameof(contextFactory));
         private readonly IContractRepository _contractRepository = contractRepository ?? throw new ArgumentNullException(nameof(contractRepository));
 
-        //   [Authorize(Policy = "ManagementPolicyLevel5")]
-        [SwaggerOperation(Summary = "Gera um contrato Termo de comprometimento", Description = "Este endpoint gera o Termo de comprometimento.")]
+        //[uthorize(Policy = "ManagementPolicyLevel5")]
+        [SwaggerOperation(Summary = "Gera um contrato Termo de comprometimento")]
         [SwaggerResponse(200, "Contrato gerado com sucesso", typeof(string))]
-        [SwaggerResponse(400, "Requisição inválida")]
+        [SwaggerResponse(401, "Requisição inválida")]
         [SwaggerResponse(404, "Modelo não encontrado")]
         [HttpPost("generate/commitmentTerm")]
-        public async Task<IActionResult> GenerateCommitmentTermContract
-        ([FromBody] CreateRequestCommitmentTerm createRequestCommitmentTerm, [FromQuery] string queryModel)
+        public async Task<IActionResult> GenerateCommitmentTermContract([FromBody] CreateRequestCommitmentTerm createRequestCommitmentTerm)
         {
-            if (createRequestCommitmentTerm == null || queryModel == null)
+            try
             {
-                throw new Exception("Campos de parametros vazio.");
+                if (createRequestCommitmentTerm == null || !ModelState.IsValid)
+                {
+                    var erros = ModelState.Values.SelectMany(v => v.Errors)
+                                                 .Select(e => e.ErrorMessage)
+                    .ToList();
+
+                    return Unauthorized(new CustomResponse
+                    {
+                        StatusCode = StatusCodes.Status401Unauthorized,
+                        Message = $"OS DADOS FORNECIDOS SÃO INVÁLIDOS. "
+                    });
+                }
+
+                var model = await _modelRepository.GetModelByCriteriaAsync(createRequestCommitmentTerm.ModelIdentification);
+
+                if (model == null)
+                {
+                    return NotFound(new CustomResponse
+                    {
+                        StatusCode = StatusCodes.Status404NotFound,
+                        Message = $"MODELO CUJO DOC:{createRequestCommitmentTerm.ModelIdentification}, NÃO ENCONTRADO "
+                    });
+                }
+                // Colocar validação de contrato já gerado
+
+                var contract = await _contractService.GenerateContractCommitmentTerm(createRequestCommitmentTerm, model);
+
+                if (contract == null)
+                {
+                    return BadRequest(new CustomResponse
+                    {
+                        StatusCode = StatusCodes.Status400BadRequest,
+                        Message = $" ERRO AO GERAR CONTRATOS. CONSULTAR TIME DE TECNOLOGIA."
+                    });
+                }
+
+
+                var response = new CustomResponse
+                {
+                    StatusCode = StatusCodes.Status200OK,
+                    Message = $"TERMO DE COMPROMETIMENTO GERADO PARA {model.Name.ToUpper()}",
+                    Data = contract.ContractFilePath
+                };
+                return Ok(response);
+            }
+            catch (Exception ex)
+            {
+                Console.WriteLine($"ERRO AO GERAR TERMO: {ex.Message}");
+                return ActionResultIndex.Failure(
+                    $"OCORREU UM ERRO NA OPERAÇÃO: {ex.Message}",
+                    isSpeakOnOperation: true
+                );
             }
 
-            ContractBase contract = await _contractService.GenerateContractCommitmentTerm(createRequestCommitmentTerm, queryModel);
-
-            await _context.SaveChangesAsync();
-
-            return Ok($"Termo de comprometimento , gerado com sucesso. Código da Proposta: {contract.CodProposta}.");
         }
 
         // [Authorize(Policy = "ManagementPolicyLevel5")]
@@ -87,6 +129,94 @@ namespace Pregiato.API.Controllers
             ContractBase contract = await _contractService.GenetayeContractImageRightsTerm(queryModel);
             await _context.SaveChangesAsync();
             return Ok($"Termo de Concessão de direito de imagem para: {model.Name}, gerado com sucesso. Código da Proposta: {contract.CodProposta}.");
+        }
+
+        [SwaggerOperation("Gerar Contrato de Agenciamento e Fotografia -18.")]
+        [ProducesResponseType(typeof(ApiResponse<object>), StatusCodes.Status200OK)]
+        [ProducesResponseType(typeof(ApiResponse<object>), StatusCodes.Status404NotFound)]
+        [HttpPost("generate/contract/Agency-Photograph/Minority")]
+        public async Task<IActionResult> GenereteContractAgencyPhotographyMinority(GenerateContractsMinorityRequest request)
+        {
+            try
+            {
+
+                if (request == null || !ModelState.IsValid)
+                {
+                    var erros = ModelState.Values.SelectMany(v => v.Errors)
+                                                 .Select(e => e.ErrorMessage)
+                    .ToList();
+
+                    return Unauthorized(new CustomResponse
+                    {
+                        StatusCode = StatusCodes.Status401Unauthorized,
+                        Message = $"OS DADOS FORNECIDOS SÃO INVÁLIDOS. "
+                    });
+                }
+
+                var model = await _modelRepository.GetModelByCriteriaAsync(request.ModelIdentification);
+
+                if (model == null)
+                {
+                    return NotFound(new CustomResponse
+                    {
+                        StatusCode = StatusCodes.Status404NotFound,
+                        Message = $"MODELO CUJO DO DOC:{request.ModelIdentification}, NÃO ENCONTRADO "
+                    });
+                }
+
+                var existingContracts = await _contractRepository.ExistsContractForTodayAsync(model.IdModel);
+
+                if (existingContracts.Any())
+                {
+                    return Unauthorized(new CustomResponse
+                    {
+                        StatusCode = StatusCodes.Status401Unauthorized,
+                        Message = $"JÁ EXISTEM CONTRATO(S) GERADO(S) PARA ESTE MODELO HOJE. " +
+                                  $"CASO PRECISE GERAR UM NOVO CONTRATO EXCLUA OS QUE FORAM GERADOS.",
+                        Data = existingContracts.Select(c => new ContractResponse
+                        {
+                            StatusCode = StatusCodes.Status400BadRequest,
+                            ContractFilePath = c.ContractFilePath,
+                            CodProposta = c.CodProposta,
+                            ValorContrato = c.ValorContrato,
+                            DataContrato = c.DataContrato
+                        })
+                    });
+                }
+
+                List<ContractBase> generatedContracts = await _contractService.GenereteContractAgencyPhotographyMinorityAsync(request, model);
+
+                if (generatedContracts == null)
+                {
+                    return BadRequest(new CustomResponse
+                    {
+                        StatusCode = StatusCodes.Status400BadRequest,
+                        Message = $" ERRO AO GERAR CONTRATOS. CONSULTAR TIME DE TECNOLOGIA."
+                    });
+                }
+
+                var response = new CustomResponse
+                {
+                    StatusCode = StatusCodes.Status200OK,
+                    Message = $"CONTRATOS GERADOS COM SUCESSO PARA {model.Name.ToUpper()}",
+                    Data = generatedContracts.Select(c => new ContractResponse
+                    {
+                        ContractFilePath = c.ContractFilePath,
+                        CodProposta = c.CodProposta,
+                        ValorContrato = c.ValorContrato,
+                        DataContrato = c.DataContrato
+                    })
+                };
+
+                return Ok(response);
+            }
+            catch (Exception ex)
+            {
+                Console.WriteLine($"ERRO AO GERAR CONTRATOS: {ex.Message}");
+                return ActionResultIndex.Failure(
+                    $"OCORREU UM ERRO NA OPERAÇÃO: {ex.Message}",
+                    isSpeakOnOperation: true);
+            }
         }
 
         // [Authorize(Policy = "ManagementPolicyLevel5")]
@@ -276,7 +406,6 @@ namespace Pregiato.API.Controllers
         {
 
             request.Event = "document.deleted";
-
             try
             {
                  var documentAutentique = await _autentiqueService.ProcessDocumentAutentiqueAsync(request.Data.Id);

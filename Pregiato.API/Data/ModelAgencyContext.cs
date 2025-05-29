@@ -29,7 +29,7 @@ namespace Pregiato.API.Data
         public DbSet<LessonProgress> LessonProgresses { get; set; }
         public DbSet<CourseReview> CourseReviews { get; set; }
         public DbSet<Certificate> Certificates { get; set; }
-
+        public DbSet<ContractCommitmentTerm> ContractCommitmentTerms { get; set; }
         public DbSet<DocumentsAutentique> DocumentsAutentique { get; set; }
         public DbSet<PasswordReset> PasswordReset { get; set; }
 
@@ -464,6 +464,36 @@ namespace Pregiato.API.Data
                     .HasDefaultValueSql("CURRENT_TIMESTAMP")
                     .HasColumnType("timestamp with time zone");
 
+            });
+
+            modelBuilder.Entity<ContractCommitmentTerm>(entity =>
+            {
+                EnumToStringConverter<PaymentMethod> methodConverter = new();
+
+                entity.ToTable("ContractCommitmentTerm");
+                entity.Property(e => e.IDcontract);
+                entity.Property(e => e.IDModel);
+                entity.Property(e => e.NameModel);
+                entity.Property(e => e.CpfModel);
+                entity.Property(e => e.Mark);
+                entity.Property(e => e.Locality);
+                entity.Property(e => e.DatOfActivity)
+                .HasDefaultValueSql("CURRENT_TIMESTAMP")
+                    .HasColumnType("timestamp with time zone"); ;
+                entity.Property(e => e.AppointmentTime)
+                      .HasColumnType("time without time zone"); ;
+                entity.Property(e => e.Content);
+                entity.Property(e => e.ContractFilePath);
+                entity.Property(e => e.GrossCash);
+                entity.Property(e => e.PaymentMethod)
+                      .HasConversion(methodConverter)
+                      .HasColumnType("text");
+                entity.Property(e => e.CreatedAt)
+                      .HasDefaultValueSql("CURRENT_TIMESTAMP")
+                      .HasColumnType("timestamp with time zone");
+                entity.Property(e => e.UpdatedAt)
+                      .HasDefaultValueSql("CURRENT_TIMESTAMP")
+                      .HasColumnType("timestamp with time zone");
             });
         }
     }
