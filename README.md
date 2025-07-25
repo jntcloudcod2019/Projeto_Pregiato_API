@@ -1,10 +1,10 @@
-# 🧠 Projeto Pregiato API
+#  Projeto Pregiato API
 
 **Pregiato API** é uma aplicação corporativa construída em ASP.NET Core 8, projetada para ser o **cérebro operacional de uma agência de modelos digital**. Essa API moderna centraliza o controle de cadastro, agendamentos, visualizações de portfólio, geração de contratos em PDF, autenticação de usuários e envio de notificações via WhatsApp e e-mail — tudo isso orquestrado com RabbitMQ e arquitetura limpa.
 
 ---
 
-## 🎯 Objetivo do Projeto
+## Objetivo do Projeto
 
 Criar uma API robusta, escalável e extensível que permita a gestão completa de um ecossistema de agenciamento de modelos e eventos. O sistema é preparado para:
 
@@ -18,7 +18,7 @@ Ideal para agências que querem elevar o nível da automação de seus processos
 
 ---
 
-## 📂 Estrutura do Projeto
+##  Estrutura do Projeto
 
 ```text
 Projeto_Pregiato_API/
@@ -36,7 +36,7 @@ Projeto_Pregiato_API/
 
 ---
 
-## 🛠️ Tecnologias Utilizadas
+## Tecnologias Utilizadas
 
 | Camada           | Tecnologia/Ferramenta                       |
 |------------------|---------------------------------------------|
@@ -53,7 +53,7 @@ Projeto_Pregiato_API/
 
 ---
 
-## 🧠 Padrões de Arquitetura e Técnicas Aplicadas
+##  Padrões de Arquitetura e Técnicas Aplicadas
 
 | Tipo                         | Detalhe                                                                 |
 |------------------------------|-------------------------------------------------------------------------|
@@ -69,7 +69,7 @@ Projeto_Pregiato_API/
 
 ---
 
-## ✅ Funcionalidades
+##  Funcionalidades
 
 - Cadastro e login de usuários com autenticação via JWT
 - CRUD completo para modelos (incluindo JSONB para dados dinâmicos)
@@ -81,7 +81,7 @@ Projeto_Pregiato_API/
 
 ---
 
-## 🚀 Como Executar Localmente
+##  Como Executar Localmente
 
 ### Pré-requisitos
 
@@ -96,7 +96,7 @@ Acesse via:
 
 ⸻
 
-📂 Exemplos de Endpoints
+Exemplos de Endpoints
 	•	POST /api/User/register — Registro de usuário
 	•	POST /api/User/login — Login com JWT
 	•	POST /api/Model — Cadastro de modelo
@@ -105,7 +105,7 @@ Acesse via:
 
 ⸻
 
-🧑‍💻 Autor
+ Autor
 
 Desenvolvido com 💻 e ☕ por:
 
