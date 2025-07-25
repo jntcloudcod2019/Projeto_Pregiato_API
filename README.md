@@ -18,20 +18,21 @@ Ideal para agências que querem elevar o nível da automação de seus processos
 
 ---
 
-## 🧱 Estrutura do Projeto
-Projeto_Pregiato_API/
-├── Controllers/           # Endpoints REST
-├── DTOs/                  # Objetos de transferência (entrada/saída)
-├── Enums/                 # Enumerações para status, tipo de usuário etc.
-├── Helpers/               # Serviços auxiliares (JWT, Email, PDF, WhatsApp)
-├── Middlewares/           # Interceptação de requisições/respostas
-├── Models/                # Entidades do domínio
-├── Repositories/          # Repositórios e interface de acesso a dados
-├── Services/              # Regras de negócio encapsuladas
-├── Migrations/            # Mapeamento do banco via EF Core
-├── Program.cs             # Entry point e configuração
-└── appsettings.json       # Configurações do ambiente
+## 📂 Estrutura do Projeto
 
+```text
+Projeto_Pregiato_API/
+├── Controllers/        # Endpoints REST
+├── DTOs/               # Objetos de transferência (entrada/saída)
+├── Enums/              # Enumerações para status, tipo de usuário etc.
+├── Helpers/            # Serviços auxiliares (JWT, Email, PDF, WhatsApp)
+├── Middlewares/        # Interceptação de requisições/respostas
+├── Models/             # Entidades do domínio
+├── Repositories/       # Repositórios e interface de acesso a dados
+├── Services/           # Regras de negócio encapsuladas
+├── Migrations/         # Mapeamento do banco via EF Core
+├── Program.cs          # Entry point e configuração
+└── appsettings.json    # Configurações do ambiente
 
 ---
 
