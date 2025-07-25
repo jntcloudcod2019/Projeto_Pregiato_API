@@ -110,4 +110,4 @@ Acesse via:
 Desenvolvido com 💻 e ☕ por:
 
 Jonathan – @jntcloudcod2019
-Engenheiro de Software .NET | Automação Corporativa | IA + Cloud | Estratégia & Delivery
+Engenheiro de Software .NET 
